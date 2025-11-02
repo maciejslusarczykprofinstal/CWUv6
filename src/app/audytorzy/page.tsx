@@ -48,305 +48,361 @@ export default function AudytorzyPage() {
   }
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div className="text-center space-y-4">
-        <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-indigo-100 to-blue-100 dark:from-indigo-900/30 dark:to-blue-900/30 rounded-full text-sm font-medium text-indigo-700 dark:text-indigo-300">
-          <Wrench className="w-4 h-4" />
-          Narzędzia profesjonalisty
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50 dark:from-slate-900 dark:via-slate-900 dark:to-slate-900">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        {/* Header */}
+        <div className="text-center space-y-6 mb-12">
+          <div className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-500/10 to-blue-500/10 backdrop-blur-sm border border-indigo-200 dark:border-indigo-800 rounded-full text-sm font-semibold text-indigo-700 dark:text-indigo-300">
+            <Wrench className="w-5 h-5" />
+            Narzędzia profesjonalisty
+          </div>
+          <h1 className="text-5xl md:text-7xl font-bold bg-gradient-to-r from-indigo-600 via-blue-600 to-purple-600 bg-clip-text text-transparent leading-tight">
+            Audytorzy
+          </h1>
+          <p className="text-xl text-slate-600 dark:text-slate-400 max-w-3xl mx-auto leading-relaxed">
+            Precyzyjne obliczenia mocy z uwzględnieniem bufora i jednoczesności. 
+            Szczegółowa analiza strat cyrkulacji z wariantami modernizacji.
+          </p>
         </div>
-        <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-indigo-600 to-blue-600 bg-clip-text text-transparent">
-          Audytorzy
-        </h1>
-        <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-          Precyzyjne obliczenia mocy z uwzględnieniem bufora i jednoczesności. 
-          Szczegółowa analiza strat cyrkulacji z wariantami modernizacji.
-        </p>
-      </div>
 
-      {/* Calculator Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Calculator className="w-5 h-5 text-indigo-600" />
-            Kalkulator mocy zamówionej CWU
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={onSubmit} className="space-y-6">
-            {/* Building Parameters */}
-            <div>
-              <h3 className="font-semibold mb-4 text-sm text-muted-foreground uppercase tracking-wide">
-                Parametry budynku
-              </h3>
-              <div className="grid md:grid-cols-4 gap-4">
-                <Field label="Liczba mieszkań">
-                  <input
-                    name="flats"
-                    defaultValue={65}
-                    className="w-full px-3 py-2 border border-input rounded-lg bg-background focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-                  />
-                </Field>
-                <Field label="Liczba pionów">
-                  <input
-                    name="risers"
-                    defaultValue={18}
-                    className="w-full px-3 py-2 border border-input rounded-lg bg-background focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-                  />
-                </Field>
-                <Field label="T. zimnej [°C]">
-                  <input
-                    name="coldTempC"
-                    defaultValue={8}
-                    className="w-full px-3 py-2 border border-input rounded-lg bg-background focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-                  />
-                </Field>
-                <Field label="T. CWU [°C]">
-                  <input
-                    name="hotTempC"
-                    defaultValue={55}
-                    className="w-full px-3 py-2 border border-input rounded-lg bg-background focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-                  />
-                </Field>
+        {/* Calculator Card */}
+        <Card className="backdrop-blur-sm bg-white/80 dark:bg-slate-900/80 border-0 shadow-2xl">
+          <CardHeader className="border-b border-slate-200 dark:border-slate-700 bg-gradient-to-r from-indigo-50 to-blue-50 dark:from-indigo-950/50 dark:to-blue-950/50">
+            <CardTitle className="flex items-center gap-3 text-xl text-slate-800 dark:text-slate-200">
+              <div className="p-2 bg-indigo-500 rounded-lg shadow-lg">
+                <Calculator className="w-6 h-6 text-white" />
               </div>
-            </div>
-
-            {/* Technical Parameters */}
-            <div>
-              <h3 className="font-semibold mb-4 text-sm text-muted-foreground uppercase tracking-wide">
-                Parametry techniczne
-              </h3>
-              <div className="grid md:grid-cols-4 gap-4">
-                <Field label="Szczytowy pobór [L/min]">
-                  <input
-                    name="drawPeakLpm"
-                    defaultValue={120}
-                    className="w-full px-3 py-2 border border-input rounded-lg bg-background focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-                  />
-                </Field>
-                <Field label="Profil jednoczesności">
-                  <select
-                    name="simultProfile"
-                    defaultValue="med"
-                    className="w-full px-3 py-2 border border-input rounded-lg bg-background focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-                  >
-                    <option value="low">Niski</option>
-                    <option value="med">Średni</option>
-                    <option value="high">Wysoki</option>
-                  </select>
-                </Field>
-                <Field label="Bufor [L]">
-                  <input
-                    name="bufferL"
-                    defaultValue={1000}
-                    className="w-full px-3 py-2 border border-input rounded-lg bg-background focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-                  />
-                </Field>
-                <Field label="ΔT bufora [K]">
-                  <input
-                    name="bufferDeltaC"
-                    defaultValue={10}
-                    className="w-full px-3 py-2 border border-input rounded-lg bg-background focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-                  />
-                </Field>
+              Kalkulator mocy zamówionej CWU
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-8">
+            <form onSubmit={onSubmit} className="space-y-10">
+              {/* Building Parameters */}
+              <div className="space-y-6">
+                <h3 className="flex items-center gap-3 text-lg font-bold text-slate-800 dark:text-slate-200">
+                  <div className="w-1 h-6 bg-gradient-to-b from-indigo-500 to-blue-500 rounded-full"></div>
+                  Parametry budynku
+                </h3>
+                <div className="grid md:grid-cols-4 gap-6">
+                  <Field label="Liczba mieszkań" unit="szt">
+                    <input
+                      name="flats"
+                      defaultValue={65}
+                      className="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all hover:border-indigo-300 dark:hover:border-indigo-600"
+                    />
+                  </Field>
+                  <Field label="Liczba pionów" unit="szt">
+                    <input
+                      name="risers"
+                      defaultValue={18}
+                      className="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all hover:border-indigo-300 dark:hover:border-indigo-600"
+                    />
+                  </Field>
+                  <Field label="T. zimnej" unit="°C">
+                    <input
+                      name="coldTempC"
+                      defaultValue={8}
+                      className="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all hover:border-indigo-300 dark:hover:border-indigo-600"
+                    />
+                  </Field>
+                  <Field label="T. CWU" unit="°C">
+                    <input
+                      name="hotTempC"
+                      defaultValue={55}
+                      className="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all hover:border-indigo-300 dark:hover:border-indigo-600"
+                    />
+                  </Field>
+                </div>
               </div>
-            </div>
 
-            {/* Advanced Parameters */}
-            <div>
-              <h3 className="font-semibold mb-4 text-sm text-muted-foreground uppercase tracking-wide">
-                Parametry zaawansowane
-              </h3>
-              <div className="grid md:grid-cols-4 gap-4">
-                <Field label="Czas piku [s]">
-                  <input
-                    name="peakDurationSec"
-                    defaultValue={300}
-                    className="w-full px-3 py-2 border border-input rounded-lg bg-background focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-                  />
-                </Field>
-                <Field label="% strat cyrkulacji" optional>
-                  <input
-                    name="circulationPct"
-                    placeholder="np. 25"
-                    className="w-full px-3 py-2 border border-input rounded-lg bg-background focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-                  />
-                </Field>
-                <Field label="Ciepło zakupione [GJ]" optional>
-                  <input
-                    name="purchasedGJ"
-                    placeholder="np. 610"
-                    className="w-full px-3 py-2 border border-input rounded-lg bg-background focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-                  />
-                </Field>
-                <Field label="UA cyrkulacji [W/K]" optional>
-                  <input
-                    name="UA_WK"
-                    placeholder="np. 240"
-                    className="w-full px-3 py-2 border border-input rounded-lg bg-background focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-                  />
-                </Field>
+              {/* Technical Parameters */}
+              <div className="space-y-6">
+                <h3 className="flex items-center gap-3 text-lg font-bold text-slate-800 dark:text-slate-200">
+                  <div className="w-1 h-6 bg-gradient-to-b from-blue-500 to-cyan-500 rounded-full"></div>
+                  Parametry techniczne
+                </h3>
+                <div className="grid md:grid-cols-4 gap-6">
+                  <Field label="Szczytowy pobór" unit="L/min">
+                    <input
+                      name="drawPeakLpm"
+                      defaultValue={120}
+                      className="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all hover:border-blue-300 dark:hover:border-blue-600"
+                    />
+                  </Field>
+                  <Field label="Profil jednoczesności">
+                    <select
+                      name="simultProfile"
+                      defaultValue="med"
+                      className="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all hover:border-blue-300 dark:hover:border-blue-600"
+                    >
+                      <option value="low">Niski</option>
+                      <option value="med">Średni</option>
+                      <option value="high">Wysoki</option>
+                    </select>
+                  </Field>
+                  <Field label="Bufor" unit="L">
+                    <input
+                      name="bufferL"
+                      defaultValue={1000}
+                      className="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all hover:border-blue-300 dark:hover:border-blue-600"
+                    />
+                  </Field>
+                  <Field label="ΔT bufora" unit="K">
+                    <input
+                      name="bufferDeltaC"
+                      defaultValue={10}
+                      className="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all hover:border-blue-300 dark:hover:border-blue-600"
+                    />
+                  </Field>
+                </div>
               </div>
-            </div>
 
-            {/* Economic Parameters */}
-            <div>
-              <h3 className="font-semibold mb-4 text-sm text-muted-foreground uppercase tracking-wide">
-                Parametry ekonomiczne
-              </h3>
-              <div className="grid md:grid-cols-4 gap-4">
-                <Field label="ΔT cyrkulacji [K]">
-                  <input
-                    name="dT_circ"
-                    defaultValue={20}
-                    className="w-full px-3 py-2 border border-input rounded-lg bg-background focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-                  />
-                </Field>
-                <Field label="Godziny/rok">
-                  <input
-                    name="hours_circ"
-                    defaultValue={8760}
-                    className="w-full px-3 py-2 border border-input rounded-lg bg-background focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-                  />
-                </Field>
-                <Field label="Cena [zł/GJ]">
-                  <input
-                    name="pricePerGJ"
-                    defaultValue={60}
-                    className="w-full px-3 py-2 border border-input rounded-lg bg-background focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-                  />
-                </Field>
+              {/* Advanced Parameters */}
+              <div className="space-y-6">
+                <h3 className="flex items-center gap-3 text-lg font-bold text-slate-800 dark:text-slate-200">
+                  <div className="w-1 h-6 bg-gradient-to-b from-purple-500 to-indigo-500 rounded-full"></div>
+                  Parametry zaawansowane
+                </h3>
+                <div className="grid md:grid-cols-4 gap-6">
+                  <Field label="Czas piku" unit="s">
+                    <input
+                      name="peakDurationSec"
+                      defaultValue={300}
+                      className="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all hover:border-purple-300 dark:hover:border-purple-600"
+                    />
+                  </Field>
+                  <Field label="% strat cyrkulacji" optional>
+                    <input
+                      name="circulationPct"
+                      placeholder="np. 25"
+                      className="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all hover:border-purple-300 dark:hover:border-purple-600"
+                    />
+                  </Field>
+                  <Field label="Ciepło zakupione" unit="GJ" optional>
+                    <input
+                      name="purchasedGJ"
+                      placeholder="np. 610"
+                      className="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all hover:border-purple-300 dark:hover:border-purple-600"
+                    />
+                  </Field>
+                  <Field label="UA cyrkulacji" unit="W/K" optional>
+                    <input
+                      name="UA_WK"
+                      placeholder="np. 240"
+                      className="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all hover:border-purple-300 dark:hover:border-purple-600"
+                    />
+                  </Field>
+                </div>
               </div>
+
+              {/* Economic Parameters */}
+              <div className="space-y-6">
+                <h3 className="flex items-center gap-3 text-lg font-bold text-slate-800 dark:text-slate-200">
+                  <div className="w-1 h-6 bg-gradient-to-b from-emerald-500 to-green-500 rounded-full"></div>
+                  Parametry ekonomiczne
+                </h3>
+                <div className="grid md:grid-cols-3 gap-6">
+                  <Field label="ΔT cyrkulacji" unit="K">
+                    <input
+                      name="dT_circ"
+                      defaultValue={20}
+                      className="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all hover:border-emerald-300 dark:hover:border-emerald-600"
+                    />
+                  </Field>
+                  <Field label="Godziny/rok" unit="h">
+                    <input
+                      name="hours_circ"
+                      defaultValue={8760}
+                      className="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all hover:border-emerald-300 dark:hover:border-emerald-600"
+                    />
+                  </Field>
+                  <Field label="Cena" unit="zł/GJ">
+                    <input
+                      name="pricePerGJ"
+                      defaultValue={60}
+                      className="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all hover:border-emerald-300 dark:hover:border-emerald-600"
+                    />
+                  </Field>
+                </div>
+              </div>
+
+              <div className="flex justify-center pt-6">
+                <Button
+                  type="submit"
+                  disabled={loading}
+                  className="px-12 py-4 bg-gradient-to-r from-indigo-600 via-blue-600 to-purple-600 hover:from-indigo-700 hover:via-blue-700 hover:to-purple-700 text-white font-bold text-lg rounded-2xl transition-all duration-300 hover:scale-105 hover:shadow-2xl disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                >
+                  {loading ? (
+                    <div className="flex items-center gap-3">
+                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                      Liczenie...
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-3">
+                      <Calculator className="w-5 h-5" />
+                      Policz moc i straty
+                    </div>
+                  )}
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+
+        {/* Results */}
+        {res && (
+          <div className="space-y-8">
+            <div className="text-center space-y-4">
+              <h2 className="text-4xl font-bold bg-gradient-to-r from-indigo-600 to-blue-600 bg-clip-text text-transparent">
+                Wyniki obliczeń
+              </h2>
+              <p className="text-lg text-slate-600 dark:text-slate-400">
+                Profesjonalna analiza systemu CWU
+              </p>
             </div>
-
-            <Button
-              type="submit"
-              disabled={loading}
-              className="w-full md:w-auto px-8 py-3 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white font-semibold rounded-lg transition-all hover:scale-105 shadow-lg"
-            >
-              {loading ? "Liczenie..." : "Policz moc i straty"}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
-
-      {/* Results */}
-      {res && (
-        <div className="space-y-6">
-          <h2 className="text-2xl font-bold">Wyniki obliczeń</h2>
-          
-          {/* Key Power Metrics */}
-          <div className="grid md:grid-cols-3 gap-4">
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground mb-1">
-                      P (szczyt)
-                    </p>
-                    <p className="text-2xl font-bold">{res.power.PkW.toFixed(1)} kW</p>
+            
+            {/* Key Power Metrics */}
+            <div className="grid md:grid-cols-3 gap-6">
+              <Card className="bg-gradient-to-br from-red-50 to-orange-50 dark:from-red-950/30 dark:to-orange-950/30 border-red-200 dark:border-red-800 backdrop-blur-sm">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-red-600 dark:text-red-400 font-medium mb-2">
+                        P (szczyt)
+                      </p>
+                      <p className="text-3xl font-bold text-red-900 dark:text-red-100">
+                        {res.power.PkW.toFixed(1)} kW
+                      </p>
+                    </div>
+                    <div className="p-3 bg-red-500 rounded-xl shadow-lg">
+                      <Zap className="w-6 h-6 text-white" />
+                    </div>
                   </div>
-                  <div className="w-12 h-12 bg-red-100 rounded-2xl flex items-center justify-center">
-                    <Zap className="w-6 h-6 text-red-600" />
+                </CardContent>
+              </Card>
+
+              <Card className="bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-950/30 dark:to-green-950/30 border-emerald-200 dark:border-emerald-800 backdrop-blur-sm">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-emerald-600 dark:text-emerald-400 font-medium mb-2">
+                        P po buforze
+                      </p>
+                      <p className="text-3xl font-bold text-emerald-900 dark:text-emerald-100">
+                        {res.power.PnetkW.toFixed(1)} kW
+                      </p>
+                    </div>
+                    <div className="p-3 bg-emerald-500 rounded-xl shadow-lg">
+                      <Settings className="w-6 h-6 text-white" />
+                    </div>
                   </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/30 dark:to-amber-950/30 border-orange-200 dark:border-orange-800 backdrop-blur-sm">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-orange-600 dark:text-orange-400 font-medium mb-2">
+                        Straty cyrkulacji
+                      </p>
+                      <p className="text-3xl font-bold text-orange-900 dark:text-orange-100">
+                        {res.circGJ.toFixed(2)} GJ/rok
+                      </p>
+                    </div>
+                    <div className="p-3 bg-orange-500 rounded-xl shadow-lg">
+                      <TrendingUp className="w-6 h-6 text-white" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Detailed Technical Results */}
+            <Card className="backdrop-blur-sm bg-white/70 dark:bg-slate-900/70 border-0 shadow-xl">
+              <CardHeader>
+                <CardTitle className="text-xl text-slate-800 dark:text-slate-200">
+                  Szczegółowe parametry techniczne
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid md:grid-cols-3 gap-6">
+                  <Info label="Jednoczesność" value={res.power.jednocz.toFixed(2)} />
+                  <Info label="ΔT [K]" value={res.power.dT.toFixed(1)} />
+                  <Info label="Energia bufora [kWh]" value={res.power.Ebufor_kWh.toFixed(2)} />
                 </div>
               </CardContent>
             </Card>
 
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground mb-1">
-                      P po buforze
-                    </p>
-                    <p className="text-2xl font-bold text-green-600">{res.power.PnetkW.toFixed(1)} kW</p>
+            {/* Modernization Variants */}
+            <Card className="backdrop-blur-sm bg-white/70 dark:bg-slate-900/70 border-0 shadow-xl">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-3 text-xl text-slate-800 dark:text-slate-200">
+                  <div className="p-2 bg-blue-500 rounded-lg shadow-lg">
+                    <BarChart3 className="w-5 h-5 text-white" />
                   </div>
-                  <div className="w-12 h-12 bg-green-100 rounded-2xl flex items-center justify-center">
-                    <Settings className="w-6 h-6 text-green-600" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground mb-1">
-                      Straty cyrkulacji
-                    </p>
-                    <p className="text-2xl font-bold text-orange-600">{res.circGJ.toFixed(2)} GJ/rok</p>
-                  </div>
-                  <div className="w-12 h-12 bg-orange-100 rounded-2xl flex items-center justify-center">
-                    <TrendingUp className="w-6 h-6 text-orange-600" />
-                  </div>
+                  Warianty modernizacji (szacunek)
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {res.variants.map((variant, i) => (
+                    <div key={i} className="p-6 rounded-xl bg-gradient-to-r from-slate-50 to-blue-50/50 dark:from-slate-800 dark:to-blue-950/30 border border-slate-200 dark:border-slate-700 hover:shadow-lg transition-all duration-300 hover:scale-[1.02]">
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-2">
+                          <h4 className="text-lg font-bold text-slate-800 dark:text-slate-200">
+                            {variant.name}
+                          </h4>
+                          <p className="text-sm text-slate-600 dark:text-slate-400">
+                            Oszczędności: <span className="font-semibold text-emerald-600 dark:text-emerald-400">{variant.savedGJ.toFixed(1)} GJ/rok</span>
+                          </p>
+                        </div>
+                        <div className="text-right space-y-3">
+                          <div className="flex items-center gap-4">
+                            <span className="text-sm text-slate-500 dark:text-slate-400 font-medium">CAPEX:</span>
+                            <span className="font-bold text-slate-800 dark:text-slate-200">{fmt(variant.capexPLN)} PLN</span>
+                          </div>
+                          <div className="flex items-center gap-4">
+                            <span className="text-sm text-slate-500 dark:text-slate-400 font-medium">Oszcz./rok:</span>
+                            <span className="font-bold text-emerald-600 dark:text-emerald-400">{fmt(variant.savedPLN)} PLN</span>
+                          </div>
+                          <Badge 
+                            className={`${
+                              variant.paybackYears < 5 
+                                ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300" 
+                                : variant.paybackYears < 10 
+                                  ? "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300"
+                                  : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300"
+                            } font-semibold`}
+                          >
+                            Payback: {variant.paybackYears.toFixed(1)} lat
+                          </Badge>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </CardContent>
             </Card>
           </div>
-
-          {/* Detailed Technical Results */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Szczegółowe parametry techniczne</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid md:grid-cols-3 gap-4">
-                <Info label="Jednoczesność" value={res.power.jednocz.toFixed(2)} />
-                <Info label="ΔT [K]" value={res.power.dT.toFixed(1)} />
-                <Info label="Energia bufora [kWh]" value={res.power.Ebufor_kWh.toFixed(2)} />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Modernization Variants */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BarChart3 className="w-5 h-5 text-blue-600" />
-                Warianty modernizacji (szacunek)
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {res.variants.map((variant, i) => (
-                  <div key={i} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
-                    <div>
-                      <h4 className="font-medium">{variant.name}</h4>
-                      <p className="text-sm text-muted-foreground">
-                        Oszczędności: {variant.savedGJ.toFixed(1)} GJ/rok
-                      </p>
-                    </div>
-                    <div className="text-right space-y-1">
-                      <div className="flex items-center gap-4">
-                        <span className="text-sm text-muted-foreground">CAPEX:</span>
-                        <span className="font-medium">{fmt(variant.capexPLN)} PLN</span>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <span className="text-sm text-muted-foreground">Oszcz./rok:</span>
-                        <span className="font-medium text-green-600">{fmt(variant.savedPLN)} PLN</span>
-                      </div>
-                      <Badge variant={variant.paybackYears < 5 ? "success" : variant.paybackYears < 10 ? "warning" : "destructive"}>
-                        Payback: {variant.paybackYears.toFixed(1)} lat
-                      </Badge>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
 
-function Field({ label, children, optional = false }: { label: string; children: React.ReactNode; optional?: boolean }) {
+function Field({ label, unit, children, optional = false }: { 
+  label: string; 
+  unit?: string;
+  children: React.ReactNode; 
+  optional?: boolean 
+}) {
   return (
-    <div className="space-y-2">
-      <label className="text-sm font-medium text-foreground">
-        {label} {optional && <span className="text-muted-foreground">(opcjonalne)</span>}
+    <div className="space-y-3">
+      <label className="block text-sm font-semibold text-slate-800 dark:text-slate-200">
+        {label}
+        {unit && <span className="text-slate-500 dark:text-slate-400 font-normal"> ({unit})</span>}
+        {optional && <span className="text-slate-400 dark:text-slate-500 font-normal ml-2">(opcjonalne)</span>}
       </label>
       {children}
     </div>
@@ -355,9 +411,13 @@ function Field({ label, children, optional = false }: { label: string; children:
 
 function Info({ label, value }: { label: string; value: string }) {
   return (
-    <div className="p-4 rounded-xl bg-muted/50 border">
-      <div className="text-xs text-muted-foreground uppercase tracking-wide mb-1">{label}</div>
-      <div className="text-lg font-semibold">{value}</div>
+    <div className="p-4 rounded-xl bg-slate-50/50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 backdrop-blur-sm">
+      <div className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wide font-medium mb-1">
+        {label}
+      </div>
+      <div className="text-lg font-bold text-slate-800 dark:text-slate-200">
+        {value}
+      </div>
     </div>
   );
 }
