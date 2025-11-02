@@ -7,12 +7,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
 type Result = {
-  needGJ: number;
-  purchasedGJ: number;
-  circGJ: number;
-  usefulGJ: number;
-  costPLN: number;
-  diffPLN: number;
+  energyLossPerM3: number;
+  lossPerM3: number;
+  monthlyFinancialLoss: number;
+  monthlyEnergyLoss: number;
+  yearlyFinancialLoss: number;
+  yearlyEnergyLoss: number;
+  theoreticalCostPerM3: number;
+  theoreticalMonthlyPayment: number;
+  actualMonthlyPayment: number;
+  energyPerM3: number;
 };
 
 export default function MieszkancyPage() {
@@ -24,27 +28,73 @@ export default function MieszkancyPage() {
     e.preventDefault();
     setLoading(true);
     const form = new FormData(e.currentTarget);
-    const payload = Object.fromEntries(
-      Array.from(form.entries()).map(([k, v]) => [k, coerce(v as string)])
-    );
-    setFormData(payload);
     
-    const r = await fetch("/api/calc/resident", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    const json = await r.json();
-    if (json.ok) setRes(json.result);
-    else alert("Błąd: " + JSON.stringify(json.error));
+    // Pobieranie danych z formularza
+    const cwuPriceFromBill = Number(form.get('cwuPriceFromBill'));
+    const monthlyConsumption = Number(form.get('monthlyConsumption'));
+    const coldTempC = Number(form.get('coldTempC'));
+    const hotTempC = Number(form.get('hotTempC'));
+    const heatPriceFromCity = Number(form.get('heatPriceFromCity'));
+    
+    try {
+      // Obliczenia według zasady zachowania energii
+      const deltaT = hotTempC - coldTempC; // różnica temperatur [K]
+      
+      // Energia potrzebna do podgrzania 1m³ wody
+      const energyPerM3 = 0.004186 * deltaT; // GJ/m³ (ciepło właściwe wody)
+      
+      // Teoretyczny koszt podgrzania (bez strat) za m³
+      const theoreticalCostPerM3 = energyPerM3 * heatPriceFromCity; // zł/m³
+      
+      // Straty finansowe na m³
+      const lossPerM3 = cwuPriceFromBill - theoreticalCostPerM3; // zł/m³
+      
+      // Straty energii na m³ (z zasady zachowania energii)
+      const energyLossPerM3 = lossPerM3 / heatPriceFromCity; // GJ/m³
+      
+      // Straty w miesiącu
+      const monthlyFinancialLoss = lossPerM3 * monthlyConsumption; // zł/miesiąc
+      const monthlyEnergyLoss = energyLossPerM3 * monthlyConsumption; // GJ/miesiąc
+      
+      // Straty w ciągu roku
+      const yearlyFinancialLoss = monthlyFinancialLoss * 12; // zł/rok
+      const yearlyEnergyLoss = monthlyEnergyLoss * 12; // GJ/rok
+      
+      // Teoretyczny koszt dla zużycia mieszkańca
+      const theoreticalMonthlyPayment = theoreticalCostPerM3 * monthlyConsumption;
+      const actualMonthlyPayment = cwuPriceFromBill * monthlyConsumption;
+      
+      const result = {
+        energyLossPerM3: Number(energyLossPerM3.toFixed(4)),
+        lossPerM3: Number(lossPerM3.toFixed(2)),
+        monthlyFinancialLoss: Number(monthlyFinancialLoss.toFixed(2)),
+        monthlyEnergyLoss: Number(monthlyEnergyLoss.toFixed(3)),
+        yearlyFinancialLoss: Number(yearlyFinancialLoss.toFixed(2)),
+        yearlyEnergyLoss: Number(yearlyEnergyLoss.toFixed(3)),
+        theoreticalCostPerM3: Number(theoreticalCostPerM3.toFixed(2)),
+        theoreticalMonthlyPayment: Number(theoreticalMonthlyPayment.toFixed(2)),
+        actualMonthlyPayment: Number(actualMonthlyPayment.toFixed(2)),
+        energyPerM3: Number(energyPerM3.toFixed(4))
+      };
+      
+      setRes(result as any);
+      setFormData({ 
+        cwuPriceFromBill, 
+        monthlyConsumption, 
+        coldTempC, 
+        hotTempC, 
+        heatPriceFromCity 
+      });
+    } catch (error) {
+      alert('Błąd obliczeń: ' + error);
+    }
+    
     setLoading(false);
   }
 
   async function downloadPDF() {
-    if (!res || !formData) return;
-    const data = { input: formData, result: res };
-    const url = `/api/report/resident?data=${encodeURIComponent(JSON.stringify(data))}`;
-    window.open(url, '_blank');
+    // Funkcja może być rozwinięta w przyszłości dla nowego typu raportu
+    alert('Funkcja generowania PDF zostanie dodana w przyszłej wersji.');
   }
 
   return (
@@ -80,8 +130,11 @@ export default function MieszkancyPage() {
               <div className="p-2 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl shadow-lg">
                 <Calculator className="w-6 h-6 text-white" />
               </div>
-              Kalkulator analizy kosztów
+              Kalkulator strat na przesyle CWU
             </CardTitle>
+            <p className="text-slate-600 dark:text-slate-400 mt-2">
+              Oblicz straty finansowe na przesyle ciepłej wody użytkowej w budynku
+            </p>
           </CardHeader>
           <CardContent className="space-y-8">
             <form onSubmit={onSubmit} className="space-y-8">
@@ -90,21 +143,49 @@ export default function MieszkancyPage() {
                 <div className="flex items-center gap-3 mb-6">
                   <div className="w-1 h-8 bg-gradient-to-b from-blue-500 to-cyan-500 rounded-full"></div>
                   <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200">
-                    Parametry podstawowe
+                    Dane z rachunku
                   </h3>
                 </div>
-                <div className="grid md:grid-cols-3 gap-6">
-                  <Field label="Zużycie wody" unit="m³/miesiąc">
+                <div className="grid md:grid-cols-2 gap-6">
+                  <Field label="Cena CWU z rachunku" unit="zł/m³">
                     <input
-                      name="waterM3"
-                      defaultValue={12}
+                      name="cwuPriceFromBill"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      placeholder="np. 66.00"
                       className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
                       required
                     />
                   </Field>
+                  <Field label="Zużycie CWU w miesiącu" unit="m³">
+                    <input
+                      name="monthlyConsumption"
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      placeholder="np. 3.5"
+                      className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
+                      required
+                    />
+                  </Field>
+                </div>
+              </div>
+
+              {/* Technical Parameters */}
+              <div className="space-y-6">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-1 h-8 bg-gradient-to-b from-emerald-500 to-green-500 rounded-full"></div>
+                  <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200">
+                    Parametry techniczne
+                  </h3>
+                </div>
+                <div className="grid md:grid-cols-3 gap-6">
                   <Field label="Temperatura zimnej wody" unit="°C">
                     <input
                       name="coldTempC"
+                      type="number"
+                      step="0.1"
                       defaultValue={8}
                       className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
                       required
@@ -113,7 +194,19 @@ export default function MieszkancyPage() {
                   <Field label="Temperatura CWU" unit="°C">
                     <input
                       name="hotTempC"
+                      type="number"
+                      step="0.1"
                       defaultValue={55}
+                      className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
+                      required
+                    />
+                  </Field>
+                  <Field label="Cena ciepła od miasta" unit="zł/GJ">
+                    <input
+                      name="heatPriceFromCity"
+                      type="number"
+                      step="0.01"
+                      defaultValue={82.13}
                       className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
                       required
                     />
@@ -197,18 +290,13 @@ export default function MieszkancyPage() {
         {/* Results */}
         {res && (
           <div className="space-y-8">
-            <div className="flex justify-between items-center">
+            <div className="text-center space-y-4">
               <h2 className="text-3xl font-bold text-slate-800 dark:text-slate-200">
-                Wyniki analizy
+                Analiza strat na przesyle CWU
               </h2>
-              <Button
-                onClick={downloadPDF}
-                variant="outline"
-                className="flex items-center gap-2 bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm border-slate-200 dark:border-slate-700 hover:bg-white dark:hover:bg-slate-800"
-              >
-                <Download className="w-4 h-4" />
-                Pobierz raport PDF
-              </Button>
+              <p className="text-lg text-slate-600 dark:text-slate-400">
+                Porównanie kosztów teoretycznych z rzeczywistymi opłatami
+              </p>
             </div>
             
             {/* Key Metrics */}
@@ -218,10 +306,10 @@ export default function MieszkancyPage() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-blue-600 dark:text-blue-400 font-medium mb-2">
-                        Zapotrzebowanie teoretyczne
+                        Strata na m³
                       </p>
                       <p className="text-3xl font-bold text-blue-900 dark:text-blue-100">
-                        {res.needGJ.toFixed(2)} GJ
+                        {res.lossPerM3.toFixed(2)} zł/m³
                       </p>
                     </div>
                     <div className="p-3 bg-blue-500 rounded-xl shadow-lg">
@@ -236,10 +324,10 @@ export default function MieszkancyPage() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-orange-600 dark:text-orange-400 font-medium mb-2">
-                        Straty cyrkulacji
+                        Strata miesięczna
                       </p>
                       <p className="text-3xl font-bold text-orange-900 dark:text-orange-100">
-                        {res.circGJ.toFixed(2)} GJ
+                        {res.monthlyFinancialLoss.toFixed(2)} zł
                       </p>
                     </div>
                     <div className="p-3 bg-orange-500 rounded-xl shadow-lg">
@@ -249,32 +337,18 @@ export default function MieszkancyPage() {
                 </CardContent>
               </Card>
 
-              <Card className={`bg-gradient-to-br backdrop-blur-sm ${
-                res.diffPLN > 0 
-                  ? "from-red-50 to-rose-50 dark:from-red-950/30 dark:to-rose-950/30 border-red-200 dark:border-red-800" 
-                  : "from-emerald-50 to-green-50 dark:from-emerald-950/30 dark:to-green-950/30 border-emerald-200 dark:border-emerald-800"
-              }`}>
+              <Card className="bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-950/30 dark:to-rose-950/30 border-red-200 dark:border-red-800 backdrop-blur-sm">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className={`text-sm font-medium mb-2 ${
-                        res.diffPLN > 0 
-                          ? "text-red-600 dark:text-red-400" 
-                          : "text-emerald-600 dark:text-emerald-400"
-                      }`}>
-                        Różnica (koszt - wpłaty)
+                      <p className="text-sm text-red-600 dark:text-red-400 font-medium mb-2">
+                        Strata roczna
                       </p>
-                      <p className={`text-3xl font-bold ${
-                        res.diffPLN > 0 
-                          ? "text-red-900 dark:text-red-100" 
-                          : "text-emerald-900 dark:text-emerald-100"
-                      }`}>
-                        {fmt(Math.round(res.diffPLN))} PLN
+                      <p className="text-3xl font-bold text-red-900 dark:text-red-100">
+                        {res.yearlyFinancialLoss.toFixed(2)} zł
                       </p>
                     </div>
-                    <div className={`p-3 rounded-xl shadow-lg ${
-                      res.diffPLN > 0 ? "bg-red-500" : "bg-emerald-500"
-                    }`}>
+                    <div className="p-3 bg-red-500 rounded-xl shadow-lg">
                       <TrendingDown className="w-6 h-6 text-white" />
                     </div>
                   </div>
@@ -291,18 +365,22 @@ export default function MieszkancyPage() {
               </CardHeader>
               <CardContent>
                 <div className="grid md:grid-cols-3 gap-6">
-                  <Info label="Ciepło zakupione" value={`${res.purchasedGJ.toFixed(2)} GJ`} />
-                  <Info label="Energia użyteczna" value={`${res.usefulGJ.toFixed(2)} GJ`} />
-                  <Info label="Koszt energii (MPEC)" value={`${fmt(Math.round(res.costPLN))} PLN`} />
+                  <Info label="Koszt teoretyczny za m³" value={`${res.theoreticalCostPerM3.toFixed(2)} zł/m³`} />
+                  <Info label="Energia do podgrzania" value={`${res.energyPerM3.toFixed(4)} GJ/m³`} />
+                  <Info label="Strata energii na m³" value={`${res.energyLossPerM3.toFixed(4)} GJ/m³`} />
+                </div>
+                <div className="grid md:grid-cols-2 gap-6 mt-6">
+                  <Info label="Płatność teoretyczna (miesiąc)" value={`${res.theoreticalMonthlyPayment.toFixed(2)} zł`} />
+                  <Info label="Rzeczywista płatność (miesiąc)" value={`${res.actualMonthlyPayment.toFixed(2)} zł`} />
                 </div>
               </CardContent>
             </Card>
 
-            {/* Analysis */}
+            {/* Energy Loss Analysis */}
             <Card className="backdrop-blur-sm bg-white/70 dark:bg-slate-900/70 border-0 shadow-xl">
               <CardHeader>
                 <CardTitle className="text-xl text-slate-800 dark:text-slate-200">
-                  Interpretacja wyników
+                  Analiza strat energii
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
@@ -312,11 +390,10 @@ export default function MieszkancyPage() {
                       <div className="w-2 h-2 bg-blue-500 rounded-full mt-3 flex-shrink-0"></div>
                       <div>
                         <h4 className="font-semibold text-slate-800 dark:text-slate-200 mb-2">
-                          Udział strat cyrkulacji
+                          Miesięczne straty energii
                         </h4>
                         <p className="text-slate-600 dark:text-slate-400">
-                          {res.purchasedGJ > 0 ? ((res.circGJ / res.purchasedGJ) * 100).toFixed(1) : "0"}% 
-                          zakupionego ciepła idzie na straty w cyrkulacji.
+                          {res.monthlyEnergyLoss.toFixed(3)} GJ trafia na straty w przesyle wewnątrz budynku.
                         </p>
                       </div>
                     </div>
@@ -324,40 +401,27 @@ export default function MieszkancyPage() {
                       <div className="w-2 h-2 bg-emerald-500 rounded-full mt-3 flex-shrink-0"></div>
                       <div>
                         <h4 className="font-semibold text-slate-800 dark:text-slate-200 mb-2">
-                          Efektywność systemu
+                          Roczne straty energii
                         </h4>
                         <p className="text-slate-600 dark:text-slate-400">
-                          {res.purchasedGJ > 0 ? ((res.usefulGJ / res.purchasedGJ) * 100).toFixed(1) : "0"}% 
-                          zakupionego ciepła trafia do Państwa mieszkania.
+                          {res.yearlyEnergyLoss.toFixed(3)} GJ rocznie marnuje się w systemie przesyłu CWU.
                         </p>
                       </div>
                     </div>
                   </div>
                   
                   <div>
-                    {res.diffPLN > 0 ? (
-                      <div className="p-6 bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-950/30 dark:to-rose-950/30 border border-red-200 dark:border-red-800 rounded-xl backdrop-blur-sm">
-                        <h4 className="font-semibold text-red-800 dark:text-red-300 mb-3 flex items-center gap-2">
-                          <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                          Uwaga - nadpłata!
-                        </h4>
-                        <p className="text-red-700 dark:text-red-400 leading-relaxed">
-                          Rzeczywiste koszty energii są wyższe od wpłat o {fmt(Math.round(res.diffPLN))} PLN/miesiąc.
-                          Sugerujemy przeanalizowanie kosztów z zarządcą.
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="p-6 bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-950/30 dark:to-green-950/30 border border-emerald-200 dark:border-emerald-800 rounded-xl backdrop-blur-sm">
-                        <h4 className="font-semibold text-emerald-800 dark:text-emerald-300 mb-3 flex items-center gap-2">
-                          <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
-                          Pozytywnie!
-                        </h4>
-                        <p className="text-emerald-700 dark:text-emerald-400 leading-relaxed">
-                          Wpłaty pokrywają koszty z nadwyżką {fmt(Math.round(-res.diffPLN))} PLN/miesiąc.
-                          System działa efektywnie ekonomicznie.
-                        </p>
-                      </div>
-                    )}
+                    <div className="p-6 bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950/30 dark:to-cyan-950/30 border border-blue-200 dark:border-blue-800 rounded-xl backdrop-blur-sm">
+                      <h4 className="font-semibold text-blue-800 dark:text-blue-300 mb-3 flex items-center gap-2">
+                        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                        Zasada zachowania energii
+                      </h4>
+                      <p className="text-blue-700 dark:text-blue-400 leading-relaxed text-sm">
+                        Różnica między ceną płaconą przez mieszkańca ({res.actualMonthlyPayment.toFixed(2)} zł) 
+                        a kosztem teoretycznym ({res.theoreticalMonthlyPayment.toFixed(2)} zł) 
+                        odpowiada stracie energii w systemie przesyłu CWU w budynku.
+                      </p>
+                    </div>
                   </div>
                 </div>
               </CardContent>
