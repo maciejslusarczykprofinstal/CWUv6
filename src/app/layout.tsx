@@ -10,7 +10,10 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "PROF INSTAL – CWU bez zgadywania",
-  description: "Kalkulator CWU + audyt + raporty",
+  description: "Kalkulator CWU + audyt + raporty. © 2025 PROF INSTAL Maciej Ślusarczyk. Wszystkie prawa zastrzeżone.",
+  authors: [{ name: "PROF INSTAL Maciej Ślusarczyk" }],
+  creator: "PROF INSTAL Maciej Ślusarczyk",
+  publisher: "PROF INSTAL Maciej Ślusarczyk",
 };
 
 export default function RootLayout({
@@ -138,8 +141,16 @@ export default function RootLayout({
                 </div>
               </div>
               
-              <div className="border-t pt-8 flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
-                <p>© 2025 PROFINSTAL. Wszystkie prawa zastrzeżone.</p>
+              <div className="border-t pt-8 flex flex-col items-center gap-4 text-sm text-muted-foreground">
+                <div className="text-center">
+                  <p className="font-semibold text-base">© 2025 PROF INSTAL Maciej Ślusarczyk</p>
+                  <p className="mb-2">Wszystkie prawa zastrzeżone.</p>
+                  <p className="text-xs max-w-2xl mx-auto leading-relaxed">
+                    Kalkulator CWU, algorytmy obliczeniowe, metodologia analizy strat i interfejs użytkownika 
+                    są chronione prawem autorskim. Wszelkie próby kopiowania, modyfikacji lub dystrybucji 
+                    bez pisemnej zgody autora są zabronione.
+                  </p>
+                </div>
                 <div className="flex items-center gap-4">
                   <span>Wykonane z ❤️ w Polsce</span>
                 </div>
