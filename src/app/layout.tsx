@@ -4,6 +4,7 @@ import "./globals.css";
 import { ThemeProvider } from "next-themes";
 import { Toaster } from "sonner";
 import Link from "next/link";
+import Image from "next/image";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -26,24 +27,16 @@ export default function RootLayout({
           <header className="sticky top-0 bg-background/95 backdrop-blur-lg border-b z-50 shadow-sm">
             <nav className="mx-auto max-w-7xl px-4 py-4 flex items-center justify-between">
               <Link href="/" className="flex items-center gap-2 font-bold text-lg group">
-                {/* Logo SVG with gradient */}
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-md group-hover:shadow-lg transition-all group-hover:scale-105">
-                  <svg
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="white"
-                  >
-                    <path d="M12 2L2 7v10c0 5.55 3.84 9.74 9 11 5.16-1.26 9-5.45 9-11V7l-10-5z" />
-                    <path
-                      d="M9 12l2 2 4-4"
-                      stroke="white"
-                      strokeWidth="2"
-                      fill="none"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
+                {/* Logo image from GitHub */}
+                <div className="w-10 h-10 rounded-xl overflow-hidden shadow-md group-hover:shadow-lg transition-all group-hover:scale-105">
+                  <Image
+                    src="https://avatars.githubusercontent.com/u/222444241?s=48&v=4"
+                    alt="PROFINSTAL Logo"
+                    width={40}
+                    height={40}
+                    className="w-full h-full object-cover"
+                    priority
+                  />
                 </div>
                 <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
                   PROFINSTAL
@@ -96,10 +89,14 @@ export default function RootLayout({
               <div className="grid md:grid-cols-4 gap-8 mb-8">
                 <div className="space-y-4">
                   <div className="flex items-center gap-2 font-bold text-lg">
-                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-md">
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
-                        <path d="M12 2L2 7v10c0 5.55 3.84 9.74 9 11 5.16-1.26 9-5.45 9-11V7l-10-5z" />
-                      </svg>
+                    <div className="w-8 h-8 rounded-lg overflow-hidden shadow-md">
+                      <Image
+                        src="https://avatars.githubusercontent.com/u/222444241?s=48&v=4"
+                        alt="PROFINSTAL Logo"
+                        width={32}
+                        height={32}
+                        className="w-full h-full object-cover"
+                      />
                     </div>
                     <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
                       PROFINSTAL
