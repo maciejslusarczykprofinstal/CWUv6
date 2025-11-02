@@ -163,21 +163,21 @@ export default function AudytorzyPage() {
                       <Field label="Liczba mieszkań" unit="szt">
                         <input
                           name="flats"
-                          defaultValue={65}
+                          defaultValue={120}
                           className="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all hover:border-indigo-300 dark:hover:border-indigo-600"
                         />
                       </Field>
                       <Field label="Liczba pionów" unit="szt">
                         <input
                           name="risers"
-                          defaultValue={18}
+                          defaultValue={24}
                           className="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all hover:border-indigo-300 dark:hover:border-indigo-600"
                         />
                       </Field>
                       <Field label="T. zimnej" unit="°C">
                         <input
                           name="coldTempC"
-                          defaultValue={8}
+                          defaultValue={6}
                           className="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all hover:border-indigo-300 dark:hover:border-indigo-600"
                         />
                       </Field>
@@ -201,14 +201,14 @@ export default function AudytorzyPage() {
                       <Field label="Szczytowy pobór" unit="L/min">
                         <input
                           name="drawPeakLpm"
-                          defaultValue={120}
+                          defaultValue={200}
                           className="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all hover:border-blue-300 dark:hover:border-blue-600"
                         />
                       </Field>
                       <Field label="Profil jednoczesności">
                         <select
                           name="simultProfile"
-                          defaultValue="med"
+                          defaultValue="high"
                           className="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all hover:border-blue-300 dark:hover:border-blue-600"
                         >
                           <option value="low">Niski</option>
@@ -219,15 +219,87 @@ export default function AudytorzyPage() {
                       <Field label="Bufor" unit="L">
                         <input
                           name="bufferL"
-                          defaultValue={1000}
+                          defaultValue={1500}
                           className="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all hover:border-blue-300 dark:hover:border-blue-600"
                         />
                       </Field>
                       <Field label="ΔT bufora" unit="K">
                         <input
                           name="bufferDeltaC"
-                          defaultValue={10}
+                          defaultValue={15}
                           className="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all hover:border-blue-300 dark:hover:border-blue-600"
+                        />
+                      </Field>
+                    </div>
+                  </div>
+
+                  {/* Advanced Parameters */}
+                  <div className="space-y-6">
+                    <h3 className="flex items-center gap-3 text-lg font-bold text-slate-800 dark:text-slate-200">
+                      <div className="w-1 h-6 bg-gradient-to-b from-purple-500 to-indigo-500 rounded-full"></div>
+                      Parametry zaawansowane
+                    </h3>
+                    <div className="grid md:grid-cols-4 gap-6">
+                      <Field label="Czas piku" unit="s">
+                        <input
+                          name="peakDurationSec"
+                          defaultValue={600}
+                          className="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all hover:border-purple-300 dark:hover:border-purple-600"
+                        />
+                      </Field>
+                      <Field label="% strat cyrkulacji" optional>
+                        <input
+                          name="circulationPct"
+                          defaultValue={35}
+                          placeholder="np. 35"
+                          className="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all hover:border-purple-300 dark:hover:border-purple-600"
+                        />
+                      </Field>
+                      <Field label="Ciepło zakupione" unit="GJ" optional>
+                        <input
+                          name="purchasedGJ"
+                          defaultValue={850}
+                          placeholder="np. 850"
+                          className="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all hover:border-purple-300 dark:hover:border-purple-600"
+                        />
+                      </Field>
+                      <Field label="UA cyrkulacji" unit="W/K" optional>
+                        <input
+                          name="UA_WK"
+                          defaultValue={420}
+                          placeholder="np. 420"
+                          className="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all hover:border-purple-300 dark:hover:border-purple-600"
+                        />
+                      </Field>
+                    </div>
+                  </div>
+
+                  {/* Economic Parameters */}
+                  <div className="space-y-6">
+                    <h3 className="flex items-center gap-3 text-lg font-bold text-slate-800 dark:text-slate-200">
+                      <div className="w-1 h-6 bg-gradient-to-b from-emerald-500 to-green-500 rounded-full"></div>
+                      Parametry ekonomiczne
+                    </h3>
+                    <div className="grid md:grid-cols-3 gap-6">
+                      <Field label="ΔT cyrkulacji" unit="K">
+                        <input
+                          name="dT_circ"
+                          defaultValue={25}
+                          className="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all hover:border-emerald-300 dark:hover:border-emerald-600"
+                        />
+                      </Field>
+                      <Field label="Godziny/rok" unit="h">
+                        <input
+                          name="hours_circ"
+                          defaultValue={8760}
+                          className="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all hover:border-emerald-300 dark:hover:border-emerald-600"
+                        />
+                      </Field>
+                      <Field label="Cena" unit="zł/GJ">
+                        <input
+                          name="pricePerGJ"
+                          defaultValue={75}
+                          className="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all hover:border-emerald-300 dark:hover:border-emerald-600"
                         />
                       </Field>
                     </div>

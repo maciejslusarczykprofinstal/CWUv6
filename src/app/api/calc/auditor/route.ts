@@ -55,12 +55,77 @@ export async function POST(req: Request) {
       circGJ = data.purchasedGJ * (data.circulationPct / 100);
     }
 
+    // Enhance power object with proper assumptions for frontend
+    const enhancedPower = {
+      ...power,
+      assumptions: {
+        profile: data.simultProfile,
+        consumptionPattern: `${data.flats} mieszkań, ${data.drawPeakLpm} L/min szczyt`,
+        efficiency: Math.round((1 - (circGJ / (data.purchasedGJ || 500))) * 100)
+      }
+    };
+
     const variants = modernizationVariants({
       circLossGJ: circGJ,
       pricePerGJ: data.pricePerGJ,
     });
 
-    return NextResponse.json({ ok: true, result: { power, circGJ, variants } });
+    // Economics calculation
+    const currentCostPLN = Math.round(circGJ * data.pricePerGJ);
+    const potentialSavingsPLN = Math.round(variants.reduce((sum, v) => sum + v.savingsPLN, 0) / variants.length);
+    const co2ReductionKg = Math.round(circGJ * 0.2 * 1000); // ~0.2 kg CO2/kWh converted to GJ
+    
+    const economics = {
+      currentCostPLN,
+      potentialSavingsPLN,
+      investmentRecommendation: potentialSavingsPLN > 50000 
+        ? "Zdecydowanie zalecana modernizacja - wysokie oszczędności" 
+        : potentialSavingsPLN > 20000 
+          ? "Zalecana modernizacja - dobre oszczędności"
+          : "Rozważyć modernizację - umiarkowane oszczędności",
+      co2ReductionKg
+    };
+
+    // Technical analysis
+    const efficiency = Math.max(60, Math.min(95, 100 - (circGJ / (data.purchasedGJ || 500) * 100)));
+    const heatLosses = circGJ / (data.purchasedGJ || 500) * 100;
+    const systemRating = efficiency > 85 ? "BARDZO DOBRY" : 
+                        efficiency > 75 ? "DOBRY" : 
+                        efficiency > 65 ? "ŚREDNI" : "WYMAGA MODERNIZACJI";
+    
+    const recommendations = [
+      "Modernizacja izolacji przewodów cyrkulacyjnych",
+      "Instalacja zaworów termostatycznych na pionach",
+      "Optymalizacja temperatury cyrkulacji CWU",
+      heatLosses > 20 ? "Pilna wymiana nieizolowanych przewodów" : "Regularna kontrola stanu izolacji",
+      "Rozważenie instalacji systemu rekuperacji ciepła"
+    ];
+
+    const technical = {
+      efficiency: Math.round(efficiency * 10) / 10,
+      heatLosses: Math.round(heatLosses * 10) / 10,
+      systemRating,
+      recommendations
+    };
+
+    return NextResponse.json({ 
+      ok: true, 
+      result: { 
+        power: enhancedPower, 
+        circGJ, 
+        variants: variants.map(v => ({
+          ...v,
+          description: `Redukcja strat o ${(v.savingsGJ/circGJ*100).toFixed(1)}%`,
+          roi: Math.round((v.savingsPLN / v.capexPLN * 100) * 10) / 10,
+          // Mapowanie do oczekiwanej struktury frontend
+          savedGJ: v.savingsGJ,
+          savedPLN: v.savingsPLN,
+          paybackYears: v.paybackYears
+        })), 
+        economics,
+        technical
+      } 
+    });
   } catch (e: unknown) {
     const msg = e instanceof ZodError ? e.issues : String(e);
     return NextResponse.json({ ok: false, error: msg }, { status: 400 });
