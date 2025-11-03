@@ -78,6 +78,31 @@ export async function makeResidentBillPDF(
     </Document>
   );
 
-  const buf = (await pdf(Doc).toBuffer()) as unknown as Uint8Array;
+  // Uwaga: w @react-pdf/renderer toBuffer w Node korzysta z callbacku i nie zwraca Promise.
+  // Dlatego opakowujemy w Promise, aby zawsze otrzymać Buffer/Uint8Array.
+  const buf: Uint8Array = await new Promise((resolve, reject) => {
+    try {
+      // @ts-expect-error: w runtime Node istnieje wersja z callbackiem
+      pdf(Doc).toBuffer((buffer: unknown) => {
+        // pdfkit zwraca Buffer (node Buffer => Uint8Array)
+        if (buffer instanceof Uint8Array) {
+          resolve(buffer);
+        } else if (buffer && typeof (buffer as any).byteLength === "number") {
+          resolve(new Uint8Array(buffer as ArrayBufferLike));
+        } else {
+          try {
+            // Ostatnia deska: spróbuj skonstruować Buffer i zrzut do Uint8Array
+            // @ts-ignore
+            const b = Buffer.from(buffer as any);
+            resolve(new Uint8Array(b));
+          } catch (e) {
+            reject(e);
+          }
+        }
+      });
+    } catch (e) {
+      reject(e);
+    }
+  });
   return buf;
 }

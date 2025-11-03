@@ -131,6 +131,27 @@ export async function makeResidentLetterPDF(
     </Document>
   );
 
-  const buf = (await pdf(Doc).toBuffer()) as unknown as Uint8Array;
+  const buf: Uint8Array = await new Promise((resolve, reject) => {
+    try {
+      // @ts-expect-error: callback overload dla Node
+      pdf(Doc).toBuffer((buffer: unknown) => {
+        if (buffer instanceof Uint8Array) {
+          resolve(buffer);
+        } else if (buffer && typeof (buffer as any).byteLength === "number") {
+          resolve(new Uint8Array(buffer as ArrayBufferLike));
+        } else {
+          try {
+            // @ts-ignore
+            const b = Buffer.from(buffer as any);
+            resolve(new Uint8Array(b));
+          } catch (e) {
+            reject(e);
+          }
+        }
+      });
+    } catch (e) {
+      reject(e);
+    }
+  });
   return buf;
 }
