@@ -154,30 +154,44 @@ export default function MieszkancyPage() {
                 </div>
                 <div className="grid md:grid-cols-2 gap-6">
                   <Field label="Cena CWU z rachunku" unit="zł/m³" numeric hint="Wpisz liczbę, np. 65.00">
-                    <input
-                      name="cwuPriceFromBill"
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      inputMode="decimal"
-                      placeholder="np. 65.00"
-                      defaultValue={65}
-                      className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
-                      required
-                    />
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+                        <Calculator className="w-4 h-4" />
+                      </span>
+                      <input
+                        name="cwuPriceFromBill"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        inputMode="decimal"
+                        placeholder="np. 65.00"
+                        defaultValue={65}
+                        aria-label="Cena CWU z rachunku w zł za metr sześcienny"
+                        className="w-full pl-10 pr-16 py-3 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500 text-lg font-semibold"
+                        required
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 dark:text-slate-400 text-sm font-medium select-none">zł/m³</span>
+                    </div>
                   </Field>
                   <Field label="Zużycie CWU w miesiącu" unit="m³" numeric hint="Wpisz liczbę, np. 3.5">
-                    <input
-                      name="monthlyConsumption"
-                      type="number"
-                      step="0.1"
-                      min="0"
-                      inputMode="decimal"
-                      placeholder="np. 3.5"
-                      defaultValue={3.5}
-                      className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
-                      required
-                    />
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+                        <Calculator className="w-4 h-4" />
+                      </span>
+                      <input
+                        name="monthlyConsumption"
+                        type="number"
+                        step="0.1"
+                        min="0"
+                        inputMode="decimal"
+                        placeholder="np. 3.5"
+                        defaultValue={3.5}
+                        aria-label="Zużycie CWU w metrach sześciennych na miesiąc"
+                        className="w-full pl-10 pr-12 py-3 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500 text-lg font-semibold"
+                        required
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 dark:text-slate-400 text-sm font-medium select-none">m³</span>
+                    </div>
                   </Field>
                 </div>
               </div>
