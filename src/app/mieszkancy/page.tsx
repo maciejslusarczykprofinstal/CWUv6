@@ -41,23 +41,42 @@ export default function MieszkancyPage() {
   const [loading, setLoading] = useState(false);
   const [inputs, setInputs] = useState<Inputs | null>(null);
 
-  function openPdf(url: string) {
-    // Otwórz w nowej karcie, aby pobrać PDF
-    if (typeof window !== "undefined") {
-      window.open(url, "_blank");
+  async function openPdf(url: string, filename = "dokument.pdf") {
+    if (typeof window === "undefined") return;
+    try {
+      const res = await fetch(url, { cache: "no-store" });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const ab = await res.arrayBuffer();
+      const blob = new Blob([ab], { type: "application/pdf" });
+      const objectUrl = URL.createObjectURL(blob);
+      // Spróbuj otworzyć w nowej karcie
+      const w = window.open(objectUrl, "_blank");
+      if (!w) {
+        // Fallback: wymuś pobranie przez tymczasowe <a download>
+        const a = document.createElement("a");
+        a.href = objectUrl;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      }
+      // Sprzątanie po chwili (dać viewerowi czas na wczytanie)
+      setTimeout(() => URL.revokeObjectURL(objectUrl), 10_000);
+    } catch (e) {
+      alert(`Nie udało się otworzyć PDF: ${String(e)}`);
     }
   }
 
   function onDownloadReport() {
     if (!res || !inputs) return;
     const data = encodeURIComponent(JSON.stringify({ input: inputs, result: res }));
-    openPdf(`/api/report/resident?data=${data}`);
+    void openPdf(`/api/report/resident?data=${data}`, "raport-mieszkancy.pdf");
   }
 
   function onDownloadLetter() {
     if (!res || !inputs) return;
     const data = encodeURIComponent(JSON.stringify({ input: inputs, result: res }));
-    openPdf(`/api/report/resident-letter?data=${data}`);
+    void openPdf(`/api/report/resident-letter?data=${data}`, "pismo-do-zarzadcy.pdf");
   }
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
