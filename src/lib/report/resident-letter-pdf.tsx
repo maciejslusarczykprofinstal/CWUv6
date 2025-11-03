@@ -14,9 +14,9 @@ const styles = StyleSheet.create({
   bold: { fontWeight: 600 },
   topRight: { alignSelf: "flex-end", marginBottom: 12 },
   brandRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 18 },
-  brand: { fontSize: 18, fontWeight: 700 },
+  brand: { fontSize: 18, fontWeight: 700, marginLeft: 8 },
   site: { fontSize: 12, color: "#1d4ed8", textDecoration: "none" },
-  brandLeft: { flexDirection: "row", alignItems: "center", gap: 8 },
+  brandLeft: { flexDirection: "row", alignItems: "center" },
 });
 
 function n(v: unknown, d = 2) {

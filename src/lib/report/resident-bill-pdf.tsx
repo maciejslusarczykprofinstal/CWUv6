@@ -7,12 +7,12 @@ const styles = StyleSheet.create({
   h2: { fontSize: 13, fontWeight: 600, marginTop: 14, marginBottom: 6 },
   row: { marginBottom: 4 },
   small: { color: "#666" },
-  grid: { display: "flex", flexDirection: "row", gap: 18 },
-  col: { flex: 1 },
+  grid: { display: "flex", flexDirection: "row" },
+  col: { flex: 1, marginRight: 18 },
   brandRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 },
-  brand: { fontSize: 16, fontWeight: 700 },
+  brand: { fontSize: 16, fontWeight: 700, marginLeft: 8 },
   site: { fontSize: 11, color: "#1d4ed8", textDecoration: "none" },
-  brandLeft: { flexDirection: "row", alignItems: "center", gap: 8 },
+  brandLeft: { flexDirection: "row", alignItems: "center" },
 });
 
 function n(v: unknown, d = 2) {
