@@ -1,10 +1,9 @@
 "use client";
 
-import { useState } from "react";
-import { Download, Home, Calculator, TrendingDown } from "lucide-react";
+import { useState, type ReactNode } from "react";
+import { Home, Calculator, TrendingDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 
 type Result = {
   energyLossPerM3: number;
@@ -22,54 +21,33 @@ type Result = {
 export default function MieszkancyPage() {
   const [res, setRes] = useState<Result | null>(null);
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState<{
-    cwuPriceFromBill: number;
-    monthlyConsumption: number;
-    coldTempC: number;
-    hotTempC: number;
-    heatPriceFromCity: number;
-  } | null>(null);
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
     const form = new FormData(e.currentTarget);
-    
-    // Pobieranie danych z formularza
-    const cwuPriceFromBill = Number(form.get('cwuPriceFromBill'));
-    const monthlyConsumption = Number(form.get('monthlyConsumption'));
-    const coldTempC = Number(form.get('coldTempC'));
-    const hotTempC = Number(form.get('hotTempC'));
-    const heatPriceFromCity = Number(form.get('heatPriceFromCity'));
-    
+
+    const cwuPriceFromBill = Number(form.get("cwuPriceFromBill"));
+    const monthlyConsumption = Number(form.get("monthlyConsumption"));
+    const coldTempC = Number(form.get("coldTempC"));
+    const hotTempC = Number(form.get("hotTempC"));
+    const heatPriceFromCity = Number(form.get("heatPriceFromCity"));
+
     try {
-      // Obliczenia według zasady zachowania energii
-      const deltaT = hotTempC - coldTempC; // różnica temperatur [K]
-      
-      // Energia potrzebna do podgrzania 1m³ wody
-      const energyPerM3 = 0.004186 * deltaT; // GJ/m³ (ciepło właściwe wody)
-      
-      // Teoretyczny koszt podgrzania (bez strat) za m³
+      const deltaT = hotTempC - coldTempC; // K
+      const energyPerM3 = 0.004186 * deltaT; // GJ/m³
       const theoreticalCostPerM3 = energyPerM3 * heatPriceFromCity; // zł/m³
-      
-      // Straty finansowe na m³
       const lossPerM3 = cwuPriceFromBill - theoreticalCostPerM3; // zł/m³
-      
-      // Straty energii na m³ (z zasady zachowania energii)
       const energyLossPerM3 = lossPerM3 / heatPriceFromCity; // GJ/m³
-      
-      // Straty w miesiącu
+
       const monthlyFinancialLoss = lossPerM3 * monthlyConsumption; // zł/miesiąc
       const monthlyEnergyLoss = energyLossPerM3 * monthlyConsumption; // GJ/miesiąc
-      
-      // Straty w ciągu roku
       const yearlyFinancialLoss = monthlyFinancialLoss * 12; // zł/rok
       const yearlyEnergyLoss = monthlyEnergyLoss * 12; // GJ/rok
-      
-      // Teoretyczny koszt dla zużycia mieszkańca
+
       const theoreticalMonthlyPayment = theoreticalCostPerM3 * monthlyConsumption;
       const actualMonthlyPayment = cwuPriceFromBill * monthlyConsumption;
-      
+
       const result: Result = {
         energyLossPerM3: Number(energyLossPerM3.toFixed(4)),
         lossPerM3: Number(lossPerM3.toFixed(2)),
@@ -80,27 +58,15 @@ export default function MieszkancyPage() {
         theoreticalCostPerM3: Number(theoreticalCostPerM3.toFixed(2)),
         theoreticalMonthlyPayment: Number(theoreticalMonthlyPayment.toFixed(2)),
         actualMonthlyPayment: Number(actualMonthlyPayment.toFixed(2)),
-        energyPerM3: Number(energyPerM3.toFixed(4))
+        energyPerM3: Number(energyPerM3.toFixed(4)),
       };
-      
-      setRes(result);
-      setFormData({ 
-        cwuPriceFromBill, 
-        monthlyConsumption, 
-        coldTempC, 
-        hotTempC, 
-        heatPriceFromCity 
-      });
-    } catch (error) {
-      alert('Błąd obliczeń: ' + error);
-    }
-    
-    setLoading(false);
-  }
 
-  async function downloadPDF() {
-    // Funkcja może być rozwinięta w przyszłości dla nowego typu raportu
-    alert('Funkcja generowania PDF zostanie dodana w przyszłej wersji.');
+      setRes(result);
+    } catch (error) {
+      alert("Błąd obliczeń: " + error);
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -231,46 +197,6 @@ export default function MieszkancyPage() {
                       type="number"
                       step="0.01"
                       defaultValue={82.13}
-                      className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
-                      required
-                    />
-                  </Field>
-                </div>
-              </div>
-
-              {/* Economic Parameters */}
-              <div className="space-y-6">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-1 h-8 bg-gradient-to-b from-emerald-500 to-green-500 rounded-full"></div>
-                  <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200">
-                    Parametry ekonomiczne
-                  </h3>
-                </div>
-                <div className="grid md:grid-cols-3 gap-6">
-                  <Field label="Ciepło z MPEC" unit="GJ/miesiąc" optional>
-                    <input
-                      name="mpecHeatGJ"
-                      type="number"
-                      step="0.01"
-                      defaultValue={45}
-                      className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
-                    />
-                  </Field>
-                  <Field label="Cena za GJ" unit="zł" optional>
-                    <input
-                      name="pricePerGJ"
-                      type="number"
-                      step="0.01"
-                      defaultValue={60}
-                      className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
-                    />
-                  </Field>
-                  <Field label="Wasze wpłaty" unit="PLN/miesiąc">
-                    <input
-                      name="residentPaymentsPLN"
-                      type="number"
-                      step="0.01"
-                      defaultValue={2400}
                       className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
                       required
                     />
@@ -468,7 +394,7 @@ export default function MieszkancyPage() {
 function Field({ label, unit, children, optional = false, numeric = false, hint }: { 
   label: string; 
   unit?: string;
-  children: React.ReactNode; 
+  children: ReactNode; 
   optional?: boolean;
   numeric?: boolean;
   hint?: string;
@@ -506,12 +432,4 @@ function Info({ label, value }: { label: string; value: string }) {
   );
 }
 
-function coerce(v: string) {
-  if (v === "" || v === null || v === undefined) return null;
-  const n = Number(v);
-  return Number.isFinite(n) ? n : v;
-}
-
-function fmt(n: number) {
-  return n.toLocaleString("pl-PL");
-}
+// (brak dodatkowych helperów)
