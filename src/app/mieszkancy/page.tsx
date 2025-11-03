@@ -483,12 +483,24 @@ function Info({ label, value, formula, substitution, unitsNote }: { label: strin
           <div className="mt-2 space-y-1 text-xs text-slate-600 dark:text-slate-400">
             {formula && (
               <div>
-                <span className="font-medium text-slate-700 dark:text-slate-300">Wzór:</span> {formula}
+                <span className="font-medium text-slate-700 dark:text-slate-300">Wzór:</span>{" "}
+                <code
+                  className="align-middle inline-block px-2 py-1 rounded border border-slate-200/60 dark:border-slate-700/60 bg-slate-100 dark:bg-slate-800/60 tabular-nums"
+                  style={{ fontFamily: "var(--font-math)" }}
+                >
+                  {formula}
+                </code>
               </div>
             )}
             {substitution && (
               <div>
-                <span className="font-medium text-slate-700 dark:text-slate-300">Podstawienie:</span> {substitution}
+                <span className="font-medium text-slate-700 dark:text-slate-300">Podstawienie:</span>{" "}
+                <code
+                  className="align-middle inline-block px-2 py-1 rounded border border-slate-200/60 dark:border-slate-700/60 bg-slate-50 dark:bg-slate-900/40 tabular-nums"
+                  style={{ fontFamily: "var(--font-math)" }}
+                >
+                  {substitution}
+                </code>
               </div>
             )}
             {unitsNote && (

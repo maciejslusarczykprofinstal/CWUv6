@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "next-themes";
 import { Toaster } from "sonner";
@@ -7,6 +7,11 @@ import Link from "next/link";
 import Image from "next/image";
 
 const inter = Inter({ subsets: ["latin"] });
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin", "latin-ext"],
+  variable: "--font-math",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "PROF INSTAL – CWU bez zgadywania",
@@ -24,7 +29,7 @@ export default function RootLayout({
   return (
     <html lang="pl" suppressHydrationWarning>
       <body
-        className={`${inter.className} min-h-screen bg-background text-foreground antialiased`}
+        className={`${inter.className} ${jetbrainsMono.variable} min-h-screen bg-background text-foreground antialiased`}
       >
         <ThemeProvider attribute="class">
           <header className="sticky top-0 bg-background/95 backdrop-blur-lg border-b z-50 shadow-sm">
