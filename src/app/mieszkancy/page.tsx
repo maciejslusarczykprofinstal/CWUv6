@@ -4,6 +4,7 @@ import { useState, type ReactNode } from "react";
 import { Home, Calculator, TrendingDown, Info as InfoIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { KatexFormula } from "@/components/ui/katex-formula";
 
 type Result = {
   energyLossPerM3: number;
@@ -342,21 +343,21 @@ export default function MieszkancyPage() {
                   <Info 
                     label="Koszt teoretyczny za m³" 
                     value={`${res.theoreticalCostPerM3.toFixed(2)} zł/m³`} 
-                    formula={"C_teor_m³ = E_m³ × Cena_GJ"}
+                    formula={"C_{teor,m^3} = E_{m^3} \\times C_{GJ}"}
                     substitution={inputs ? `= ${res.energyPerM3.toLocaleString('pl-PL', { minimumFractionDigits: 4, maximumFractionDigits: 4 })} × ${inputs.heatPriceFromCity.toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} = ${res.theoreticalCostPerM3.toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} zł/m³` : undefined}
                     unitsNote={"zł/m³ — koszt w złotych za 1 m³ wody (energia [GJ/m³] × cena [zł/GJ])."}
                   />
                   <Info 
                     label="Energia do podgrzania" 
                     value={`${res.energyPerM3.toFixed(4)} GJ/m³`} 
-                    formula={"E_m³ = 0,004186 × (T_CWU − T_zimna)"}
+                    formula={"E_{m^3} = 0{,}004186 \\times (T_{CWU} - T_{zimna})"}
                     substitution={inputs ? `= 0,004186 × (${inputs.hotTempC.toLocaleString('pl-PL', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} − ${inputs.coldTempC.toLocaleString('pl-PL', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}) = ${res.energyPerM3.toLocaleString('pl-PL', { minimumFractionDigits: 4, maximumFractionDigits: 4 })} GJ/m³` : undefined}
                     unitsNote={"GJ/m³ — energia w gigadżulach potrzebna na podgrzanie 1 m³ wody."}
                   />
                   <Info 
                     label="Strata energii na m³" 
                     value={`${res.energyLossPerM3.toFixed(4)} GJ/m³`} 
-                    formula={"E_strata_m³ = (Cena_CWU_m³ − C_teor_m³) / Cena_GJ"}
+                    formula={"E_{strata,m^3} = \\frac{C_{CWU,m^3} - C_{teor,m^3}}{C_{GJ}}"}
                     substitution={inputs ? `= (${inputs.cwuPriceFromBill.toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} − ${res.theoreticalCostPerM3.toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}) / ${inputs.heatPriceFromCity.toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} = ${res.energyLossPerM3.toLocaleString('pl-PL', { minimumFractionDigits: 4, maximumFractionDigits: 4 })} GJ/m³` : undefined}
                     unitsNote={"GJ/m³ — energia utracona na przesyle na 1 m³ ciepłej wody."}
                   />
@@ -365,14 +366,14 @@ export default function MieszkancyPage() {
                   <Info 
                     label="Płatność teoretyczna (miesiąc)" 
                     value={`${res.theoreticalMonthlyPayment.toFixed(2)} zł`} 
-                    formula={"P_teor_mies = C_teor_m³ × Zużycie_m³"}
+                    formula={"P_{teor} = C_{teor,m^3} \\times V_{mies}"}
                     substitution={inputs ? `= ${res.theoreticalCostPerM3.toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} × ${inputs.monthlyConsumption.toLocaleString('pl-PL', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} = ${res.theoreticalMonthlyPayment.toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} zł` : undefined}
                     unitsNote={"zł — kwota oszacowana dla miesięcznego zużycia."}
                   />
                   <Info 
                     label="Rzeczywista płatność (miesiąc)" 
                     value={`${res.actualMonthlyPayment.toFixed(2)} zł`} 
-                    formula={"P_rzecz_mies = Cena_CWU_m³ × Zużycie_m³"}
+                    formula={"P_{rzecz} = C_{CWU,m^3} \\times V_{mies}"}
                     substitution={inputs ? `= ${inputs.cwuPriceFromBill.toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} × ${inputs.monthlyConsumption.toLocaleString('pl-PL', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} = ${res.actualMonthlyPayment.toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} zł` : undefined}
                     unitsNote={"zł — faktyczna kwota dla miesięcznego zużycia."}
                   />
@@ -482,14 +483,11 @@ function Info({ label, value, formula, substitution, unitsNote }: { label: strin
           </summary>
           <div className="mt-2 space-y-1 text-xs text-slate-600 dark:text-slate-400">
             {formula && (
-              <div>
-                <span className="font-medium text-slate-700 dark:text-slate-300">Wzór:</span>{" "}
-                <code
-                  className="align-middle inline-block px-2 py-1 rounded border border-slate-200/60 dark:border-slate-700/60 bg-slate-100 dark:bg-slate-800/60 tabular-nums"
-                  style={{ fontFamily: "var(--font-math)" }}
-                >
-                  {formula}
-                </code>
+              <div className="flex items-start gap-2">
+                <span className="font-medium text-slate-700 dark:text-slate-300 shrink-0">Wzór:</span>
+                <div className="inline-block px-3 py-1.5 rounded border border-slate-200/60 dark:border-slate-700/60 bg-slate-100 dark:bg-slate-800/60">
+                  <KatexFormula formula={formula} />
+                </div>
               </div>
             )}
             {substitution && (

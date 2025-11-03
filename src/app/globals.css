@@ -1,6 +1,7 @@
 ﻿@import "tailwindcss/theme.css";
 @import "tailwindcss/preflight.css";
 @import "tailwindcss/utilities.css";
+@import "katex/dist/katex.min.css";
 
 @layer base {
   :root {

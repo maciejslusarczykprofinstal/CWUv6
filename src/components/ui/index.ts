@@ -12,3 +12,4 @@ export * from "./badge";
 export * from "./tooltip";
 export * from "./toast";
 export * from "./toaster";
+export * from "./katex-formula";
