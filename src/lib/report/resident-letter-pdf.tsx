@@ -9,6 +9,9 @@ const styles = StyleSheet.create({
   para: { marginBottom: 10 },
   bullet: { marginLeft: 12, marginBottom: 4 },
   sign: { marginTop: 24 },
+  row: { flexDirection: "row", justifyContent: "space-between", marginBottom: 12 },
+  box: { width: "48%" },
+  bold: { fontWeight: 600 },
 });
 
 function n(v: unknown, d = 2) {
@@ -23,6 +26,11 @@ export async function makeResidentLetterPDF(
 ): Promise<Uint8Array> {
   const i = (input ?? {}) as Record<string, any>;
   const r = (result ?? {}) as Record<string, any>;
+  const managerName = (i.managerName as string) || "";
+  const managerAddress = (i.managerAddress as string) || "";
+  const buildingAddress = (i.buildingAddress as string) || "";
+  const apartmentNumber = (i.apartmentNumber as string) || "";
+  const residentName = (i.residentName as string) || "";
 
   const Doc = (
     <Document>
@@ -31,6 +39,21 @@ export async function makeResidentLetterPDF(
           <Text style={styles.h1}>Pismo do Zarządcy — analiza kosztów CWU</Text>
           <Text style={styles.small}>Data: {createdAt.toLocaleString("pl-PL")}</Text>
         </View>
+
+        {(managerName || managerAddress || buildingAddress) && (
+          <View style={styles.row}>
+            <View style={styles.box}>
+              <Text style={styles.bold}>Adresat:</Text>
+              {managerName ? <Text>{managerName}</Text> : null}
+              {managerAddress ? <Text>{managerAddress}</Text> : null}
+            </View>
+            <View style={styles.box}>
+              <Text style={styles.bold}>Dotyczy:</Text>
+              {buildingAddress ? <Text>Budynek: {buildingAddress}</Text> : null}
+              {apartmentNumber ? <Text>Lokal: {apartmentNumber}</Text> : null}
+            </View>
+          </View>
+        )}
 
         <Text style={styles.para}>Szanowni Państwo,</Text>
 
@@ -69,7 +92,7 @@ export async function makeResidentLetterPDF(
         <View style={styles.sign}>
           <Text>Z poważaniem,</Text>
           <Text>__________________________________</Text>
-          <Text>Mieszkaniec</Text>
+          <Text>{residentName || "Mieszkaniec"}</Text>
         </View>
       </Page>
     </Document>

@@ -25,6 +25,12 @@ type Inputs = {
   coldTempC: number;
   hotTempC: number;
   heatPriceFromCity: number;
+  // Dane do pisma (opcjonalne)
+  managerName?: string;
+  managerAddress?: string;
+  buildingAddress?: string;
+  apartmentNumber?: string;
+  residentName?: string;
 };
 
 export default function MieszkancyPage() {
@@ -61,6 +67,12 @@ export default function MieszkancyPage() {
     const coldTempC = Number(form.get("coldTempC"));
     const hotTempC = Number(form.get("hotTempC"));
     const heatPriceFromCity = Number(form.get("heatPriceFromCity"));
+  // Opcjonalne dane do pisma
+  const managerName = String(form.get("managerName") ?? "").trim();
+  const managerAddress = String(form.get("managerAddress") ?? "").trim();
+  const buildingAddress = String(form.get("buildingAddress") ?? "").trim();
+  const apartmentNumber = String(form.get("apartmentNumber") ?? "").trim();
+  const residentName = String(form.get("residentName") ?? "").trim();
 
     try {
       const deltaT = hotTempC - coldTempC; // K
@@ -97,6 +109,11 @@ export default function MieszkancyPage() {
         coldTempC,
         hotTempC,
         heatPriceFromCity,
+        managerName,
+        managerAddress,
+        buildingAddress,
+        apartmentNumber,
+        residentName,
       });
     } catch (error) {
       alert("Błąd obliczeń: " + error);
@@ -235,6 +252,58 @@ export default function MieszkancyPage() {
                       defaultValue={82.13}
                       className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
                       required
+                    />
+                  </Field>
+                </div>
+              </div>
+
+              {/* Dane do pisma (opcjonalne) */}
+              <div className="space-y-6">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-1 h-8 bg-gradient-to-b from-purple-500 to-fuchsia-500 rounded-full"></div>
+                  <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200">
+                    Dane do pisma (opcjonalne)
+                  </h3>
+                </div>
+                <div className="grid md:grid-cols-2 gap-6">
+                  <Field label="Zarządca — nazwa">
+                    <input
+                      name="managerName"
+                      type="text"
+                      placeholder="np. ABC Zarządzanie Nieruchomościami Sp. z o.o."
+                      className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
+                    />
+                  </Field>
+                  <Field label="Zarządca — adres">
+                    <input
+                      name="managerAddress"
+                      type="text"
+                      placeholder="np. ul. Długa 10, 00-001 Warszawa"
+                      className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
+                    />
+                  </Field>
+                  <Field label="Adres budynku">
+                    <input
+                      name="buildingAddress"
+                      type="text"
+                      placeholder="np. ul. Kwiatowa 5, 30-000 Kraków"
+                      className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
+                    />
+                  </Field>
+                  <Field label="Numer lokalu">
+                    <input
+                      name="apartmentNumber"
+                      type="text"
+                      placeholder="np. 12"
+                      className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
+                    />
+                  </Field>
+                  <Field label="Imię i nazwisko mieszkańca">
+                    <input
+                      name="residentName"
+                      type="text"
+                      placeholder="np. Jan Kowalski"
+                      className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
                     />
                   </Field>
                 </div>
