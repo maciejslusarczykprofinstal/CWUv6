@@ -22,7 +22,13 @@ type Result = {
 export default function MieszkancyPage() {
   const [res, setRes] = useState<Result | null>(null);
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState<any>(null);
+  const [formData, setFormData] = useState<{
+    cwuPriceFromBill: number;
+    monthlyConsumption: number;
+    coldTempC: number;
+    hotTempC: number;
+    heatPriceFromCity: number;
+  } | null>(null);
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -64,7 +70,7 @@ export default function MieszkancyPage() {
       const theoreticalMonthlyPayment = theoreticalCostPerM3 * monthlyConsumption;
       const actualMonthlyPayment = cwuPriceFromBill * monthlyConsumption;
       
-      const result = {
+      const result: Result = {
         energyLossPerM3: Number(energyLossPerM3.toFixed(4)),
         lossPerM3: Number(lossPerM3.toFixed(2)),
         monthlyFinancialLoss: Number(monthlyFinancialLoss.toFixed(2)),
@@ -77,7 +83,7 @@ export default function MieszkancyPage() {
         energyPerM3: Number(energyPerM3.toFixed(4))
       };
       
-      setRes(result as any);
+      setRes(result);
       setFormData({ 
         cwuPriceFromBill, 
         monthlyConsumption, 
@@ -153,7 +159,7 @@ export default function MieszkancyPage() {
                       type="number"
                       step="0.01"
                       min="0"
-                      placeholder="np. 66.00"
+                      defaultValue={65}
                       className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
                       required
                     />
@@ -164,7 +170,7 @@ export default function MieszkancyPage() {
                       type="number"
                       step="0.1"
                       min="0"
-                      placeholder="np. 3.5"
+                      defaultValue={3.5}
                       className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
                       required
                     />
@@ -226,20 +232,26 @@ export default function MieszkancyPage() {
                   <Field label="Ciepło z MPEC" unit="GJ/miesiąc" optional>
                     <input
                       name="mpecHeatGJ"
-                      placeholder="np. 45"
+                      type="number"
+                      step="0.01"
+                      defaultValue={45}
                       className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
                     />
                   </Field>
                   <Field label="Cena za GJ" unit="zł" optional>
                     <input
                       name="pricePerGJ"
-                      placeholder="np. 60"
+                      type="number"
+                      step="0.01"
+                      defaultValue={60}
                       className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
                     />
                   </Field>
                   <Field label="Wasze wpłaty" unit="PLN/miesiąc">
                     <input
                       name="residentPaymentsPLN"
+                      type="number"
+                      step="0.01"
                       defaultValue={2400}
                       className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
                       required
@@ -260,6 +272,8 @@ export default function MieszkancyPage() {
                   <Field label="Straty cyrkulacji" unit="%">
                     <input
                       name="circulationLossPct"
+                      type="number"
+                      step="0.1"
                       defaultValue={25}
                       className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
                     />
