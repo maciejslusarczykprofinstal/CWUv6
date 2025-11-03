@@ -323,13 +323,33 @@ export default function MieszkancyPage() {
               </CardHeader>
               <CardContent>
                 <div className="grid md:grid-cols-3 gap-6">
-                  <Info label="Koszt teoretyczny za m³" value={`${res.theoreticalCostPerM3.toFixed(2)} zł/m³`} />
-                  <Info label="Energia do podgrzania" value={`${res.energyPerM3.toFixed(4)} GJ/m³`} />
-                  <Info label="Strata energii na m³" value={`${res.energyLossPerM3.toFixed(4)} GJ/m³`} />
+                  <Info 
+                    label="Koszt teoretyczny za m³" 
+                    value={`${res.theoreticalCostPerM3.toFixed(2)} zł/m³`} 
+                    formula={"C_teor_m³ = E_m³ × Cena_GJ"}
+                  />
+                  <Info 
+                    label="Energia do podgrzania" 
+                    value={`${res.energyPerM3.toFixed(4)} GJ/m³`} 
+                    formula={"E_m³ = 0,004186 × (T_CWU − T_zimna)"}
+                  />
+                  <Info 
+                    label="Strata energii na m³" 
+                    value={`${res.energyLossPerM3.toFixed(4)} GJ/m³`} 
+                    formula={"E_strata_m³ = (Cena_CWU_m³ − C_teor_m³) / Cena_GJ"}
+                  />
                 </div>
                 <div className="grid md:grid-cols-2 gap-6 mt-6">
-                  <Info label="Płatność teoretyczna (miesiąc)" value={`${res.theoreticalMonthlyPayment.toFixed(2)} zł`} />
-                  <Info label="Rzeczywista płatność (miesiąc)" value={`${res.actualMonthlyPayment.toFixed(2)} zł`} />
+                  <Info 
+                    label="Płatność teoretyczna (miesiąc)" 
+                    value={`${res.theoreticalMonthlyPayment.toFixed(2)} zł`} 
+                    formula={"P_teor_mies = C_teor_m³ × Zużycie_m³"}
+                  />
+                  <Info 
+                    label="Rzeczywista płatność (miesiąc)" 
+                    value={`${res.actualMonthlyPayment.toFixed(2)} zł`} 
+                    formula={"P_rzecz_mies = Cena_CWU_m³ × Zużycie_m³"}
+                  />
                 </div>
               </CardContent>
             </Card>
@@ -419,7 +439,7 @@ function Field({ label, unit, children, optional = false, numeric = false, hint 
   );
 }
 
-function Info({ label, value }: { label: string; value: string }) {
+function Info({ label, value, formula }: { label: string; value: string; formula?: string }) {
   return (
     <div className="p-4 rounded-xl bg-slate-50/50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 backdrop-blur-sm">
       <div className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wide font-medium mb-1">
@@ -428,6 +448,11 @@ function Info({ label, value }: { label: string; value: string }) {
       <div className="text-lg font-bold text-slate-800 dark:text-slate-200">
         {value}
       </div>
+      {formula && (
+        <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+          {formula}
+        </div>
+      )}
     </div>
   );
 }
