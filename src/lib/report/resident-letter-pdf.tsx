@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Document, Page, Text, View, StyleSheet, pdf, Link, Svg, Circle, Rect } from "@react-pdf/renderer";
+import { Document, Page, Text, View, StyleSheet, pdf, Link } from "@react-pdf/renderer";
 
 const styles = StyleSheet.create({
   page: { padding: 48, fontSize: 12, lineHeight: 1.35 },
@@ -14,9 +14,8 @@ const styles = StyleSheet.create({
   bold: { fontWeight: 600 },
   topRight: { alignSelf: "flex-end", marginBottom: 12 },
   brandRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 18 },
-  brand: { fontSize: 18, fontWeight: 700, marginLeft: 8 },
+  brand: { fontSize: 18, fontWeight: 700 },
   site: { fontSize: 12, color: "#1d4ed8", textDecoration: "none" },
-  brandLeft: { flexDirection: "row", alignItems: "center" },
 });
 
 function n(v: unknown, d = 2) {
@@ -53,13 +52,7 @@ export async function makeResidentLetterPDF(
       <Page size="A4" style={styles.page}>
         {/* Branding */}
         <View style={styles.brandRow}>
-          <View style={styles.brandLeft}>
-            <Svg width={22} height={22} viewBox="0 0 24 24">
-              <Circle cx={12} cy={12} r={11} fill="#1d4ed8" />
-              <Rect x={11} y={6} width={5.5} height={12} fill="#93c5fd" rx={2} ry={2} />
-            </Svg>
-            <Text style={styles.brand}>PROFINSTAL</Text>
-          </View>
+          <Text style={styles.brand}>PROFINSTAL</Text>
           <Link src="https://profinstal.info" style={styles.site}>profinstal.info</Link>
         </View>
         <View style={styles.header}>

@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Document, Page, Text, View, StyleSheet, pdf, Link, Svg, Circle, Rect } from "@react-pdf/renderer";
+import { Document, Page, Text, View, StyleSheet, pdf, Link } from "@react-pdf/renderer";
 
 const styles = StyleSheet.create({
   page: { padding: 36, fontSize: 11 },
@@ -10,9 +10,8 @@ const styles = StyleSheet.create({
   grid: { display: "flex", flexDirection: "row" },
   col: { flex: 1, marginRight: 18 },
   brandRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 },
-  brand: { fontSize: 16, fontWeight: 700, marginLeft: 8 },
+  brand: { fontSize: 16, fontWeight: 700 },
   site: { fontSize: 11, color: "#1d4ed8", textDecoration: "none" },
-  brandLeft: { flexDirection: "row", alignItems: "center" },
 });
 
 function n(v: unknown, d = 2) {
@@ -33,13 +32,7 @@ export async function makeResidentBillPDF(
       <Page size="A4" style={styles.page}>
         {/* Branding */}
         <View style={styles.brandRow}>
-          <View style={styles.brandLeft}>
-            <Svg width={20} height={20} viewBox="0 0 24 24">
-              <Circle cx={12} cy={12} r={11} fill="#1d4ed8" />
-              <Rect x={11} y={6} width={5.5} height={12} fill="#93c5fd" rx={2} ry={2} />
-            </Svg>
-            <Text style={styles.brand}>PROFINSTAL</Text>
-          </View>
+          <Text style={styles.brand}>PROFINSTAL</Text>
           <Link src="https://profinstal.info" style={styles.site}>profinstal.info</Link>
         </View>
         <Text style={styles.h1}>PROFINSTAL — Raport z obliczeń CWU (Mieszkańcy)</Text>
