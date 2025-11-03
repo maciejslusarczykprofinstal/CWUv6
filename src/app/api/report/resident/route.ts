@@ -1,5 +1,4 @@
-﻿ 
-import { NextRequest } from "next/server";
+﻿import { NextRequest } from "next/server";
 import { makeResidentPDF } from "@/lib/report/resident-pdf";
 
 export const runtime = "nodejs";
@@ -9,51 +8,36 @@ export async function GET(req: NextRequest) {
   try {
     const raw = req.nextUrl.searchParams.get("data");
     if (!raw) {
-      return new Response(
-        JSON.stringify({ ok: false, error: "Missing ?data" }),
-        {
-          status: 400,
-          headers: { "Content-Type": "application/json" },
-        },
-      );
+      return new Response(JSON.stringify({ ok: false, error: "Missing ?data" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
     }
 
-    let parsed: unknown;
+  type ResidentReportPayload = { input?: unknown; result?: unknown };
+  let payload: ResidentReportPayload;
     try {
-      parsed = JSON.parse(raw);
+  payload = JSON.parse(raw) as ResidentReportPayload;
     } catch {
-      return new Response(
-        JSON.stringify({ ok: false, error: "Invalid JSON" }),
-        {
-          status: 400,
-          headers: { "Content-Type": "application/json" },
-        },
-      );
-    }
-    if (typeof parsed !== "object" || parsed === null) {
-      return new Response(
-        JSON.stringify({ ok: false, error: "Invalid payload" }),
-        {
-          status: 400,
-          headers: { "Content-Type": "application/json" },
-        },
-      );
+      return new Response(JSON.stringify({ ok: false, error: "Invalid JSON" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
     }
 
-    const { input, result } = parsed as { input: unknown; result: unknown };
-
+    const { input, result } = payload || {};
     const bytes = await makeResidentPDF(input, result); // Uint8Array
-    // Podajemy ArrayBuffer (BodyInit akceptuje)  bez kombinacji z BlobPart
-    const ab = bytes.buffer.slice(
-      bytes.byteOffset,
-      bytes.byteOffset + bytes.byteLength,
-    );
 
-    return new Response(ab as ArrayBuffer, {
+    // *** KLUCZ: użyjemy Blob z Uint8Array (zgodne z BodyInit) ***
+    const u8 = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes as ArrayBuffer);
+    const compatibleU8 = new Uint8Array(u8);
+    const blob = new Blob([compatibleU8], { type: "application/pdf" });
+
+    return new Response(blob, {
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": "attachment; filename=raport-mieszkancy.pdf",
-        "Cache-Control": "no-store",
+        "Cache-Control": "no-store"
       },
     });
   } catch (e) {

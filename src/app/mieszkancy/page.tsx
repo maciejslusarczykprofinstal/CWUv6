@@ -153,23 +153,27 @@ export default function MieszkancyPage() {
                   </h3>
                 </div>
                 <div className="grid md:grid-cols-2 gap-6">
-                  <Field label="Cena CWU z rachunku" unit="zł/m³">
+                  <Field label="Cena CWU z rachunku" unit="zł/m³" numeric hint="Wpisz liczbę, np. 65.00">
                     <input
                       name="cwuPriceFromBill"
                       type="number"
                       step="0.01"
                       min="0"
+                      inputMode="decimal"
+                      placeholder="np. 65.00"
                       defaultValue={65}
                       className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
                       required
                     />
                   </Field>
-                  <Field label="Zużycie CWU w miesiącu" unit="m³">
+                  <Field label="Zużycie CWU w miesiącu" unit="m³" numeric hint="Wpisz liczbę, np. 3.5">
                     <input
                       name="monthlyConsumption"
                       type="number"
                       step="0.1"
                       min="0"
+                      inputMode="decimal"
+                      placeholder="np. 3.5"
                       defaultValue={3.5}
                       className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
                       required
@@ -447,11 +451,13 @@ export default function MieszkancyPage() {
   );
 }
 
-function Field({ label, unit, children, optional = false }: { 
+function Field({ label, unit, children, optional = false, numeric = false, hint }: { 
   label: string; 
   unit?: string;
   children: React.ReactNode; 
-  optional?: boolean 
+  optional?: boolean;
+  numeric?: boolean;
+  hint?: string;
 }) {
   return (
     <div className="space-y-3">
@@ -459,7 +465,15 @@ function Field({ label, unit, children, optional = false }: {
         {label}
         {unit && <span className="text-slate-500 dark:text-slate-400 font-normal"> ({unit})</span>}
         {optional && <span className="text-slate-400 dark:text-slate-500 font-normal ml-2">(opcjonalne)</span>}
+        {numeric && (
+          <span className="ml-2 inline-flex items-center rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-200 px-2 py-0.5 text-[10px] font-semibold tracking-wide">
+            LICZBA
+          </span>
+        )}
       </label>
+      {hint && (
+        <p className="text-xs text-slate-500 dark:text-slate-400">{hint}</p>
+      )}
       {children}
     </div>
   );
