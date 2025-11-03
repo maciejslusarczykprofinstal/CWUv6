@@ -32,7 +32,6 @@ type Inputs = {
   apartmentNumber?: string;
   residentName?: string;
   letterCity?: string;
-  letterDate?: string; // ISO yyyy-mm-dd lub tekst
   residentEmail?: string;
   residentPhone?: string;
 };
@@ -78,7 +77,6 @@ export default function MieszkancyPage() {
   const apartmentNumber = String(form.get("apartmentNumber") ?? "").trim();
   const residentName = String(form.get("residentName") ?? "").trim();
   const letterCity = String(form.get("letterCity") ?? "").trim();
-  const letterDate = String(form.get("letterDate") ?? "").trim();
   const residentEmail = String(form.get("residentEmail") ?? "").trim();
   const residentPhone = String(form.get("residentPhone") ?? "").trim();
 
@@ -123,7 +121,6 @@ export default function MieszkancyPage() {
         apartmentNumber,
         residentName,
         letterCity,
-        letterDate,
         residentEmail,
         residentPhone,
       });
@@ -278,7 +275,7 @@ export default function MieszkancyPage() {
                   </h3>
                 </div>
                 <div className="grid md:grid-cols-2 gap-6">
-                  <Field label="Miejscowość">
+                  <Field label="Miejscowość" optional>
                     <input
                       name="letterCity"
                       type="text"
@@ -286,14 +283,7 @@ export default function MieszkancyPage() {
                       className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
                     />
                   </Field>
-                  <Field label="Data pisma">
-                    <input
-                      name="letterDate"
-                      type="date"
-                      className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
-                    />
-                  </Field>
-                  <Field label="Zarządca — nazwa">
+                  <Field label="Zarządca — nazwa" optional>
                     <input
                       name="managerName"
                       type="text"
@@ -301,7 +291,7 @@ export default function MieszkancyPage() {
                       className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
                     />
                   </Field>
-                  <Field label="Zarządca — adres">
+                  <Field label="Zarządca — adres" optional>
                     <input
                       name="managerAddress"
                       type="text"
@@ -309,7 +299,7 @@ export default function MieszkancyPage() {
                       className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
                     />
                   </Field>
-                  <Field label="Adres budynku">
+                  <Field label="Adres budynku" optional>
                     <input
                       name="buildingAddress"
                       type="text"
@@ -317,7 +307,7 @@ export default function MieszkancyPage() {
                       className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
                     />
                   </Field>
-                  <Field label="Numer lokalu">
+                  <Field label="Numer lokalu" optional>
                     <input
                       name="apartmentNumber"
                       type="text"
@@ -325,7 +315,7 @@ export default function MieszkancyPage() {
                       className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
                     />
                   </Field>
-                  <Field label="Imię i nazwisko mieszkańca">
+                  <Field label="Imię i nazwisko mieszkańca" optional>
                     <input
                       name="residentName"
                       type="text"
@@ -333,7 +323,7 @@ export default function MieszkancyPage() {
                       className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
                     />
                   </Field>
-                  <Field label="E-mail mieszkańca">
+                  <Field label="E-mail mieszkańca" optional>
                     <input
                       name="residentEmail"
                       type="email"
@@ -341,7 +331,7 @@ export default function MieszkancyPage() {
                       className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
                     />
                   </Field>
-                  <Field label="Telefon mieszkańca">
+                  <Field label="Telefon mieszkańca" optional>
                     <input
                       name="residentPhone"
                       type="tel"

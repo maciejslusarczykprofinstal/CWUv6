@@ -27,9 +27,9 @@ export async function GET(req: NextRequest) {
 
     const { input, result } = payload || {};
     const bytes = await makeResidentBillPDF(input, result);
+    // Podajemy ArrayBuffer bezpośrednio do Response (bez Blob), co jest stabilne w Node runtime
     const ab = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
-
-    return new Response(new Blob([ab], { type: "application/pdf" }), {
+    return new Response(ab, {
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": "attachment; filename=raport-mieszkancy.pdf",

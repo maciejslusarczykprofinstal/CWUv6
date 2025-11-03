@@ -36,14 +36,8 @@ export async function makeResidentLetterPDF(
   const apartmentNumber = (i.apartmentNumber as string) || "";
   const residentName = (i.residentName as string) || "";
   const letterCity = (i.letterCity as string) || "";
-  const letterDateRaw = (i.letterDate as string) || "";
-  let letterDate = "";
-  if (letterDateRaw) {
-    const d = new Date(letterDateRaw);
-    letterDate = isNaN(d.getTime()) ? letterDateRaw : d.toLocaleDateString("pl-PL");
-  } else {
-    letterDate = createdAt.toLocaleDateString("pl-PL");
-  }
+  // Data pisma zawsze z czasu serwera (ignorujemy ewentualne dane z klienta)
+  const letterDate = createdAt.toLocaleDateString("pl-PL");
   const residentEmail = (i.residentEmail as string) || "";
   const residentPhone = (i.residentPhone as string) || "";
 
@@ -141,7 +135,7 @@ export async function makeResidentLetterPDF(
           resolve(new Uint8Array(buffer as ArrayBufferLike));
         } else {
           try {
-            // @ts-ignore
+            // Ostatnia deska: spróbuj skonstruować Buffer i zrzut do Uint8Array
             const b = Buffer.from(buffer as any);
             resolve(new Uint8Array(b));
           } catch (e) {

@@ -92,7 +92,6 @@ export async function makeResidentBillPDF(
         } else {
           try {
             // Ostatnia deska: spróbuj skonstruować Buffer i zrzut do Uint8Array
-            // @ts-ignore
             const b = Buffer.from(buffer as any);
             resolve(new Uint8Array(b));
           } catch (e) {
