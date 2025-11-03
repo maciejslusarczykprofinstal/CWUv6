@@ -221,27 +221,6 @@ export default function MieszkancyPage() {
                 </div>
               </div>
 
-              {/* Technical Parameters */}
-              <div className="space-y-6">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-1 h-8 bg-gradient-to-b from-orange-500 to-red-500 rounded-full"></div>
-                  <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200">
-                    Parametry techniczne
-                  </h3>
-                </div>
-                <div className="grid md:grid-cols-3 gap-6">
-                  <Field label="Straty cyrkulacji" unit="%">
-                    <input
-                      name="circulationLossPct"
-                      type="number"
-                      step="0.1"
-                      defaultValue={25}
-                      className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
-                    />
-                  </Field>
-                </div>
-              </div>
-
               <div className="pt-4">
                 <Button
                   type="submit"
