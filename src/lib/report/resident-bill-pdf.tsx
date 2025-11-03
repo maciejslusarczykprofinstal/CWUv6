@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Document, Page, Text, View, StyleSheet, pdf } from "@react-pdf/renderer";
+import { Document, Page, Text, View, StyleSheet, pdf, Link } from "@react-pdf/renderer";
 
 const styles = StyleSheet.create({
   page: { padding: 36, fontSize: 11 },
@@ -9,6 +9,9 @@ const styles = StyleSheet.create({
   small: { color: "#666" },
   grid: { display: "flex", flexDirection: "row", gap: 18 },
   col: { flex: 1 },
+  brandRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 },
+  brand: { fontSize: 16, fontWeight: 700 },
+  site: { fontSize: 11, color: "#1d4ed8", textDecoration: "none" },
 });
 
 function n(v: unknown, d = 2) {
@@ -27,6 +30,11 @@ export async function makeResidentBillPDF(
   const Doc = (
     <Document>
       <Page size="A4" style={styles.page}>
+        {/* Branding */}
+        <View style={styles.brandRow}>
+          <Text style={styles.brand}>PROFINSTAL</Text>
+          <Link src="https://profinstal.info" style={styles.site}>profinstal.info</Link>
+        </View>
         <Text style={styles.h1}>PROFINSTAL — Raport z obliczeń CWU (Mieszkańcy)</Text>
         <Text style={styles.small}>Data: {createdAt.toLocaleString("pl-PL")}</Text>
 

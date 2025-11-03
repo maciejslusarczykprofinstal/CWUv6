@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Document, Page, Text, View, StyleSheet, pdf } from "@react-pdf/renderer";
+import { Document, Page, Text, View, StyleSheet, pdf, Link } from "@react-pdf/renderer";
 
 const styles = StyleSheet.create({
   page: { padding: 48, fontSize: 12, lineHeight: 1.35 },
@@ -13,6 +13,9 @@ const styles = StyleSheet.create({
   box: { width: "48%" },
   bold: { fontWeight: 600 },
   topRight: { alignSelf: "flex-end", marginBottom: 12 },
+  brandRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 18 },
+  brand: { fontSize: 18, fontWeight: 700 },
+  site: { fontSize: 12, color: "#1d4ed8", textDecoration: "none" },
 });
 
 function n(v: unknown, d = 2) {
@@ -47,6 +50,11 @@ export async function makeResidentLetterPDF(
   const Doc = (
     <Document>
       <Page size="A4" style={styles.page}>
+        {/* Branding */}
+        <View style={styles.brandRow}>
+          <Text style={styles.brand}>PROFINSTAL</Text>
+          <Link src="https://profinstal.info" style={styles.site}>profinstal.info</Link>
+        </View>
         <View style={styles.header}>
           <Text style={styles.h1}>Pismo do Zarządcy — analiza kosztów CWU</Text>
           <Text style={styles.small}>Data: {createdAt.toLocaleString("pl-PL")}</Text>
