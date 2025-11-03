@@ -27,11 +27,13 @@ export async function GET(req: NextRequest) {
 
     const { input, result } = payload || {};
     const bytes = await makeResidentLetterPDF(input, result);
+    const ab = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
 
-    return new Response(Buffer.from(bytes), {
+    return new Response(new Blob([ab], { type: "application/pdf" }), {
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": "attachment; filename=pismo-do-zarzadcy.pdf",
+        "Content-Length": String(bytes.byteLength),
         "Cache-Control": "no-store",
       },
     });
