@@ -31,6 +31,10 @@ type Inputs = {
   buildingAddress?: string;
   apartmentNumber?: string;
   residentName?: string;
+  letterCity?: string;
+  letterDate?: string; // ISO yyyy-mm-dd lub tekst
+  residentEmail?: string;
+  residentPhone?: string;
 };
 
 export default function MieszkancyPage() {
@@ -73,6 +77,10 @@ export default function MieszkancyPage() {
   const buildingAddress = String(form.get("buildingAddress") ?? "").trim();
   const apartmentNumber = String(form.get("apartmentNumber") ?? "").trim();
   const residentName = String(form.get("residentName") ?? "").trim();
+  const letterCity = String(form.get("letterCity") ?? "").trim();
+  const letterDate = String(form.get("letterDate") ?? "").trim();
+  const residentEmail = String(form.get("residentEmail") ?? "").trim();
+  const residentPhone = String(form.get("residentPhone") ?? "").trim();
 
     try {
       const deltaT = hotTempC - coldTempC; // K
@@ -114,6 +122,10 @@ export default function MieszkancyPage() {
         buildingAddress,
         apartmentNumber,
         residentName,
+        letterCity,
+        letterDate,
+        residentEmail,
+        residentPhone,
       });
     } catch (error) {
       alert("Błąd obliczeń: " + error);
@@ -266,6 +278,21 @@ export default function MieszkancyPage() {
                   </h3>
                 </div>
                 <div className="grid md:grid-cols-2 gap-6">
+                  <Field label="Miejscowość">
+                    <input
+                      name="letterCity"
+                      type="text"
+                      placeholder="np. Kraków"
+                      className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
+                    />
+                  </Field>
+                  <Field label="Data pisma">
+                    <input
+                      name="letterDate"
+                      type="date"
+                      className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
+                    />
+                  </Field>
                   <Field label="Zarządca — nazwa">
                     <input
                       name="managerName"
@@ -303,6 +330,22 @@ export default function MieszkancyPage() {
                       name="residentName"
                       type="text"
                       placeholder="np. Jan Kowalski"
+                      className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
+                    />
+                  </Field>
+                  <Field label="E-mail mieszkańca">
+                    <input
+                      name="residentEmail"
+                      type="email"
+                      placeholder="np. jan.kowalski@example.com"
+                      className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
+                    />
+                  </Field>
+                  <Field label="Telefon mieszkańca">
+                    <input
+                      name="residentPhone"
+                      type="tel"
+                      placeholder="np. 600 000 000"
                       className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
                     />
                   </Field>

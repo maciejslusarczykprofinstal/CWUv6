@@ -12,6 +12,7 @@ const styles = StyleSheet.create({
   row: { flexDirection: "row", justifyContent: "space-between", marginBottom: 12 },
   box: { width: "48%" },
   bold: { fontWeight: 600 },
+  topRight: { alignSelf: "flex-end", marginBottom: 12 },
 });
 
 function n(v: unknown, d = 2) {
@@ -31,6 +32,17 @@ export async function makeResidentLetterPDF(
   const buildingAddress = (i.buildingAddress as string) || "";
   const apartmentNumber = (i.apartmentNumber as string) || "";
   const residentName = (i.residentName as string) || "";
+  const letterCity = (i.letterCity as string) || "";
+  const letterDateRaw = (i.letterDate as string) || "";
+  let letterDate = "";
+  if (letterDateRaw) {
+    const d = new Date(letterDateRaw);
+    letterDate = isNaN(d.getTime()) ? letterDateRaw : d.toLocaleDateString("pl-PL");
+  } else {
+    letterDate = createdAt.toLocaleDateString("pl-PL");
+  }
+  const residentEmail = (i.residentEmail as string) || "";
+  const residentPhone = (i.residentPhone as string) || "";
 
   const Doc = (
     <Document>
@@ -39,6 +51,14 @@ export async function makeResidentLetterPDF(
           <Text style={styles.h1}>Pismo do Zarządcy — analiza kosztów CWU</Text>
           <Text style={styles.small}>Data: {createdAt.toLocaleString("pl-PL")}</Text>
         </View>
+
+        {(letterCity || letterDate) && (
+          <View style={styles.topRight}>
+            <Text>
+              {[letterCity, letterDate].filter(Boolean).join(", ")}
+            </Text>
+          </View>
+        )}
 
         {(managerName || managerAddress || buildingAddress) && (
           <View style={styles.row}>
@@ -93,6 +113,11 @@ export async function makeResidentLetterPDF(
           <Text>Z poważaniem,</Text>
           <Text>__________________________________</Text>
           <Text>{residentName || "Mieszkaniec"}</Text>
+          {(residentEmail || residentPhone) && (
+            <Text style={{ marginTop: 8 }}>
+              Dane kontaktowe: {[residentEmail, residentPhone].filter(Boolean).join(" | ")}
+            </Text>
+          )}
         </View>
       </Page>
     </Document>
