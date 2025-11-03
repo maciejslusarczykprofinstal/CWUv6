@@ -32,6 +32,25 @@ export default function MieszkancyPage() {
   const [loading, setLoading] = useState(false);
   const [inputs, setInputs] = useState<Inputs | null>(null);
 
+  function openPdf(url: string) {
+    // Otwórz w nowej karcie, aby pobrać PDF
+    if (typeof window !== "undefined") {
+      window.open(url, "_blank");
+    }
+  }
+
+  function onDownloadReport() {
+    if (!res || !inputs) return;
+    const data = encodeURIComponent(JSON.stringify({ input: inputs, result: res }));
+    openPdf(`/api/report/resident?data=${data}`);
+  }
+
+  function onDownloadLetter() {
+    if (!res || !inputs) return;
+    const data = encodeURIComponent(JSON.stringify({ input: inputs, result: res }));
+    openPdf(`/api/report/resident-letter?data=${data}`);
+  }
+
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
@@ -244,6 +263,15 @@ export default function MieszkancyPage() {
         {/* Results */}
         {res && (
           <div className="space-y-8">
+            {/* Action bar */}
+            <div className="flex flex-col md:flex-row items-stretch md:items-center justify-center gap-3">
+              <Button onClick={onDownloadReport} className="px-6 py-3 font-semibold">
+                Pobierz raport PDF
+              </Button>
+              <Button onClick={onDownloadLetter} variant="secondary" className="px-6 py-3 font-semibold">
+                Pismo do Zarządcy (PDF)
+              </Button>
+            </div>
             <div className="text-center space-y-4">
               <h2 className="text-3xl font-bold text-slate-800 dark:text-slate-200">
                 Analiza strat na przesyle CWU

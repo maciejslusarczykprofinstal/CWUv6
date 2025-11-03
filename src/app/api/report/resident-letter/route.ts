@@ -1,5 +1,5 @@
-﻿import { NextRequest } from "next/server";
-import { makeResidentBillPDF } from "@/lib/report/resident-bill-pdf";
+import { NextRequest } from "next/server";
+import { makeResidentLetterPDF } from "@/lib/report/resident-letter-pdf";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -14,10 +14,10 @@ export async function GET(req: NextRequest) {
       });
     }
 
-  type ResidentReportPayload = { input?: unknown; result?: unknown };
-  let payload: ResidentReportPayload;
+    type Payload = { input?: unknown; result?: unknown };
+    let payload: Payload;
     try {
-  payload = JSON.parse(raw) as ResidentReportPayload;
+      payload = JSON.parse(raw) as Payload;
     } catch {
       return new Response(JSON.stringify({ ok: false, error: "Invalid JSON" }), {
         status: 400,
@@ -25,10 +25,9 @@ export async function GET(req: NextRequest) {
       });
     }
 
-  const { input, result } = payload || {};
-  const bytes = await makeResidentBillPDF(input, result); // Uint8Array
+    const { input, result } = payload || {};
+    const bytes = await makeResidentLetterPDF(input, result);
 
-    // *** KLUCZ: użyjemy Blob z Uint8Array (zgodne z BodyInit) ***
     const u8 = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes as ArrayBuffer);
     const compatibleU8 = new Uint8Array(u8);
     const blob = new Blob([compatibleU8], { type: "application/pdf" });
@@ -36,8 +35,8 @@ export async function GET(req: NextRequest) {
     return new Response(blob, {
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": "attachment; filename=raport-mieszkancy.pdf",
-        "Cache-Control": "no-store"
+        "Content-Disposition": "attachment; filename=pismo-do-zarzadcy.pdf",
+        "Cache-Control": "no-store",
       },
     });
   } catch (e) {
