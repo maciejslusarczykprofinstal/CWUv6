@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { Home, Calculator, TrendingDown } from "lucide-react";
+import { Home, Calculator, TrendingDown, Info as InfoIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -344,18 +344,21 @@ export default function MieszkancyPage() {
                     value={`${res.theoreticalCostPerM3.toFixed(2)} zł/m³`} 
                     formula={"C_teor_m³ = E_m³ × Cena_GJ"}
                     substitution={inputs ? `= ${res.energyPerM3.toLocaleString('pl-PL', { minimumFractionDigits: 4, maximumFractionDigits: 4 })} × ${inputs.heatPriceFromCity.toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} = ${res.theoreticalCostPerM3.toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} zł/m³` : undefined}
+                    unitsNote={"zł/m³ — koszt w złotych za 1 m³ wody (energia [GJ/m³] × cena [zł/GJ])."}
                   />
                   <Info 
                     label="Energia do podgrzania" 
                     value={`${res.energyPerM3.toFixed(4)} GJ/m³`} 
                     formula={"E_m³ = 0,004186 × (T_CWU − T_zimna)"}
                     substitution={inputs ? `= 0,004186 × (${inputs.hotTempC.toLocaleString('pl-PL', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} − ${inputs.coldTempC.toLocaleString('pl-PL', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}) = ${res.energyPerM3.toLocaleString('pl-PL', { minimumFractionDigits: 4, maximumFractionDigits: 4 })} GJ/m³` : undefined}
+                    unitsNote={"GJ/m³ — energia w gigadżulach potrzebna na podgrzanie 1 m³ wody."}
                   />
                   <Info 
                     label="Strata energii na m³" 
                     value={`${res.energyLossPerM3.toFixed(4)} GJ/m³`} 
                     formula={"E_strata_m³ = (Cena_CWU_m³ − C_teor_m³) / Cena_GJ"}
                     substitution={inputs ? `= (${inputs.cwuPriceFromBill.toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} − ${res.theoreticalCostPerM3.toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}) / ${inputs.heatPriceFromCity.toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} = ${res.energyLossPerM3.toLocaleString('pl-PL', { minimumFractionDigits: 4, maximumFractionDigits: 4 })} GJ/m³` : undefined}
+                    unitsNote={"GJ/m³ — energia utracona na przesyle na 1 m³ ciepłej wody."}
                   />
                 </div>
                 <div className="grid md:grid-cols-2 gap-6 mt-6">
@@ -364,12 +367,14 @@ export default function MieszkancyPage() {
                     value={`${res.theoreticalMonthlyPayment.toFixed(2)} zł`} 
                     formula={"P_teor_mies = C_teor_m³ × Zużycie_m³"}
                     substitution={inputs ? `= ${res.theoreticalCostPerM3.toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} × ${inputs.monthlyConsumption.toLocaleString('pl-PL', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} = ${res.theoreticalMonthlyPayment.toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} zł` : undefined}
+                    unitsNote={"zł — kwota oszacowana dla miesięcznego zużycia."}
                   />
                   <Info 
                     label="Rzeczywista płatność (miesiąc)" 
                     value={`${res.actualMonthlyPayment.toFixed(2)} zł`} 
                     formula={"P_rzecz_mies = Cena_CWU_m³ × Zużycie_m³"}
                     substitution={inputs ? `= ${inputs.cwuPriceFromBill.toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} × ${inputs.monthlyConsumption.toLocaleString('pl-PL', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} = ${res.actualMonthlyPayment.toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} zł` : undefined}
+                    unitsNote={"zł — faktyczna kwota dla miesięcznego zużycia."}
                   />
                 </div>
               </CardContent>
@@ -460,7 +465,7 @@ function Field({ label, unit, children, optional = false, numeric = false, hint 
   );
 }
 
-function Info({ label, value, formula, substitution }: { label: string; value: string; formula?: string; substitution?: string }) {
+function Info({ label, value, formula, substitution, unitsNote }: { label: string; value: string; formula?: string; substitution?: string; unitsNote?: string }) {
   return (
     <div className="p-4 rounded-xl bg-slate-50/50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 backdrop-blur-sm">
       <div className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wide font-medium mb-1">
@@ -469,15 +474,30 @@ function Info({ label, value, formula, substitution }: { label: string; value: s
       <div className="text-lg font-bold text-slate-800 dark:text-slate-200">
         {value}
       </div>
-      {formula && (
-        <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-          {formula}
-        </div>
-      )}
-      {substitution && (
-        <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-          {substitution}
-        </div>
+      {(formula || substitution || unitsNote) && (
+        <details className="mt-2">
+          <summary className="cursor-pointer select-none text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
+            <InfoIcon className="w-3.5 h-3.5" />
+            Szczegóły obliczeń
+          </summary>
+          <div className="mt-2 space-y-1 text-xs text-slate-600 dark:text-slate-400">
+            {formula && (
+              <div>
+                <span className="font-medium text-slate-700 dark:text-slate-300">Wzór:</span> {formula}
+              </div>
+            )}
+            {substitution && (
+              <div>
+                <span className="font-medium text-slate-700 dark:text-slate-300">Podstawienie:</span> {substitution}
+              </div>
+            )}
+            {unitsNote && (
+              <div>
+                <span className="font-medium text-slate-700 dark:text-slate-300">Jednostki:</span> {unitsNote}
+              </div>
+            )}
+          </div>
+        </details>
       )}
     </div>
   );
