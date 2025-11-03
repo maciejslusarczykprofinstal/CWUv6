@@ -28,11 +28,7 @@ export async function GET(req: NextRequest) {
     const { input, result } = payload || {};
     const bytes = await makeResidentLetterPDF(input, result);
 
-    const u8 = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes as ArrayBuffer);
-    const compatibleU8 = new Uint8Array(u8);
-    const blob = new Blob([compatibleU8], { type: "application/pdf" });
-
-    return new Response(blob, {
+    return new Response(Buffer.from(bytes), {
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": "attachment; filename=pismo-do-zarzadcy.pdf",
