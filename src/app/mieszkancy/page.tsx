@@ -18,9 +18,18 @@ type Result = {
   energyPerM3: number;
 };
 
+type Inputs = {
+  cwuPriceFromBill: number;
+  monthlyConsumption: number;
+  coldTempC: number;
+  hotTempC: number;
+  heatPriceFromCity: number;
+};
+
 export default function MieszkancyPage() {
   const [res, setRes] = useState<Result | null>(null);
   const [loading, setLoading] = useState(false);
+  const [inputs, setInputs] = useState<Inputs | null>(null);
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -62,6 +71,13 @@ export default function MieszkancyPage() {
       };
 
       setRes(result);
+      setInputs({
+        cwuPriceFromBill,
+        monthlyConsumption,
+        coldTempC,
+        hotTempC,
+        heatPriceFromCity,
+      });
     } catch (error) {
       alert("Błąd obliczeń: " + error);
     } finally {
@@ -327,16 +343,19 @@ export default function MieszkancyPage() {
                     label="Koszt teoretyczny za m³" 
                     value={`${res.theoreticalCostPerM3.toFixed(2)} zł/m³`} 
                     formula={"C_teor_m³ = E_m³ × Cena_GJ"}
+                    substitution={inputs ? `= ${res.energyPerM3.toLocaleString('pl-PL', { minimumFractionDigits: 4, maximumFractionDigits: 4 })} × ${inputs.heatPriceFromCity.toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} = ${res.theoreticalCostPerM3.toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} zł/m³` : undefined}
                   />
                   <Info 
                     label="Energia do podgrzania" 
                     value={`${res.energyPerM3.toFixed(4)} GJ/m³`} 
                     formula={"E_m³ = 0,004186 × (T_CWU − T_zimna)"}
+                    substitution={inputs ? `= 0,004186 × (${inputs.hotTempC.toLocaleString('pl-PL', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} − ${inputs.coldTempC.toLocaleString('pl-PL', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}) = ${res.energyPerM3.toLocaleString('pl-PL', { minimumFractionDigits: 4, maximumFractionDigits: 4 })} GJ/m³` : undefined}
                   />
                   <Info 
                     label="Strata energii na m³" 
                     value={`${res.energyLossPerM3.toFixed(4)} GJ/m³`} 
                     formula={"E_strata_m³ = (Cena_CWU_m³ − C_teor_m³) / Cena_GJ"}
+                    substitution={inputs ? `= (${inputs.cwuPriceFromBill.toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} − ${res.theoreticalCostPerM3.toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}) / ${inputs.heatPriceFromCity.toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} = ${res.energyLossPerM3.toLocaleString('pl-PL', { minimumFractionDigits: 4, maximumFractionDigits: 4 })} GJ/m³` : undefined}
                   />
                 </div>
                 <div className="grid md:grid-cols-2 gap-6 mt-6">
@@ -344,11 +363,13 @@ export default function MieszkancyPage() {
                     label="Płatność teoretyczna (miesiąc)" 
                     value={`${res.theoreticalMonthlyPayment.toFixed(2)} zł`} 
                     formula={"P_teor_mies = C_teor_m³ × Zużycie_m³"}
+                    substitution={inputs ? `= ${res.theoreticalCostPerM3.toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} × ${inputs.monthlyConsumption.toLocaleString('pl-PL', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} = ${res.theoreticalMonthlyPayment.toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} zł` : undefined}
                   />
                   <Info 
                     label="Rzeczywista płatność (miesiąc)" 
                     value={`${res.actualMonthlyPayment.toFixed(2)} zł`} 
                     formula={"P_rzecz_mies = Cena_CWU_m³ × Zużycie_m³"}
+                    substitution={inputs ? `= ${inputs.cwuPriceFromBill.toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} × ${inputs.monthlyConsumption.toLocaleString('pl-PL', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} = ${res.actualMonthlyPayment.toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} zł` : undefined}
                   />
                 </div>
               </CardContent>
@@ -439,7 +460,7 @@ function Field({ label, unit, children, optional = false, numeric = false, hint 
   );
 }
 
-function Info({ label, value, formula }: { label: string; value: string; formula?: string }) {
+function Info({ label, value, formula, substitution }: { label: string; value: string; formula?: string; substitution?: string }) {
   return (
     <div className="p-4 rounded-xl bg-slate-50/50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 backdrop-blur-sm">
       <div className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wide font-medium mb-1">
@@ -451,6 +472,11 @@ function Info({ label, value, formula }: { label: string; value: string; formula
       {formula && (
         <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
           {formula}
+        </div>
+      )}
+      {substitution && (
+        <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+          {substitution}
         </div>
       )}
     </div>
