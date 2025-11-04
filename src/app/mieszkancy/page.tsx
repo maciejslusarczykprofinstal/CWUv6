@@ -599,7 +599,7 @@ export default function MieszkancyPage() {
                   {/* Where losses occur */}
                   <div className="bg-white dark:bg-slate-900 rounded-xl p-6 shadow-lg border border-emerald-200 dark:border-emerald-800">
                     <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200 mb-4">
-                      🔍 Gdzie najczęściej ginie te ~{res.energyLossPerM3.toFixed(2)} GJ/m³?
+                      🔍 Gdzie najczęściej ginie te ~{res.energyLossPerM3.toFixed(3)} GJ/m³?
                     </h3>
                     
                     <div className="space-y-4">
@@ -607,6 +607,8 @@ export default function MieszkancyPage() {
                         percentage="30–50%"
                         title="Cyrkulacja CWU (zbyt duży przepływ + zbyt małe ΔT na pętli)"
                         symptom="Wysoka temp. powrotu (np. 52–55°C), brak 'schłodzenia' rurociągów"
+                        energyRange={`${(res.energyLossPerM3 * 0.30).toFixed(3)}–${(res.energyLossPerM3 * 0.50).toFixed(3)} GJ/m³`}
+                        costRange={`${(res.lossPerM3 * 0.30).toFixed(2)}–${(res.lossPerM3 * 0.50).toFixed(2)} zł/m³`}
                         color="red"
                       />
                       
@@ -614,6 +616,8 @@ export default function MieszkancyPage() {
                         percentage="10–25%"
                         title="Słaba izolacja pionów/gałązek i węzła"
                         symptom="Piwnice 'grzeją' za darmo"
+                        energyRange={`${(res.energyLossPerM3 * 0.10).toFixed(3)}–${(res.energyLossPerM3 * 0.25).toFixed(3)} GJ/m³`}
+                        costRange={`${(res.lossPerM3 * 0.10).toFixed(2)}–${(res.lossPerM3 * 0.25).toFixed(2)} zł/m³`}
                         color="orange"
                       />
                       
@@ -621,6 +625,8 @@ export default function MieszkancyPage() {
                         percentage="5–15%"
                         title="Ciągła praca pomp 24/7 bez sterowania temp./nocą"
                         symptom="Pompy pracują non-stop bez optymalizacji"
+                        energyRange={`${(res.energyLossPerM3 * 0.05).toFixed(3)}–${(res.energyLossPerM3 * 0.15).toFixed(3)} GJ/m³`}
+                        costRange={`${(res.lossPerM3 * 0.05).toFixed(2)}–${(res.lossPerM3 * 0.15).toFixed(2)} zł/m³`}
                         color="amber"
                       />
                       
@@ -628,6 +634,8 @@ export default function MieszkancyPage() {
                         percentage="5–15%"
                         title="Zawory zwrotne nieszczelne/przewiązki → mieszanie CWU z zimną"
                         symptom="'Pseudo-cyrkulacja' i mieszanie temperatur"
+                        energyRange={`${(res.energyLossPerM3 * 0.05).toFixed(3)}–${(res.energyLossPerM3 * 0.15).toFixed(3)} GJ/m³`}
+                        costRange={`${(res.lossPerM3 * 0.05).toFixed(2)}–${(res.lossPerM3 * 0.15).toFixed(2)} zł/m³`}
                         color="yellow"
                       />
                       
@@ -635,6 +643,8 @@ export default function MieszkancyPage() {
                         percentage="5–10%"
                         title="Za wysoka nastawa mieszacza + antylegionella robiona 'za szeroko'"
                         symptom="Temperatura 60–62°C non stop zamiast 55°C"
+                        energyRange={`${(res.energyLossPerM3 * 0.05).toFixed(3)}–${(res.energyLossPerM3 * 0.10).toFixed(3)} GJ/m³`}
+                        costRange={`${(res.lossPerM3 * 0.05).toFixed(2)}–${(res.lossPerM3 * 0.10).toFixed(2)} zł/m³`}
                         color="lime"
                       />
                       
@@ -642,6 +652,8 @@ export default function MieszkancyPage() {
                         percentage="5–10%"
                         title="Brak równoważenia pętli cyrkulacyjnej"
                         symptom="Część pętli przegrzana, część niedogrzana"
+                        energyRange={`${(res.energyLossPerM3 * 0.05).toFixed(3)}–${(res.energyLossPerM3 * 0.10).toFixed(3)} GJ/m³`}
+                        costRange={`${(res.lossPerM3 * 0.05).toFixed(2)}–${(res.lossPerM3 * 0.10).toFixed(2)} zł/m³`}
                         color="green"
                       />
                       
@@ -649,6 +661,8 @@ export default function MieszkancyPage() {
                         percentage="5–10%"
                         title="Rzeczywiste ΔT zimnej wody zimą większe niż w obliczeniach"
                         symptom="Zimna woda wchodzi z inną temperaturą niż założono"
+                        energyRange={`${(res.energyLossPerM3 * 0.05).toFixed(3)}–${(res.energyLossPerM3 * 0.10).toFixed(3)} GJ/m³`}
+                        costRange={`${(res.lossPerM3 * 0.05).toFixed(2)}–${(res.lossPerM3 * 0.10).toFixed(2)} zł/m³`}
                         color="emerald"
                       />
                     </div>
@@ -797,10 +811,12 @@ function Info({ label, value, formula, substitution, unitsNote }: { label: strin
   );
 }
 
-function LossItem({ percentage, title, symptom, color }: { 
+function LossItem({ percentage, title, symptom, energyRange, costRange, color }: { 
   percentage: string; 
   title: string; 
-  symptom: string; 
+  symptom: string;
+  energyRange?: string;
+  costRange?: string;
   color: string;
 }) {
   const colorClasses: Record<string, { bg: string; border: string; text: string; badge: string }> = {
@@ -823,9 +839,23 @@ function LossItem({ percentage, title, symptom, color }: {
         </span>
         <div className="flex-1">
           <h4 className={`font-semibold ${colors.text} mb-1`}>{title}</h4>
-          <p className="text-sm text-slate-600 dark:text-slate-400 italic">
+          <p className="text-sm text-slate-600 dark:text-slate-400 italic mb-2">
             <strong>Objaw:</strong> {symptom}
           </p>
+          {(energyRange || costRange) && (
+            <div className="text-xs text-slate-500 dark:text-slate-400 space-y-0.5 mt-2 bg-white/50 dark:bg-slate-800/50 p-2 rounded">
+              {energyRange && (
+                <div>
+                  <strong>Energia:</strong> {energyRange}
+                </div>
+              )}
+              {costRange && (
+                <div>
+                  <strong>Koszt:</strong> {costRange}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>
