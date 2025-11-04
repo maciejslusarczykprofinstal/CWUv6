@@ -488,7 +488,7 @@ export default function MieszkancyPage() {
                     unitsNote={"zł/m³ — koszt w złotych za 1 m³ wody (energia [GJ/m³] × cena [zł/GJ])."}
                   />
                   <Info 
-                    label="Energia do podgrzania" 
+                    label="TEORETYCZNA ENERGIA POTRZEBNA DO PODGRZANIA 1 m³ WODY" 
                     value={`${res.energyPerM3.toFixed(4)} GJ/m³`} 
                     formula={"E_{m^3} = 0{,}004186 \\times (T_{CWU} - T_{zimna})"}
                     substitution={inputs ? `= 0,004186 × (${inputs.hotTempC.toLocaleString('pl-PL', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} − ${inputs.coldTempC.toLocaleString('pl-PL', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}) = ${res.energyPerM3.toLocaleString('pl-PL', { minimumFractionDigits: 4, maximumFractionDigits: 4 })} GJ/m³` : undefined}
