@@ -202,7 +202,7 @@ export default function MieszkancyPage() {
                   </h3>
                 </div>
                 <div className="grid md:grid-cols-2 gap-6">
-                  <Field label="Cena CWU z rachunku" unit="zł/m³" numeric hint="Wpisz liczbę, np. 65.00">
+                  <Field label="Podgrzanie ciepłej wody" unit="zł/m³" numeric hint="Wpisz liczbę, np. 65.00">
                     <div className="relative">
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
                         <Calculator className="w-4 h-4" />
@@ -215,7 +215,7 @@ export default function MieszkancyPage() {
                         inputMode="decimal"
                         placeholder="np. 65.00"
                         defaultValue={65}
-                        aria-label="Cena CWU z rachunku w zł za metr sześcienny"
+                        aria-label="Podgrzanie ciepłej wody w zł za metr sześcienny"
                         className="w-full pl-10 pr-16 py-3 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500 text-lg font-semibold"
                         required
                       />
