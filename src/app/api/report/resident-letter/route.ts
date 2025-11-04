@@ -59,13 +59,17 @@ export async function GET(req: NextRequest) {
     }
 
     const bytes = await makeResidentLetterPDF(input, result);
-    // Podajemy ArrayBuffer bezpośrednio do Response (bez Blob) – stabilniej w Node
-    const ab = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
-    return new Response(ab, {
+    // Streamujemy odpowiedź, aby uniknąć problemów z długością/transportem
+    const stream = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(bytes);
+        controller.close();
+      },
+    });
+    return new Response(stream, {
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": "attachment; filename=pismo-do-zarzadcy.pdf",
-        "Content-Length": String(bytes.byteLength),
         "Cache-Control": "no-store",
       },
     });
@@ -92,12 +96,16 @@ export async function POST(req: NextRequest) {
 
     const { input, result } = payload || {};
     const bytes = await makeResidentLetterPDF(input, result);
-    const ab = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
-    return new Response(ab, {
+    const stream = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(bytes);
+        controller.close();
+      },
+    });
+    return new Response(stream, {
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": "attachment; filename=pismo-do-zarzadcy.pdf",
-        "Content-Length": String(bytes.byteLength),
         "Cache-Control": "no-store",
       },
     });

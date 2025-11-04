@@ -58,12 +58,17 @@ export async function GET(req: NextRequest) {
     }
 
     const bytes = await makeResidentBillPDF(input, result);
-    const ab = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
-    return new Response(ab, {
+    const stream = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(bytes);
+        controller.close();
+      },
+    });
+    return new Response(stream, {
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": "attachment; filename=raport-mieszkancy.pdf",
-        "Content-Length": String(bytes.byteLength),
+        // Bez Content-Length => pozwala na chunked encoding
         "Cache-Control": "no-store"
       },
     });
@@ -90,12 +95,16 @@ export async function POST(req: NextRequest) {
 
     const { input, result } = payload || {};
     const bytes = await makeResidentBillPDF(input, result);
-    const ab = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
-    return new Response(ab, {
+    const stream = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(bytes);
+        controller.close();
+      },
+    });
+    return new Response(stream, {
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": "attachment; filename=raport-mieszkancy.pdf",
-        "Content-Length": String(bytes.byteLength),
         "Cache-Control": "no-store",
       },
     });
