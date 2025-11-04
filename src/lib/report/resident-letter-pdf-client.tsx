@@ -1,24 +1,24 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Document, Page, Text, View, StyleSheet, Link, Font } from "@react-pdf/renderer";
 
-// Rejestracja fontów z polskimi znakami - używamy Google Fonts API z pełnym wsparciem Unicode
+// Rejestracja fontów z polskimi znakami - używamy GitHub CDN z fontami TTF dla @react-pdf
 Font.register({
   family: "Roboto",
   fonts: [
     {
-      src: "https://fonts.gstatic.com/s/roboto/v30/KFOlCnqEu92Fr1MmSU5fBBc4.woff2",
+      src: "https://github.com/google/fonts/raw/main/apache/roboto/static/Roboto-Light.ttf",
       fontWeight: 300,
     },
     {
-      src: "https://fonts.gstatic.com/s/roboto/v30/KFOmCnqEu92Fr1Mu4mxK.woff2",
+      src: "https://github.com/google/fonts/raw/main/apache/roboto/static/Roboto-Regular.ttf",
       fontWeight: 400,
     },
     {
-      src: "https://fonts.gstatic.com/s/roboto/v30/KFOlCnqEu92Fr1MmEU9fBBc4.woff2",
+      src: "https://github.com/google/fonts/raw/main/apache/roboto/static/Roboto-Medium.ttf",
       fontWeight: 500,
     },
     {
-      src: "https://fonts.gstatic.com/s/roboto/v30/KFOlCnqEu92Fr1MmWUlfBBc4.woff2",
+      src: "https://github.com/google/fonts/raw/main/apache/roboto/static/Roboto-Bold.ttf",
       fontWeight: 700,
     },
   ],
