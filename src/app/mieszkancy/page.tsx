@@ -222,7 +222,7 @@ export default function MieszkancyPage() {
                       <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 dark:text-slate-400 text-sm font-medium select-none">zł/m³</span>
                     </div>
                   </Field>
-                  <Field label="Zużycie CWU w miesiącu" unit="m³" numeric hint="Wpisz liczbę, np. 3.5">
+                  <Field label="Zużycie CWU w miesiącu" unit="m³" numeric hint="Wprowadź swoje zużycie z rachunku">
                     <div className="relative">
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
                         <Calculator className="w-4 h-4" />
