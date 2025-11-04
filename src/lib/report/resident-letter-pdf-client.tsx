@@ -1,9 +1,22 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Document, Page, Text, View, StyleSheet, Link } from "@react-pdf/renderer";
+import { Document, Page, Text, View, StyleSheet, Link, Font } from "@react-pdf/renderer";
 
-// Bez niestandardowych fontów - używamy domyślnych fontów @react-pdf z pełnym wsparciem Unicode
+// Rejestracja Noto Sans z pełnym wsparciem polskich znaków (ładowany z jsDelivr CDN)
+Font.register({
+  family: "Noto Sans",
+  fonts: [
+    {
+      src: "https://cdn.jsdelivr.net/npm/@fontsource/noto-sans@5.0.18/files/noto-sans-latin-400-normal.woff",
+    },
+    {
+      src: "https://cdn.jsdelivr.net/npm/@fontsource/noto-sans@5.0.18/files/noto-sans-latin-700-normal.woff",
+      fontWeight: 700,
+    },
+  ],
+});
+
 const styles = StyleSheet.create({
-  page: { padding: 48, fontSize: 12, lineHeight: 1.35 },
+  page: { padding: 48, fontSize: 12, lineHeight: 1.35, fontFamily: "Noto Sans" },
   header: { marginBottom: 18 },
   h1: { fontSize: 16, fontWeight: 700, marginBottom: 6 },
   small: { color: "#666" },
