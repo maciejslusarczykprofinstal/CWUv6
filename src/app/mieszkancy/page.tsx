@@ -245,6 +245,27 @@ export default function MieszkancyPage() {
                 </div>
               </div>
 
+              {/* Przycisk analizuj koszty i straty */}
+              <div className="pt-8">
+                <Button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full px-10 py-6 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-bold text-lg rounded-xl transition-all hover:scale-[1.02] shadow-xl shadow-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                >
+                  {loading ? (
+                    <div className="flex items-center gap-2">
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      Obliczanie...
+                    </div>
+                  ) : (
+                    <div className="text-center leading-tight">
+                      <div>OBLICZ SWOJE STRATY</div>
+                      <div>I POTENCJALNE OSZCZĘDNOŚCI</div>
+                    </div>
+                  )}
+                </Button>
+              </div>
+
               {/* Technical Parameters */}
               <div className="space-y-6 mt-8">
                 <div className="flex items-center gap-3 mb-6">
@@ -361,27 +382,6 @@ export default function MieszkancyPage() {
                     />
                   </Field>
                 </div>
-              </div>
-
-              {/* Przycisk analizuj koszty i straty */}
-              <div className="pt-8">
-                <Button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full px-10 py-6 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-bold text-lg rounded-xl transition-all hover:scale-[1.02] shadow-xl shadow-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-                >
-                  {loading ? (
-                    <div className="flex items-center gap-2">
-                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      Obliczanie...
-                    </div>
-                  ) : (
-                    <div className="text-center leading-tight">
-                      <div>OBLICZ SWOJE STRATY</div>
-                      <div>I POTENCJALNE OSZCZĘDNOŚCI</div>
-                    </div>
-                  )}
-                </Button>
               </div>
             </form>
           </CardContent>
