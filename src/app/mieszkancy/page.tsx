@@ -255,15 +255,13 @@ export default function MieszkancyPage() {
                     {loading ? (
                       <div className="flex items-center gap-2">
                         <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        Obliczanie...
-                      </div>
-                    ) : (
-                      "Analizuj koszty i straty"
-                    )}
-                  </Button>
-                </div>
-
-              {/* Technical Parameters */}
+                      Obliczanie...
+                    </div>
+                  ) : (
+                    "OBLICZ SWOJE STRATY I POTENCJALNE OSZCZĘDNOŚCI"
+                  )}
+                </Button>
+              </div>              {/* Technical Parameters */}
               <div className="space-y-6 mt-8">
                 <div className="flex items-center gap-3 mb-6">
                   <div className="w-1 h-8 bg-gradient-to-b from-emerald-500 to-green-500 rounded-full"></div>
