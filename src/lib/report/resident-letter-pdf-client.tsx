@@ -1,11 +1,23 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Document, Page, Text, View, StyleSheet, Link } from "@react-pdf/renderer";
+import { Document, Page, Text, View, StyleSheet, Link, Font } from "@react-pdf/renderer";
 
-// Używamy domyślnej czcionki Helvetica (wbudowana w @react-pdf/renderer)
-// bez żadnej rejestracji - ma wsparcie dla Unicode/polskich znaków
+// Rejestracja czcionki z Google Fonts API (base URL bez wersji - stabilne)
+Font.register({
+  family: "Roboto",
+  fonts: [
+    {
+      src: "https://fonts.gstatic.com/s/roboto/v30/KFOmCnqEu92Fr1Mu4mxK.woff2",
+      fontWeight: 400,
+    },
+    {
+      src: "https://fonts.gstatic.com/s/roboto/v30/KFOlCnqEu92Fr1MmWUlfBBc4.woff2",
+      fontWeight: 700,
+    },
+  ],
+});
 
 const styles = StyleSheet.create({
-  page: { padding: 48, fontSize: 11, lineHeight: 1.4 },
+  page: { padding: 48, fontSize: 12, lineHeight: 1.4, fontFamily: "Roboto" },
   header: { marginBottom: 18 },
   h1: { fontSize: 16, fontWeight: 700, marginBottom: 6 },
   h2: { fontSize: 14, fontWeight: 700, marginTop: 20, marginBottom: 10 },
