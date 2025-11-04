@@ -40,6 +40,7 @@ export default function MieszkancyPage() {
   const [res, setRes] = useState<Result | null>(null);
   const [loading, setLoading] = useState(false);
   const [inputs, setInputs] = useState<Inputs | null>(null);
+  const [showBreakdown, setShowBreakdown] = useState(false);
 
   async function generatePdfClient(docComponent: React.ReactElement, filename: string) {
     if (typeof window === "undefined") return;
@@ -525,12 +526,144 @@ export default function MieszkancyPage() {
             {/* Breakdown button */}
             <div className="flex justify-center">
               <Button 
-                onClick={() => alert('Funkcja w przygotowaniu')}
+                onClick={() => setShowBreakdown(!showBreakdown)}
                 className="px-12 py-8 text-xl font-bold bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white rounded-2xl shadow-2xl hover:shadow-3xl transition-all hover:scale-105"
               >
-                📊 Rozbicie strat na zakresy
+                📊 {showBreakdown ? 'Ukryj' : 'Pokaż'} rozbicie strat na zakresy
               </Button>
             </div>
+
+            {/* Breakdown Analysis */}
+            {showBreakdown && inputs && (
+              <Card className="backdrop-blur-sm bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-950/30 dark:to-green-950/30 border-2 border-emerald-200 dark:border-emerald-800 shadow-2xl">
+                <CardHeader>
+                  <CardTitle className="text-2xl text-emerald-800 dark:text-emerald-200 flex items-center gap-3">
+                    <div className="p-2 bg-gradient-to-br from-emerald-500 to-green-500 rounded-xl shadow-lg">
+                      <TrendingDown className="w-6 h-6 text-white" />
+                    </div>
+                    Szczegółowa analiza podziału strat energii
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-8">
+                  {/* Summary */}
+                  <div className="bg-white dark:bg-slate-900 rounded-xl p-6 shadow-lg border border-emerald-200 dark:border-emerald-800">
+                    <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200 mb-4">Podział energii na m³ CWU:</h3>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg">
+                        <span className="font-semibold text-blue-800 dark:text-blue-300">
+                          ✅ Ciepło faktycznie dostarczone do wody w kranie
+                        </span>
+                        <span className="text-xl font-bold text-blue-900 dark:text-blue-100">
+                          {res.energyPerM3.toFixed(3)} GJ/m³
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between p-4 bg-red-50 dark:bg-red-950/30 rounded-lg">
+                        <span className="font-semibold text-red-800 dark:text-red-300">
+                          ❌ Straty wewnątrz budynku (dystrybucja + cyrkulacja + inne)
+                        </span>
+                        <span className="text-xl font-bold text-red-900 dark:text-red-100">
+                          ~{res.energyLossPerM3.toFixed(3)} GJ/m³
+                        </span>
+                      </div>
+                    </div>
+                    
+                    {/* Percentages */}
+                    <div className="mt-6 p-5 bg-gradient-to-r from-slate-100 to-slate-50 dark:from-slate-800 dark:to-slate-900 rounded-xl border border-slate-300 dark:border-slate-700">
+                      <h4 className="font-bold text-slate-800 dark:text-slate-200 mb-3">Udziały procentowe:</h4>
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <div className="text-center p-4 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                          <div className="text-3xl font-bold text-blue-800 dark:text-blue-200">
+                            {((res.energyPerM3 / (res.energyPerM3 + res.energyLossPerM3)) * 100).toFixed(0)}%
+                          </div>
+                          <div className="text-sm text-blue-700 dark:text-blue-300 mt-1">Energia użyteczna</div>
+                        </div>
+                        <div className="text-center p-4 bg-red-100 dark:bg-red-900/30 rounded-lg">
+                          <div className="text-3xl font-bold text-red-800 dark:text-red-200">
+                            {((res.energyLossPerM3 / (res.energyPerM3 + res.energyLossPerM3)) * 100).toFixed(0)}%
+                          </div>
+                          <div className="text-sm text-red-700 dark:text-red-300 mt-1">Straty</div>
+                        </div>
+                      </div>
+                      <p className="text-center mt-4 text-slate-600 dark:text-slate-400 font-medium">
+                        ≈ {(res.energyLossPerM3 / res.energyPerM3).toFixed(1)}× ponad czystą teorię
+                      </p>
+                    </div>
+
+                    <div className="mt-6 p-4 bg-yellow-50 dark:bg-yellow-950/20 border-l-4 border-yellow-500 rounded">
+                      <p className="text-yellow-800 dark:text-yellow-300 font-medium">
+                        <strong>⚠️ To bardzo dużo!</strong> Typowo w blokach po modernizacji da się zejść do 0.22–0.35 GJ/m³ energii całkowitej (czyli straty 15–40%, nie {((res.energyLossPerM3 / (res.energyPerM3 + res.energyLossPerM3)) * 100).toFixed(0)}%).
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Where losses occur */}
+                  <div className="bg-white dark:bg-slate-900 rounded-xl p-6 shadow-lg border border-emerald-200 dark:border-emerald-800">
+                    <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200 mb-4">
+                      🔍 Gdzie najczęściej ginie te ~{res.energyLossPerM3.toFixed(2)} GJ/m³?
+                    </h3>
+                    
+                    <div className="space-y-4">
+                      <LossItem 
+                        percentage="30–50%"
+                        title="Cyrkulacja CWU (zbyt duży przepływ + zbyt małe ΔT na pętli)"
+                        symptom="Wysoka temp. powrotu (np. 52–55°C), brak 'schłodzenia' rurociągów"
+                        color="red"
+                      />
+                      
+                      <LossItem 
+                        percentage="10–25%"
+                        title="Słaba izolacja pionów/gałązek i węzła"
+                        symptom="Piwnice 'grzeją' za darmo"
+                        color="orange"
+                      />
+                      
+                      <LossItem 
+                        percentage="5–15%"
+                        title="Ciągła praca pomp 24/7 bez sterowania temp./nocą"
+                        symptom="Pompy pracują non-stop bez optymalizacji"
+                        color="amber"
+                      />
+                      
+                      <LossItem 
+                        percentage="5–15%"
+                        title="Zawory zwrotne nieszczelne/przewiązki → mieszanie CWU z zimną"
+                        symptom="'Pseudo-cyrkulacja' i mieszanie temperatur"
+                        color="yellow"
+                      />
+                      
+                      <LossItem 
+                        percentage="5–10%"
+                        title="Za wysoka nastawa mieszacza + antylegionella robiona 'za szeroko'"
+                        symptom="Temperatura 60–62°C non stop zamiast 55°C"
+                        color="lime"
+                      />
+                      
+                      <LossItem 
+                        percentage="5–10%"
+                        title="Brak równoważenia pętli cyrkulacyjnej"
+                        symptom="Część pętli przegrzana, część niedogrzana"
+                        color="green"
+                      />
+                      
+                      <LossItem 
+                        percentage="5–10%"
+                        title="Rzeczywiste ΔT zimnej wody zimą większe niż w obliczeniach"
+                        symptom="Zimna woda wchodzi z inną temperaturą niż założono"
+                        color="emerald"
+                      />
+                    </div>
+
+                    <div className="mt-6 p-4 bg-slate-100 dark:bg-slate-800 rounded-lg">
+                      <p className="text-sm text-slate-600 dark:text-slate-400 italic">
+                        <strong>Uwaga:</strong> Procenty są poglądowe i zależą od stanu technicznego instalacji. 
+                        W różnych budynkach dominują różne przyczyny strat. Suma nie zawsze wynosi dokładnie 100%, 
+                        ponieważ niektóre czynniki się nakładają lub występują jednocześnie.
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Energy Loss Analysis */}
             <Card className="backdrop-blur-sm bg-white/70 dark:bg-slate-900/70 border-0 shadow-xl">
@@ -664,4 +797,37 @@ function Info({ label, value, formula, substitution, unitsNote }: { label: strin
   );
 }
 
-// (brak dodatkowych helperów)
+function LossItem({ percentage, title, symptom, color }: { 
+  percentage: string; 
+  title: string; 
+  symptom: string; 
+  color: string;
+}) {
+  const colorClasses: Record<string, { bg: string; border: string; text: string; badge: string }> = {
+    red: { bg: 'bg-red-50 dark:bg-red-950/20', border: 'border-red-200 dark:border-red-800', text: 'text-red-800 dark:text-red-300', badge: 'bg-red-500 text-white' },
+    orange: { bg: 'bg-orange-50 dark:bg-orange-950/20', border: 'border-orange-200 dark:border-orange-800', text: 'text-orange-800 dark:text-orange-300', badge: 'bg-orange-500 text-white' },
+    amber: { bg: 'bg-amber-50 dark:bg-amber-950/20', border: 'border-amber-200 dark:border-amber-800', text: 'text-amber-800 dark:text-amber-300', badge: 'bg-amber-500 text-white' },
+    yellow: { bg: 'bg-yellow-50 dark:bg-yellow-950/20', border: 'border-yellow-200 dark:border-yellow-800', text: 'text-yellow-800 dark:text-yellow-300', badge: 'bg-yellow-500 text-white' },
+    lime: { bg: 'bg-lime-50 dark:bg-lime-950/20', border: 'border-lime-200 dark:border-lime-800', text: 'text-lime-800 dark:text-lime-300', badge: 'bg-lime-500 text-white' },
+    green: { bg: 'bg-green-50 dark:bg-green-950/20', border: 'border-green-200 dark:border-green-800', text: 'text-green-800 dark:text-green-300', badge: 'bg-green-500 text-white' },
+    emerald: { bg: 'bg-emerald-50 dark:bg-emerald-950/20', border: 'border-emerald-200 dark:border-emerald-800', text: 'text-emerald-800 dark:text-emerald-300', badge: 'bg-emerald-500 text-white' },
+  };
+  
+  const colors = colorClasses[color] || colorClasses.red;
+  
+  return (
+    <div className={`p-4 rounded-lg border ${colors.bg} ${colors.border}`}>
+      <div className="flex items-start gap-3">
+        <span className={`inline-block px-3 py-1 rounded-full text-sm font-bold ${colors.badge} shrink-0`}>
+          {percentage}
+        </span>
+        <div className="flex-1">
+          <h4 className={`font-semibold ${colors.text} mb-1`}>{title}</h4>
+          <p className="text-sm text-slate-600 dark:text-slate-400 italic">
+            <strong>Objaw:</strong> {symptom}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
