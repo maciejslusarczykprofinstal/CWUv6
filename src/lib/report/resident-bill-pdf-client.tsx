@@ -1,16 +1,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Document, Page, Text, View, StyleSheet, Link, Font } from "@react-pdf/renderer";
 
-// Rejestracja czcionki z Google Fonts API (base URL bez wersji - stabilne)
+// Rejestracja czcionki Roboto z lokalnych plików (TTF z pełnym wsparciem polskich znaków)
 Font.register({
   family: "Roboto",
   fonts: [
     {
-      src: "https://fonts.gstatic.com/s/roboto/v30/KFOmCnqEu92Fr1Mu4mxK.woff2",
+      src: "/fonts/Roboto-Regular.ttf",
       fontWeight: 400,
     },
     {
-      src: "https://fonts.gstatic.com/s/roboto/v30/KFOlCnqEu92Fr1MmWUlfBBc4.woff2",
+      src: "/fonts/Roboto-Bold.ttf",
       fontWeight: 700,
     },
   ],
