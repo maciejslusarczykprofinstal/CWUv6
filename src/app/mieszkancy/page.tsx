@@ -41,18 +41,13 @@ export default function MieszkancyPage() {
   const [loading, setLoading] = useState(false);
   const [inputs, setInputs] = useState<Inputs | null>(null);
 
-  async function openPdf(url: string, filename = "dokument.pdf", payload?: unknown) {
+  async function generatePdfClient(docComponent: React.ReactElement, filename: string) {
     if (typeof window === "undefined") return;
     try {
-      const res = await fetch(url, {
-        cache: "no-store",
-        method: payload ? "POST" : "GET",
-        headers: payload ? { "Content-Type": "application/json" } : undefined,
-        body: payload ? JSON.stringify(payload) : undefined,
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const ab = await res.arrayBuffer();
-      const blob = new Blob([ab], { type: "application/pdf" });
+      // Dynamiczny import @react-pdf/renderer po stronie klienta
+      const { pdf } = await import("@react-pdf/renderer");
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const blob = await pdf(docComponent as any).toBlob();
       const objectUrl = URL.createObjectURL(blob);
       // Spróbuj otworzyć w nowej karcie
       const w = window.open(objectUrl, "_blank");
@@ -65,23 +60,25 @@ export default function MieszkancyPage() {
         a.click();
         a.remove();
       }
-      // Sprzątanie po chwili (dać viewerowi czas na wczytanie)
+      // Sprzątanie po chwili
       setTimeout(() => URL.revokeObjectURL(objectUrl), 10_000);
     } catch (e) {
-      alert(`Nie udało się otworzyć PDF: ${String(e)}`);
+      alert(`Nie udało się wygenerować PDF: ${String(e)}`);
     }
   }
 
-  function onDownloadReport() {
+  async function onDownloadReport() {
     if (!res || !inputs) return;
-    const payload = { input: inputs, result: res } as const;
-    void openPdf(`/api/report/resident`, "raport-mieszkancy.pdf", payload);
+    const { ResidentBillPDFDocument } = await import("@/lib/report/resident-bill-pdf-client");
+    const doc = <ResidentBillPDFDocument input={inputs} result={res} />;
+    void generatePdfClient(doc, "raport-mieszkancy.pdf");
   }
 
-  function onDownloadLetter() {
+  async function onDownloadLetter() {
     if (!res || !inputs) return;
-    const payload = { input: inputs, result: res } as const;
-    void openPdf(`/api/report/resident-letter`, "pismo-do-zarzadcy.pdf", payload);
+    const { ResidentLetterPDFDocument } = await import("@/lib/report/resident-letter-pdf-client");
+    const doc = <ResidentLetterPDFDocument input={inputs} result={res} />;
+    void generatePdfClient(doc, "pismo-do-zarzadcy.pdf");
   }
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
