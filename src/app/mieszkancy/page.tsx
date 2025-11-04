@@ -390,21 +390,6 @@ export default function MieszkancyPage() {
         {/* Results */}
         {res && (
           <div className="space-y-8">
-            {/* Action bar */}
-            <div className="flex flex-col md:flex-row items-stretch md:items-center justify-center gap-4">
-              <Button 
-                onClick={onDownloadReport} 
-                className="px-8 py-6 text-lg font-bold bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all hover:scale-105"
-              >
-                📄 Pobierz raport PDF
-              </Button>
-              <Button 
-                onClick={onDownloadLetter} 
-                className="px-8 py-6 text-lg font-bold bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all hover:scale-105"
-              >
-                ✉️ Pismo do Zarządcy (PDF)
-              </Button>
-            </div>
             <div className="text-center space-y-4">
               <h2 className="text-3xl font-bold text-slate-800 dark:text-slate-200">
                 Analiza strat na przesyle CWU
@@ -520,6 +505,22 @@ export default function MieszkancyPage() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Action bar - PDF buttons */}
+            <div className="flex flex-col md:flex-row items-stretch md:items-center justify-center gap-4">
+              <Button 
+                onClick={onDownloadReport} 
+                className="px-8 py-6 text-lg font-bold bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all hover:scale-105"
+              >
+                📄 Pobierz raport PDF
+              </Button>
+              <Button 
+                onClick={onDownloadLetter} 
+                className="px-8 py-6 text-lg font-bold bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all hover:scale-105"
+              >
+                ✉️ Pismo do Zarządcy (PDF)
+              </Button>
+            </div>
 
             {/* Energy Loss Analysis */}
             <Card className="backdrop-blur-sm bg-white/70 dark:bg-slate-900/70 border-0 shadow-xl">
