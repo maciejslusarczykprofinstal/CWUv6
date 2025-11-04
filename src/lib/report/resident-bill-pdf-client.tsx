@@ -1,8 +1,31 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Document, Page, Text, View, StyleSheet, Link } from "@react-pdf/renderer";
+import { Document, Page, Text, View, StyleSheet, Link, Font } from "@react-pdf/renderer";
+
+// Rejestracja fontów z polskimi znakami
+Font.register({
+  family: "Roboto",
+  fonts: [
+    {
+      src: "https://cdnjs.cloudflare.com/ajax/libs/ink/3.1.10/fonts/Roboto/roboto-light-webfont.ttf",
+      fontWeight: 300,
+    },
+    {
+      src: "https://cdnjs.cloudflare.com/ajax/libs/ink/3.1.10/fonts/Roboto/roboto-regular-webfont.ttf",
+      fontWeight: 400,
+    },
+    {
+      src: "https://cdnjs.cloudflare.com/ajax/libs/ink/3.1.10/fonts/Roboto/roboto-medium-webfont.ttf",
+      fontWeight: 500,
+    },
+    {
+      src: "https://cdnjs.cloudflare.com/ajax/libs/ink/3.1.10/fonts/Roboto/roboto-bold-webfont.ttf",
+      fontWeight: 700,
+    },
+  ],
+});
 
 const styles = StyleSheet.create({
-  page: { padding: 36, fontSize: 11 },
+  page: { padding: 36, fontSize: 11, fontFamily: "Roboto" },
   h1: { fontSize: 16, fontWeight: 700, marginBottom: 8 },
   h2: { fontSize: 13, fontWeight: 600, marginTop: 14, marginBottom: 6 },
   row: { marginBottom: 4 },
