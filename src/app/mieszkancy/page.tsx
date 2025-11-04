@@ -202,7 +202,7 @@ export default function MieszkancyPage() {
                   </h3>
                 </div>
                 <div className="grid md:grid-cols-2 gap-6">
-                  <Field label="Podgrzanie ciepłej wody" unit="zł/m³" numeric hint="Wpisz liczbę, np. 65.00">
+                  <Field label="Podgrzanie ciepłej wody" unit="zł/m³" numeric hint="Przepisz wartość z rachunku">
                     <div className="relative">
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
                         <Calculator className="w-4 h-4" />
