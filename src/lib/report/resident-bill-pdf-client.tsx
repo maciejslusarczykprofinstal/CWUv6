@@ -55,7 +55,7 @@ export function ResidentBillPDFDocument({
         <View style={styles.brandRow}>
           <View style={styles.brandLeft}>
             <Image 
-              src="https://avatars.githubusercontent.com/u/maciejslusarczykprofinstal" 
+              src="/logo.png" 
               style={styles.logo}
             />
             <Text style={styles.brand}>PROFINSTAL</Text>
