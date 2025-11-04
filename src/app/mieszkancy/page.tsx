@@ -481,7 +481,7 @@ export default function MieszkancyPage() {
               <CardContent>
                 <div className="grid md:grid-cols-3 gap-6">
                   <Info 
-                    label="Koszt teoretyczny za m³" 
+                    label="Koszt teoretyczny za podgrzanie 1 m³ ciepłej wody" 
                     value={`${res.theoreticalCostPerM3.toFixed(2)} zł/m³`} 
                     formula={"C_{teor,m^3} = E_{m^3} \\times C_{GJ}"}
                     substitution={inputs ? `= ${res.energyPerM3.toLocaleString('pl-PL', { minimumFractionDigits: 4, maximumFractionDigits: 4 })} × ${inputs.heatPriceFromCity.toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} = ${res.theoreticalCostPerM3.toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} zł/m³` : undefined}
