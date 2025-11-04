@@ -153,7 +153,7 @@ export default function MieszkancyPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30 dark:from-slate-950 dark:via-slate-900 dark:to-blue-950/30">
+    <div className="min-h-screen bg-gradient-to-br from-slate-100 via-slate-50 to-blue-100/50 dark:from-slate-950 dark:via-slate-900 dark:to-blue-950/30">
       <div className="max-w-6xl mx-auto px-4 py-12 space-y-12">
         {/* Hero Section */}
         <div className="text-center space-y-6 mb-16">
