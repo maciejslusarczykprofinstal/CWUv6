@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Document, Page, Text, View, StyleSheet, Link, Font } from "@react-pdf/renderer";
+import { Document, Page, Text, View, StyleSheet, Link, Font, Image } from "@react-pdf/renderer";
 
 // Rejestracja czcionki Roboto z lokalnych plików (TTF z pełnym wsparciem polskich znaków)
 Font.register({
@@ -27,6 +27,8 @@ const styles = StyleSheet.create({
   brandRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 },
   brand: { fontSize: 16, fontWeight: 700 },
   site: { fontSize: 11, color: "#1d4ed8", textDecoration: "none" },
+  logo: { width: 40, height: 40, marginRight: 8 },
+  brandLeft: { flexDirection: "row", alignItems: "center" },
 });
 
 function n(v: unknown, d = 2) {
@@ -51,7 +53,13 @@ export function ResidentBillPDFDocument({
       <Page size="A4" style={styles.page}>
         {/* Branding */}
         <View style={styles.brandRow}>
-          <Text style={styles.brand}>PROFINSTAL</Text>
+          <View style={styles.brandLeft}>
+            <Image 
+              src="https://avatars.githubusercontent.com/u/maciejslusarczykprofinstal" 
+              style={styles.logo}
+            />
+            <Text style={styles.brand}>PROFINSTAL</Text>
+          </View>
           <Link src="https://profinstal.info" style={styles.site}>
             profinstal.info
           </Link>
