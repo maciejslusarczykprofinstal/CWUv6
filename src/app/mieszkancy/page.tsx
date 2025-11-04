@@ -264,7 +264,7 @@ export default function MieszkancyPage() {
                       required
                     />
                   </Field>
-                  <Field label="Temperatura CWU" unit="°C">
+                  <Field label="Temperatura CWU" unit="°C" hint="Zgodnie z Rozporządzeniem Ministra Infrastruktury z dnia 12 kwietnia 2002 r. w sprawie warunków technicznych, jakim powinny odpowiadać budynki i ich usytuowanie (WT)">
                     <input
                       name="hotTempC"
                       type="number"
