@@ -44,3 +44,35 @@ export async function GET(req: NextRequest) {
     });
   }
 }
+
+export async function POST(req: NextRequest) {
+  try {
+    type Payload = { input?: unknown; result?: unknown };
+    let payload: Payload;
+    try {
+      payload = (await req.json()) as Payload;
+    } catch {
+      return new Response(JSON.stringify({ ok: false, error: "Invalid JSON" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    const { input, result } = payload || {};
+    const bytes = await makeResidentLetterPDF(input, result);
+    const ab = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
+    return new Response(ab, {
+      headers: {
+        "Content-Type": "application/pdf",
+        "Content-Disposition": "attachment; filename=pismo-do-zarzadcy.pdf",
+        "Content-Length": String(bytes.byteLength),
+        "Cache-Control": "no-store",
+      },
+    });
+  } catch (e) {
+    return new Response(JSON.stringify({ ok: false, error: String(e) }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+}

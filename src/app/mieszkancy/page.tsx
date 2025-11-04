@@ -41,10 +41,15 @@ export default function MieszkancyPage() {
   const [loading, setLoading] = useState(false);
   const [inputs, setInputs] = useState<Inputs | null>(null);
 
-  async function openPdf(url: string, filename = "dokument.pdf") {
+  async function openPdf(url: string, filename = "dokument.pdf", payload?: unknown) {
     if (typeof window === "undefined") return;
     try {
-      const res = await fetch(url, { cache: "no-store" });
+      const res = await fetch(url, {
+        cache: "no-store",
+        method: payload ? "POST" : "GET",
+        headers: payload ? { "Content-Type": "application/json" } : undefined,
+        body: payload ? JSON.stringify(payload) : undefined,
+      });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const ab = await res.arrayBuffer();
       const blob = new Blob([ab], { type: "application/pdf" });
@@ -69,14 +74,14 @@ export default function MieszkancyPage() {
 
   function onDownloadReport() {
     if (!res || !inputs) return;
-    const data = encodeURIComponent(JSON.stringify({ input: inputs, result: res }));
-    void openPdf(`/api/report/resident?data=${data}`, "raport-mieszkancy.pdf");
+    const payload = { input: inputs, result: res } as const;
+    void openPdf(`/api/report/resident`, "raport-mieszkancy.pdf", payload);
   }
 
   function onDownloadLetter() {
     if (!res || !inputs) return;
-    const data = encodeURIComponent(JSON.stringify({ input: inputs, result: res }));
-    void openPdf(`/api/report/resident-letter?data=${data}`, "pismo-do-zarzadcy.pdf");
+    const payload = { input: inputs, result: res } as const;
+    void openPdf(`/api/report/resident-letter`, "pismo-do-zarzadcy.pdf", payload);
   }
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
