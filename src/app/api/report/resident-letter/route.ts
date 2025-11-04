@@ -3,6 +3,7 @@ import { makeResidentLetterPDF } from "@/lib/report/resident-letter-pdf";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const maxDuration = 60; // Zwiększ timeout do 60s (Vercel Pro)
 
 export async function GET(req: NextRequest) {
   try {
