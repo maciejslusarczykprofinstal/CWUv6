@@ -522,6 +522,16 @@ export default function MieszkancyPage() {
               </Button>
             </div>
 
+            {/* Breakdown button */}
+            <div className="flex justify-center">
+              <Button 
+                onClick={() => alert('Funkcja w przygotowaniu')}
+                className="px-12 py-8 text-xl font-bold bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white rounded-2xl shadow-2xl hover:shadow-3xl transition-all hover:scale-105"
+              >
+                📊 Rozbicie strat na zakresy
+              </Button>
+            </div>
+
             {/* Energy Loss Analysis */}
             <Card className="backdrop-blur-sm bg-white/70 dark:bg-slate-900/70 border-0 shadow-xl">
               <CardHeader>
