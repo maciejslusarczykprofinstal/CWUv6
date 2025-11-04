@@ -1,31 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Document, Page, Text, View, StyleSheet, Link, Font } from "@react-pdf/renderer";
+import { Document, Page, Text, View, StyleSheet, Link } from "@react-pdf/renderer";
 
-// Rejestracja fontów z polskimi znakami - używamy GitHub CDN z fontami TTF dla @react-pdf
-Font.register({
-  family: "Roboto",
-  fonts: [
-    {
-      src: "https://github.com/google/fonts/raw/main/apache/roboto/static/Roboto-Light.ttf",
-      fontWeight: 300,
-    },
-    {
-      src: "https://github.com/google/fonts/raw/main/apache/roboto/static/Roboto-Regular.ttf",
-      fontWeight: 400,
-    },
-    {
-      src: "https://github.com/google/fonts/raw/main/apache/roboto/static/Roboto-Medium.ttf",
-      fontWeight: 500,
-    },
-    {
-      src: "https://github.com/google/fonts/raw/main/apache/roboto/static/Roboto-Bold.ttf",
-      fontWeight: 700,
-    },
-  ],
-});
-
+// Bez niestandardowych fontów - używamy domyślnych fontów @react-pdf z pełnym wsparciem Unicode
 const styles = StyleSheet.create({
-  page: { padding: 48, fontSize: 12, lineHeight: 1.35, fontFamily: "Roboto" },
+  page: { padding: 48, fontSize: 12, lineHeight: 1.35 },
   header: { marginBottom: 18 },
   h1: { fontSize: 16, fontWeight: 700, marginBottom: 6 },
   small: { color: "#666" },
