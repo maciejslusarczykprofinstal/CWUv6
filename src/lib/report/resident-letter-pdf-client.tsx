@@ -464,6 +464,9 @@ export function ResidentLetterPDFDocument({
           <Text style={[styles.small, { textAlign: "center" }]}>
             Data wygenerowania: {createdAt.toLocaleString("pl-PL")}
           </Text>
+          <Text style={[styles.small, { marginTop: 12, textAlign: "center", fontWeight: 600 }]}>
+            © 2025 PROF INSTAL Maciej Ślusarczyk. Wszelkie prawa zastrzeżone.
+          </Text>
         </View>
       </Page>
     </Document>

@@ -109,6 +109,12 @@ export function ResidentBillPDFDocument({
             • Raport wygenerowano automatycznie na podstawie wprowadzonych danych.
           </Text>
         </View>
+
+        <View style={{ marginTop: 24, paddingTop: 12, borderTop: "1px solid #ddd" }}>
+          <Text style={{ fontSize: 9, color: "#666", textAlign: "center" }}>
+            © 2025 PROF INSTAL Maciej Ślusarczyk. Wszelkie prawa zastrzeżone.
+          </Text>
+        </View>
       </Page>
     </Document>
   );
