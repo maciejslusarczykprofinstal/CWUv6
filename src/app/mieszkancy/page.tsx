@@ -233,8 +233,8 @@ export default function MieszkancyPage() {
                         step="0.1"
                         min="0"
                         inputMode="decimal"
-                        placeholder="np. 3.5"
-                        defaultValue={3.5}
+                        placeholder="np. 8.6"
+                        defaultValue={8.6}
                         aria-label="Zużycie CWU w metrach sześciennych na miesiąc"
                         className="w-full pl-10 pr-12 py-3 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500 text-lg font-semibold"
                         required
@@ -295,12 +295,12 @@ export default function MieszkancyPage() {
                       required
                     />
                   </Field>
-                  <Field label="Cena ciepła od miasta" unit="zł/GJ">
+                  <Field label="Cena ciepła od miasta" unit="zł/GJ" hint="Źródło: https://www.mpec.krakow.pl/taryfy-i-cenniki">
                     <input
                       name="heatPriceFromCity"
                       type="number"
                       step="0.01"
-                      defaultValue={82.13}
+                      defaultValue={90}
                       className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
                       required
                     />
