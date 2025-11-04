@@ -254,12 +254,12 @@ export default function MieszkancyPage() {
                   </h3>
                 </div>
                 <div className="grid md:grid-cols-3 gap-6">
-                  <Field label="Temperatura zimnej wody" unit="°C">
+                  <Field label="Temperatura zimnej wody" unit="°C" hint="zgodnie z PN-92/B-01706 oraz PN-EN 15316-3-1">
                     <input
                       name="coldTempC"
                       type="number"
                       step="0.1"
-                      defaultValue={8}
+                      defaultValue={10}
                       className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
                       required
                     />
