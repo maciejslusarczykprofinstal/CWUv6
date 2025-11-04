@@ -1,22 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Document, Page, Text, View, StyleSheet, Link, Font } from "@react-pdf/renderer";
+import { Document, Page, Text, View, StyleSheet, Link } from "@react-pdf/renderer";
 
-// Rejestracja Noto Sans z pełnym wsparciem polskich znaków (ładowany z jsDelivr CDN)
-Font.register({
-  family: "Noto Sans",
-  fonts: [
-    {
-      src: "https://cdn.jsdelivr.net/npm/@fontsource/noto-sans@5.0.18/files/noto-sans-latin-400-normal.woff",
-    },
-    {
-      src: "https://cdn.jsdelivr.net/npm/@fontsource/noto-sans@5.0.18/files/noto-sans-latin-700-normal.woff",
-      fontWeight: 700,
-    },
-  ],
-});
+// Używamy domyślnej czcionki Helvetica (wbudowana w @react-pdf/renderer)
+// bez żadnej rejestracji - ma wsparcie dla Unicode/polskich znaków
 
 const styles = StyleSheet.create({
-  page: { padding: 36, fontSize: 11, fontFamily: "Noto Sans" },
+  page: { padding: 36, fontSize: 11 },
   h1: { fontSize: 16, fontWeight: 700, marginBottom: 8 },
   h2: { fontSize: 13, fontWeight: 600, marginTop: 14, marginBottom: 6 },
   row: { marginBottom: 4 },
