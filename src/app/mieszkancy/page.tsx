@@ -593,7 +593,7 @@ function Field({ label, unit, children, optional = false, numeric = false, hint 
         {optional && <span className="text-slate-400 dark:text-slate-500 font-normal ml-2">(opcjonalne)</span>}
         {numeric && (
           <span className="ml-2 inline-flex items-center rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-200 px-2 py-0.5 text-[10px] font-semibold tracking-wide">
-            LICZBA
+            WARTOŚĆ Z RACHUNKU
           </span>
         )}
       </label>
