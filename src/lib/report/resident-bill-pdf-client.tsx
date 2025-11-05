@@ -140,6 +140,46 @@ export function ResidentBillPDFDocument({
           <Text style={styles.row}>Strata finansowa (rok): {n(r.yearlyFinancialLoss)} zł/rok</Text>
         </View>
 
+        {/* Szczegółowy podział strat na zakresy */}
+        <Section title="Szczegółowy podział strat (zakresy i komentarz)" />
+        <View>
+          {(() => {
+            const baseLossGJpm3 = Math.max(Number(r.energyLossPerM3) || 0, 0);
+            const baseLossPLNpm3 = Math.max(Number(r.lossPerM3) || 0, 0);
+            const fmtGJ = (x: number) => `${x.toFixed(3)} GJ/m³`;
+            const fmtPLN = (x: number) => `${x.toFixed(2)} zł/m³`;
+            const Row = ({ name, min, max }: { name: string; min: number; max: number }) => (
+              <View style={{ flexDirection: "row", borderBottom: "1px solid #eee", paddingVertical: 4 }}>
+                <Text style={{ flex: 2 }}>{name}</Text>
+                <Text style={{ flex: 1 }}>{Math.round(min * 100)}–{Math.round(max * 100)}%</Text>
+                <Text style={{ flex: 1 }}>{fmtGJ(baseLossGJpm3 * min)}–{fmtGJ(baseLossGJpm3 * max)}</Text>
+                <Text style={{ flex: 1 }}>{fmtPLN(baseLossPLNpm3 * min)}–{fmtPLN(baseLossPLNpm3 * max)}</Text>
+              </View>
+            );
+            return (
+              <View style={{ border: "1px solid #ddd", marginTop: 6 }}>
+                <View style={{ flexDirection: "row", backgroundColor: "#f5f5f5", padding: 6, borderBottom: "1px solid #ddd" }}>
+                  <Text style={{ flex: 2, fontWeight: 700 }}>Obszar/Przyczyna</Text>
+                  <Text style={{ flex: 1, fontWeight: 700 }}>Udział [%]</Text>
+                  <Text style={{ flex: 1, fontWeight: 700 }}>Energia</Text>
+                  <Text style={{ flex: 1, fontWeight: 700 }}>Koszt</Text>
+                </View>
+                <Row name="Cyrkulacja (wysokie przepływy, małe ΔT)" min={0.30} max={0.50} />
+                <Row name="Słaba izolacja pionów/gałązek i węzła" min={0.10} max={0.25} />
+                <Row name="Ciągła praca pomp 24/7" min={0.05} max={0.15} />
+                <Row name="Nieszczelne zawory / przewiązki (mieszanie)" min={0.05} max={0.15} />
+                <Row name="Za wysoka nastawa + antylegionella 'za szeroko'" min={0.05} max={0.10} />
+                <Row name="Brak równoważenia pętli cyrkulacyjnych" min={0.05} max={0.10} />
+                <Row name="Wyższe rzeczywiste ΔT zimą" min={0.05} max={0.10} />
+              </View>
+            );
+          })()}
+          <Text style={[styles.small, { marginTop: 6 }]}>
+            Uwaga: Suma udziałów nie musi równać się 100%, zjawiska mogą się nakładać. Zakresy są
+            poglądowe i wymagają potwierdzenia pomiarami dla konkretnego budynku.
+          </Text>
+        </View>
+
         <Section title="5. Interpretacja i komentarz ekspercki" />
         <View>
           <Text style={styles.row}>

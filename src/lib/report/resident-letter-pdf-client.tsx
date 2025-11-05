@@ -75,17 +75,6 @@ export function ResidentLetterPDFDocument({
   const residentEmail = (i.residentEmail as string) || "";
   const residentPhone = (i.residentPhone as string) || "";
 
-  // Bezpieczne podstawy do rozbicia strat na zakresy
-  const baseLossGJpm3 = Math.max(Number(r.energyLossPerM3) || 0, 0);
-  const baseLossPLNpm3 = Math.max(Number(r.lossPerM3) || 0, 0);
-
-  const fmtRange = (min: number, max: number, unit: "GJ" | "PLN") => {
-    if (unit === "GJ") {
-      return `${min.toFixed(3)}–${max.toFixed(3)} GJ/m³`;
-    }
-    return `${min.toFixed(2)}–${max.toFixed(2)} zł/m³`;
-  };
-
   return (
     <Document>
       <Page size="A4" style={styles.page}>
@@ -253,104 +242,6 @@ export function ResidentLetterPDFDocument({
           Część różnicy może wynikać z narzutu administracyjnego, konserwacyjnego lub opłat za
           utrzymanie węzła. Wysokość takiej marży powinna być transparentna i uzasadniona kosztami
           rzeczywistymi.
-        </Text>
-
-        <Text style={styles.h3}>4.5. Szczegółowy podział strat (zakresy i komentarz)</Text>
-        <Text style={styles.para}>
-          Poniżej przedstawiono rozbicie potencjalnych strat na najczęściej spotykane obszary wraz
-          z typowym zakresem udziału i przeliczeniem na energię oraz koszt dla 1 m³ CWU. Zakresy
-          mają charakter poglądowy i zależą od stanu technicznego instalacji oraz sposobu eksploatacji.
-        </Text>
-
-        <View style={styles.table}>
-          <View style={styles.tableRow}>
-            <Text style={styles.tableCellBold}>Obszar/Przyczyna</Text>
-            <Text style={styles.tableCellBold}>Udział [%]</Text>
-            <Text style={styles.tableCellBold}>Energia [GJ/m³]</Text>
-            <Text style={styles.tableCellBold}>Koszt [zł/m³]</Text>
-          </View>
-          {/* Cyrkulacja 30–50% */}
-          <View style={styles.tableRow}>
-            <Text style={styles.tableCell}>Cyrkulacja CWU (zbyt duży przepływ, małe ΔT)</Text>
-            <Text style={styles.tableCell}>30–50%</Text>
-            <Text style={styles.tableCell}>
-              {fmtRange(baseLossGJpm3 * 0.30, baseLossGJpm3 * 0.50, "GJ")}
-            </Text>
-            <Text style={styles.tableCell}>
-              {fmtRange(baseLossPLNpm3 * 0.30, baseLossPLNpm3 * 0.50, "PLN")}
-            </Text>
-          </View>
-          {/* Izolacja 10–25% */}
-          <View style={styles.tableRow}>
-            <Text style={styles.tableCell}>Słaba izolacja pionów/gałązek i węzła</Text>
-            <Text style={styles.tableCell}>10–25%</Text>
-            <Text style={styles.tableCell}>
-              {fmtRange(baseLossGJpm3 * 0.10, baseLossGJpm3 * 0.25, "GJ")}
-            </Text>
-            <Text style={styles.tableCell}>
-              {fmtRange(baseLossPLNpm3 * 0.10, baseLossPLNpm3 * 0.25, "PLN")}
-            </Text>
-          </View>
-          {/* Pompy 5–15% */}
-          <View style={styles.tableRow}>
-            <Text style={styles.tableCell}>Ciągła praca pomp 24/7 bez sterowania</Text>
-            <Text style={styles.tableCell}>5–15%</Text>
-            <Text style={styles.tableCell}>
-              {fmtRange(baseLossGJpm3 * 0.05, baseLossGJpm3 * 0.15, "GJ")}
-            </Text>
-            <Text style={styles.tableCell}>
-              {fmtRange(baseLossPLNpm3 * 0.05, baseLossPLNpm3 * 0.15, "PLN")}
-            </Text>
-          </View>
-          {/* Zawory 5–15% */}
-          <View style={styles.tableRow}>
-            <Text style={styles.tableCell}>Zawory zwrotne nieszczelne / przewiązki (mieszanie)</Text>
-            <Text style={styles.tableCell}>5–15%</Text>
-            <Text style={styles.tableCell}>
-              {fmtRange(baseLossGJpm3 * 0.05, baseLossGJpm3 * 0.15, "GJ")}
-            </Text>
-            <Text style={styles.tableCell}>
-              {fmtRange(baseLossPLNpm3 * 0.05, baseLossPLNpm3 * 0.15, "PLN")}
-            </Text>
-          </View>
-          {/* Nastawy 5–10% */}
-          <View style={styles.tableRow}>
-            <Text style={styles.tableCell}>Za wysoka nastawa + antylegionella „za szeroko”</Text>
-            <Text style={styles.tableCell}>5–10%</Text>
-            <Text style={styles.tableCell}>
-              {fmtRange(baseLossGJpm3 * 0.05, baseLossGJpm3 * 0.10, "GJ")}
-            </Text>
-            <Text style={styles.tableCell}>
-              {fmtRange(baseLossPLNpm3 * 0.05, baseLossPLNpm3 * 0.10, "PLN")}
-            </Text>
-          </View>
-          {/* Równoważenie 5–10% */}
-          <View style={styles.tableRow}>
-            <Text style={styles.tableCell}>Brak równoważenia pętli cyrkulacyjnej</Text>
-            <Text style={styles.tableCell}>5–10%</Text>
-            <Text style={styles.tableCell}>
-              {fmtRange(baseLossGJpm3 * 0.05, baseLossGJpm3 * 0.10, "GJ")}
-            </Text>
-            <Text style={styles.tableCell}>
-              {fmtRange(baseLossPLNpm3 * 0.05, baseLossPLNpm3 * 0.10, "PLN")}
-            </Text>
-          </View>
-          {/* ΔT zimnej wody 5–10% */}
-          <View style={styles.tableRow}>
-            <Text style={styles.tableCell}>Wyższe rzeczywiste ΔT zimą (zimna woda zimniejsza)</Text>
-            <Text style={styles.tableCell}>5–10%</Text>
-            <Text style={styles.tableCell}>
-              {fmtRange(baseLossGJpm3 * 0.05, baseLossGJpm3 * 0.10, "GJ")}
-            </Text>
-            <Text style={styles.tableCell}>
-              {fmtRange(baseLossPLNpm3 * 0.05, baseLossPLNpm3 * 0.10, "PLN")}
-            </Text>
-          </View>
-        </View>
-
-        <Text style={styles.small}>
-          Uwaga: Suma udziałów nie musi równać się 100%, ponieważ zjawiska mogą się nakładać. Zakresy są
-          poglądowe i wymagają potwierdzenia pomiarami dla konkretnego budynku.
         </Text>
 
         {/* Przejście na drugą stronę */}
