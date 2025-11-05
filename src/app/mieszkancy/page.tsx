@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useState, useEffect, type ReactNode } from "react";
 import { Home, Calculator, TrendingDown, Info as InfoIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -38,9 +38,60 @@ type Inputs = {
 
 export default function MieszkancyPage() {
   const [res, setRes] = useState<Result | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [inputs, setInputs] = useState<Inputs | null>(null);
+  const [inputs, setInputs] = useState<Inputs>({
+    cwuPriceFromBill: 65,
+    monthlyConsumption: 8.6,
+    coldTempC: 10,
+    hotTempC: 55,
+    heatPriceFromCity: 90,
+  });
   const [showBreakdown, setShowBreakdown] = useState(false);
+
+  // Automatyczna kalkulacja przy zmianie inputów
+  function calculateResults(inp: Inputs) {
+    try {
+      const deltaT = inp.hotTempC - inp.coldTempC; // K
+      const energyPerM3 = 0.004186 * deltaT; // GJ/m³
+      const theoreticalCostPerM3 = energyPerM3 * inp.heatPriceFromCity; // zł/m³
+      const lossPerM3 = inp.cwuPriceFromBill - theoreticalCostPerM3; // zł/m³
+      const energyLossPerM3 = lossPerM3 / inp.heatPriceFromCity; // GJ/m³
+
+      const monthlyFinancialLoss = lossPerM3 * inp.monthlyConsumption; // zł/miesiąc
+      const monthlyEnergyLoss = energyLossPerM3 * inp.monthlyConsumption; // GJ/miesiąc
+      const yearlyFinancialLoss = monthlyFinancialLoss * 12; // zł/rok
+      const yearlyEnergyLoss = monthlyEnergyLoss * 12; // GJ/rok
+
+      const theoreticalMonthlyPayment = theoreticalCostPerM3 * inp.monthlyConsumption;
+      const actualMonthlyPayment = inp.cwuPriceFromBill * inp.monthlyConsumption;
+
+      const result: Result = {
+        energyLossPerM3: Number(energyLossPerM3.toFixed(4)),
+        lossPerM3: Number(lossPerM3.toFixed(2)),
+        monthlyFinancialLoss: Number(monthlyFinancialLoss.toFixed(2)),
+        monthlyEnergyLoss: Number(monthlyEnergyLoss.toFixed(3)),
+        yearlyFinancialLoss: Number(yearlyFinancialLoss.toFixed(2)),
+        yearlyEnergyLoss: Number(yearlyEnergyLoss.toFixed(3)),
+        theoreticalCostPerM3: Number(theoreticalCostPerM3.toFixed(2)),
+        theoreticalMonthlyPayment: Number(theoreticalMonthlyPayment.toFixed(2)),
+        actualMonthlyPayment: Number(actualMonthlyPayment.toFixed(2)),
+        energyPerM3: Number(energyPerM3.toFixed(4)),
+      };
+
+      setRes(result);
+    } catch (error) {
+      console.error("Błąd obliczeń:", error);
+      setRes(null);
+    }
+  }
+
+  // Wykonaj kalkulację przy montowaniu i przy zmianie inputs
+  useEffect(() => {
+    calculateResults(inputs);
+  }, [inputs]);
+
+  function handleInputChange(field: keyof Inputs, value: number | string) {
+    setInputs(prev => ({ ...prev, [field]: value }));
+  }
 
   async function generatePdfClient(docComponent: React.ReactElement, filename: string) {
     if (typeof window === "undefined") return;
@@ -80,77 +131,6 @@ export default function MieszkancyPage() {
     const { ResidentLetterPDFDocument } = await import("@/lib/report/resident-letter-pdf-client");
     const doc = <ResidentLetterPDFDocument input={inputs} result={res} />;
     void generatePdfClient(doc, "pismo-do-zarzadcy.pdf");
-  }
-
-  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setLoading(true);
-    const form = new FormData(e.currentTarget);
-
-    const cwuPriceFromBill = Number(form.get("cwuPriceFromBill"));
-    const monthlyConsumption = Number(form.get("monthlyConsumption"));
-    const coldTempC = Number(form.get("coldTempC"));
-    const hotTempC = Number(form.get("hotTempC"));
-    const heatPriceFromCity = Number(form.get("heatPriceFromCity"));
-  // Opcjonalne dane do pisma
-  const managerName = String(form.get("managerName") ?? "").trim();
-  const managerAddress = String(form.get("managerAddress") ?? "").trim();
-  const buildingAddress = String(form.get("buildingAddress") ?? "").trim();
-  const apartmentNumber = String(form.get("apartmentNumber") ?? "").trim();
-  const residentName = String(form.get("residentName") ?? "").trim();
-  const letterCity = String(form.get("letterCity") ?? "").trim();
-  const residentEmail = String(form.get("residentEmail") ?? "").trim();
-  const residentPhone = String(form.get("residentPhone") ?? "").trim();
-
-    try {
-      const deltaT = hotTempC - coldTempC; // K
-      const energyPerM3 = 0.004186 * deltaT; // GJ/m³
-      const theoreticalCostPerM3 = energyPerM3 * heatPriceFromCity; // zł/m³
-      const lossPerM3 = cwuPriceFromBill - theoreticalCostPerM3; // zł/m³
-      const energyLossPerM3 = lossPerM3 / heatPriceFromCity; // GJ/m³
-
-      const monthlyFinancialLoss = lossPerM3 * monthlyConsumption; // zł/miesiąc
-      const monthlyEnergyLoss = energyLossPerM3 * monthlyConsumption; // GJ/miesiąc
-      const yearlyFinancialLoss = monthlyFinancialLoss * 12; // zł/rok
-      const yearlyEnergyLoss = monthlyEnergyLoss * 12; // GJ/rok
-
-      const theoreticalMonthlyPayment = theoreticalCostPerM3 * monthlyConsumption;
-      const actualMonthlyPayment = cwuPriceFromBill * monthlyConsumption;
-
-      const result: Result = {
-        energyLossPerM3: Number(energyLossPerM3.toFixed(4)),
-        lossPerM3: Number(lossPerM3.toFixed(2)),
-        monthlyFinancialLoss: Number(monthlyFinancialLoss.toFixed(2)),
-        monthlyEnergyLoss: Number(monthlyEnergyLoss.toFixed(3)),
-        yearlyFinancialLoss: Number(yearlyFinancialLoss.toFixed(2)),
-        yearlyEnergyLoss: Number(yearlyEnergyLoss.toFixed(3)),
-        theoreticalCostPerM3: Number(theoreticalCostPerM3.toFixed(2)),
-        theoreticalMonthlyPayment: Number(theoreticalMonthlyPayment.toFixed(2)),
-        actualMonthlyPayment: Number(actualMonthlyPayment.toFixed(2)),
-        energyPerM3: Number(energyPerM3.toFixed(4)),
-      };
-
-      setRes(result);
-      setInputs({
-        cwuPriceFromBill,
-        monthlyConsumption,
-        coldTempC,
-        hotTempC,
-        heatPriceFromCity,
-        managerName,
-        managerAddress,
-        buildingAddress,
-        apartmentNumber,
-        residentName,
-        letterCity,
-        residentEmail,
-        residentPhone,
-      });
-    } catch (error) {
-      alert("Błąd obliczeń: " + error);
-    } finally {
-      setLoading(false);
-    }
   }
 
   return (
@@ -193,7 +173,7 @@ export default function MieszkancyPage() {
             </p>
           </CardHeader>
           <CardContent className="space-y-8">
-            <form onSubmit={onSubmit} className="space-y-8">
+            <div className="space-y-8">
               {/* Basic Parameters */}
               <div className="space-y-6">
                 <div className="flex items-center gap-3 mb-6">
@@ -209,16 +189,15 @@ export default function MieszkancyPage() {
                         <Calculator className="w-4 h-4" />
                       </span>
                       <input
-                        name="cwuPriceFromBill"
                         type="number"
                         step="0.01"
                         min="0"
                         inputMode="decimal"
                         placeholder="np. 65.00"
-                        defaultValue={65}
+                        value={inputs.cwuPriceFromBill}
+                        onChange={(e) => handleInputChange('cwuPriceFromBill', Number(e.target.value))}
                         aria-label="Podgrzanie ciepłej wody w zł za metr sześcienny"
                         className="w-full pl-10 pr-16 py-3 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500 text-lg font-semibold"
-                        required
                       />
                       <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 dark:text-slate-400 text-sm font-medium select-none">zł/m³</span>
                     </div>
@@ -229,42 +208,20 @@ export default function MieszkancyPage() {
                         <Calculator className="w-4 h-4" />
                       </span>
                       <input
-                        name="monthlyConsumption"
                         type="number"
                         step="0.1"
                         min="0"
                         inputMode="decimal"
                         placeholder="np. 8.6"
-                        defaultValue={8.6}
+                        value={inputs.monthlyConsumption}
+                        onChange={(e) => handleInputChange('monthlyConsumption', Number(e.target.value))}
                         aria-label="Zużycie CWU w metrach sześciennych na miesiąc"
                         className="w-full pl-10 pr-12 py-3 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500 text-lg font-semibold"
-                        required
                       />
                       <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 dark:text-slate-400 text-sm font-medium select-none">m³</span>
                     </div>
                   </Field>
                 </div>
-              </div>
-
-              {/* Przycisk analizuj koszty i straty */}
-              <div className="pt-8">
-                <Button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full px-10 py-6 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-bold text-lg rounded-xl transition-all hover:scale-[1.02] shadow-xl shadow-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-                >
-                  {loading ? (
-                    <div className="flex items-center gap-2">
-                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      Obliczanie...
-                    </div>
-                  ) : (
-                    <div className="text-center leading-tight">
-                      <div>OBLICZ SWOJE STRATY</div>
-                      <div>I POTENCJALNE OSZCZĘDNOŚCI</div>
-                    </div>
-                  )}
-                </Button>
               </div>
 
               {/* Technical Parameters */}
@@ -278,37 +235,34 @@ export default function MieszkancyPage() {
                 <div className="grid md:grid-cols-3 gap-6">
                   <Field label="Temperatura zimnej wody" unit="°C" hint="zgodnie z PN-92/B-01706 oraz PN-EN 15316-3-1">
                     <input
-                      name="coldTempC"
                       type="number"
                       step="0.1"
-                      defaultValue={10}
+                      value={inputs.coldTempC}
+                      onChange={(e) => handleInputChange('coldTempC', Number(e.target.value))}
                       className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
-                      required
                     />
                   </Field>
                   <Field label="Temperatura CWU" unit="°C" hint="Zgodnie z Rozporządzeniem Ministra Infrastruktury z dnia 12 kwietnia 2002 r. w sprawie warunków technicznych, jakim powinny odpowiadać budynki i ich usytuowanie (WT)">
                     <input
-                      name="hotTempC"
                       type="number"
                       step="0.1"
-                      defaultValue={55}
+                      value={inputs.hotTempC}
+                      onChange={(e) => handleInputChange('hotTempC', Number(e.target.value))}
                       className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
-                      required
                     />
                   </Field>
                   <Field label="Cena ciepła od miasta" unit="zł/GJ" hint="Źródło: https://www.mpec.krakow.pl/taryfy-i-cenniki">
                     <input
-                      name="heatPriceFromCity"
                       type="number"
                       step="0.01"
-                      defaultValue={90}
+                      value={inputs.heatPriceFromCity}
+                      onChange={(e) => handleInputChange('heatPriceFromCity', Number(e.target.value))}
                       className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
-                      required
                     />
                   </Field>
                 </div>
               </div>
-            </form>
+            </div>
           </CardContent>
         </Card>
 
@@ -617,65 +571,73 @@ export default function MieszkancyPage() {
                 <div className="grid md:grid-cols-2 gap-6">
                   <Field label="Miejscowość" optional>
                     <input
-                      name="letterCity"
                       type="text"
                       placeholder="np. Kraków"
+                      value={inputs.letterCity || ''}
+                      onChange={(e) => handleInputChange('letterCity', e.target.value)}
                       className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
                     />
                   </Field>
                   <Field label="Zarządca — nazwa" optional>
                     <input
-                      name="managerName"
                       type="text"
                       placeholder="np. ABC Zarządzanie Nieruchomościami Sp. z o.o."
+                      value={inputs.managerName || ''}
+                      onChange={(e) => handleInputChange('managerName', e.target.value)}
                       className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
                     />
                   </Field>
                   <Field label="Zarządca — adres" optional>
                     <input
-                      name="managerAddress"
                       type="text"
                       placeholder="np. ul. Długa 10, 00-001 Warszawa"
+                      value={inputs.managerAddress || ''}
+                      onChange={(e) => handleInputChange('managerAddress', e.target.value)}
                       className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
                     />
                   </Field>
                   <Field label="Adres budynku" optional>
                     <input
-                      name="buildingAddress"
                       type="text"
                       placeholder="np. ul. Kwiatowa 5, 30-000 Kraków"
+                      value={inputs.buildingAddress || ''}
+                      onChange={(e) => handleInputChange('buildingAddress', e.target.value)}
                       className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
                     />
                   </Field>
                   <Field label="Numer lokalu" optional>
                     <input
-                      name="apartmentNumber"
                       type="text"
                       placeholder="np. 12"
+                      value={inputs.apartmentNumber || ''}
+                      onChange={(e) => handleInputChange('apartmentNumber', e.target.value)}
                       className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
                     />
                   </Field>
                   <Field label="Imię i nazwisko mieszkańca" optional>
                     <input
-                      name="residentName"
                       type="text"
                       placeholder="np. Jan Kowalski"
+                      value={inputs.residentName || ''}
+                      onChange={(e) => handleInputChange('residentName', e.target.value)}
                       className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
                     />
                   </Field>
                   <Field label="E-mail mieszkańca" optional>
                     <input
-                      name="residentEmail"
                       type="email"
                       placeholder="np. jan.kowalski@example.com"
+                      value={inputs.residentEmail || ''}
+                      onChange={(e) => handleInputChange('residentEmail', e.target.value)}
                       className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
                     />
                   </Field>
                   <Field label="Telefon mieszkańca" optional>
                     <input
-                      name="residentPhone"
                       type="tel"
                       placeholder="np. 600 000 000"
+                      value={inputs.residentPhone || ''}
+                      onChange={(e) => handleInputChange('residentPhone', e.target.value)}
                       className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
                     />
                   </Field>
