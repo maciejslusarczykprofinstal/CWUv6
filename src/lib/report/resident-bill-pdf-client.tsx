@@ -60,7 +60,7 @@ export function ResidentBillPDFDocument({
     unit,
     data,
     width = 300,
-    height = 160,
+    height = 150,
     autoLog = true,
   }: {
     title: string;
@@ -70,7 +70,7 @@ export function ResidentBillPDFDocument({
     height?: number;
     autoLog?: boolean;
   }) => {
-    const margin = { top: 20, right: 20, bottom: 40, left: 40 };
+    const margin = { top: 18, right: 20, bottom: 34, left: 80 };
     const iw = width - margin.left - margin.right;
     const ih = height - margin.top - margin.bottom;
     const values = data.map((d) => Math.max(0, Number(d.value) || 0));

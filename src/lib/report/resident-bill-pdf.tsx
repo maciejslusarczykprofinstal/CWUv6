@@ -44,7 +44,7 @@ export async function makeResidentBillPDF(
     height?: number;
     autoLog?: boolean;
   }) => {
-    const margin = { top: 18, right: 20, bottom: 34, left: 36 };
+    const margin = { top: 18, right: 20, bottom: 34, left: 80 };
     const iw = width - margin.left - margin.right;
     const ih = height - margin.top - margin.bottom;
     const values = data.map((d) => Math.max(0, Number(d.value) || 0));
