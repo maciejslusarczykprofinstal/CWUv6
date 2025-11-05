@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Gauge, FileText } from "lucide-react";
+import { Gauge, FileText, Activity } from "lucide-react";
 
 export default function AudytorzyPage() {
   return (
@@ -15,7 +15,7 @@ export default function AudytorzyPage() {
           </p>
         </header>
 
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
           <Button
             asChild
             size="lg"
@@ -37,13 +37,29 @@ export default function AudytorzyPage() {
             size="lg"
             className="h-auto py-8 px-8 rounded-2xl text-left bg-gradient-to-r from-blue-600 to-cyan-600 text-white hover:bg-none"
           >
-            <Link href="/audytorzy/straty-z-faktur" className="flex items-center gap-4">
+            <Link href="/audytorzy/faktury-mpec" className="flex items-center gap-4">
               <span className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-white/20">
                 <FileText className="h-6 w-6" />
               </span>
               <span className="flex flex-col">
-                <span className="text-xl font-bold">Oblicz straty z faktur</span>
-                <span className="text-sm opacity-90">Analiza strat cyrkulacji na podstawie danych z faktur</span>
+                <span className="text-xl font-bold">Obliczenia z faktur MPEC</span>
+                <span className="text-sm opacity-90">Analiza zużycia i kosztów na podstawie faktur</span>
+              </span>
+            </Link>
+          </Button>
+
+          <Button
+            asChild
+            size="lg"
+            className="h-auto py-8 px-8 rounded-2xl text-left bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:bg-none"
+          >
+            <Link href="/audytorzy/liczniki" className="flex items-center gap-4">
+              <span className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-white/20">
+                <Activity className="h-6 w-6" />
+              </span>
+              <span className="flex flex-col">
+                <span className="text-xl font-bold">Liczniki</span>
+                <span className="text-sm opacity-90">Analiza odczytów liczników ciepła</span>
               </span>
             </Link>
           </Button>
