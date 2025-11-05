@@ -16,53 +16,65 @@ export default function AudytorzyPage() {
         </header>
 
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-          <Button
-            asChild
-            size="lg"
-            className="h-auto py-8 px-8 rounded-2xl text-left bg-gradient-to-r from-indigo-600 via-blue-600 to-purple-600 text-white hover:bg-none"
+          <Link 
+            href="/audytorzy/moc-zamowiona" 
+            className="group relative overflow-hidden rounded-2xl bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 p-8 transition-all duration-300 hover:shadow-2xl hover:scale-105 hover:border-indigo-500 dark:hover:border-indigo-400"
           >
-            <Link href="/audytorzy/moc-zamowiona" className="flex items-center gap-4">
-              <span className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-white/20">
-                <Gauge className="h-6 w-6" />
+            <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 via-blue-500/10 to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            <div className="relative flex items-center gap-4">
+              <span className="inline-flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-600 to-purple-600 text-white shadow-lg group-hover:scale-110 transition-transform duration-300">
+                <Gauge className="h-7 w-7" />
               </span>
               <span className="flex flex-col">
-                <span className="text-xl font-bold">Oblicz moc zamówioną</span>
-                <span className="text-sm opacity-90">Szybki kalkulator mocy z buforem i jednoczesnością</span>
+                <span className="text-xl font-bold text-slate-900 dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                  Oblicz moc zamówioną
+                </span>
+                <span className="text-sm text-slate-600 dark:text-slate-400">
+                  Szybki kalkulator mocy z buforem i jednoczesnością
+                </span>
               </span>
-            </Link>
-          </Button>
+            </div>
+          </Link>
 
-          <Button
-            asChild
-            size="lg"
-            className="h-auto py-8 px-8 rounded-2xl text-left bg-gradient-to-r from-blue-600 to-cyan-600 text-white hover:bg-none"
+          <Link 
+            href="/audytorzy/faktury-mpec" 
+            className="group relative overflow-hidden rounded-2xl bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 p-8 transition-all duration-300 hover:shadow-2xl hover:scale-105 hover:border-cyan-500 dark:hover:border-cyan-400"
           >
-            <Link href="/audytorzy/faktury-mpec" className="flex items-center gap-4">
-              <span className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-white/20">
-                <FileText className="h-6 w-6" />
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-cyan-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            <div className="relative flex items-center gap-4">
+              <span className="inline-flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-cyan-600 text-white shadow-lg group-hover:scale-110 transition-transform duration-300">
+                <FileText className="h-7 w-7" />
               </span>
               <span className="flex flex-col">
-                <span className="text-xl font-bold">Obliczenia z faktur MPEC</span>
-                <span className="text-sm opacity-90">Analiza zużycia i kosztów na podstawie faktur</span>
+                <span className="text-xl font-bold text-slate-900 dark:text-slate-100 group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors">
+                  Obliczenia z faktur MPEC
+                </span>
+                <span className="text-sm text-slate-600 dark:text-slate-400">
+                  Analiza zużycia i kosztów na podstawie faktur
+                </span>
               </span>
-            </Link>
-          </Button>
+            </div>
+          </Link>
 
-          <Button
-            asChild
-            size="lg"
-            className="h-auto py-8 px-8 rounded-2xl text-left bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:bg-none"
+          <Link 
+            href="/audytorzy/liczniki" 
+            className="group relative overflow-hidden rounded-2xl bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 p-8 transition-all duration-300 hover:shadow-2xl hover:scale-105 hover:border-pink-500 dark:hover:border-pink-400"
           >
-            <Link href="/audytorzy/liczniki" className="flex items-center gap-4">
-              <span className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-white/20">
-                <Activity className="h-6 w-6" />
+            <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-pink-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            <div className="relative flex items-center gap-4">
+              <span className="inline-flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-purple-600 to-pink-600 text-white shadow-lg group-hover:scale-110 transition-transform duration-300">
+                <Activity className="h-7 w-7" />
               </span>
               <span className="flex flex-col">
-                <span className="text-xl font-bold">Liczniki</span>
-                <span className="text-sm opacity-90">Analiza odczytów liczników ciepła</span>
+                <span className="text-xl font-bold text-slate-900 dark:text-slate-100 group-hover:text-pink-600 dark:group-hover:text-pink-400 transition-colors">
+                  Liczniki
+                </span>
+                <span className="text-sm text-slate-600 dark:text-slate-400">
+                  Analiza odczytów liczników ciepła
+                </span>
               </span>
-            </Link>
-          </Button>
+            </div>
+          </Link>
         </div>
       </div>
     </div>
