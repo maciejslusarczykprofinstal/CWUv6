@@ -35,7 +35,18 @@ export async function GET(req: Request) {
     // Uzupełnij wartości jeśli nie dostarczono totalPaid/totalCost — komponent sam też to potrafi,
     // ale trzymamy się jawnego kontraktu i spójności z API.
     const doc = <LicznikiSummaryPDF data={data} />;
-    const bytes = (await pdf(doc).toBuffer()) as unknown as Uint8Array;
+    
+    // W Node.js runtime pdf().toBuffer() wymaga callbacka, opakowujemy w Promise
+    const bytes: Uint8Array = await new Promise((resolve, reject) => {
+      try {
+        // @ts-expect-error - runtime Node używa callback API
+        pdf(doc).toBuffer((buffer: Buffer) => {
+          resolve(new Uint8Array(buffer));
+        });
+      } catch (e) {
+        reject(e);
+      }
+    });
 
     const stream = new ReadableStream<Uint8Array>({
       start(controller) {

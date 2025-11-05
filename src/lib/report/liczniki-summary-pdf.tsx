@@ -25,7 +25,14 @@ const styles = StyleSheet.create({
 });
 
 function fmt(v: number, digits = 2) {
-  return Number(v).toLocaleString("pl-PL", { minimumFractionDigits: digits, maximumFractionDigits: digits });
+  const n = Number(v);
+  if (!Number.isFinite(n)) return "-";
+  // Format manualnie (bez toLocaleString, który nie działa w react-pdf)
+  const fixed = n.toFixed(digits);
+  // Zamień . na , i dodaj spacje co 3 cyfry
+  const [int, dec] = fixed.split(".");
+  const intFormatted = int.replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+  return dec ? `${intFormatted},${dec}` : intFormatted;
 }
 
 function computeFrom(data: LicznikiSummaryData) {
