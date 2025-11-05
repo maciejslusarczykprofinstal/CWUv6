@@ -98,7 +98,7 @@ export default function LicznikiPage() {
                 <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-green-600 text-white flex-shrink-0">
                   <DollarSign className="h-5 w-5" />
                 </span>
-                <span>Ile zapłacili</span>
+                <span>Koszty i zużycie CWU mieszkańców</span>
               </CardTitle>
               <p className="text-xs text-slate-600 dark:text-slate-400 mt-2">
                 Rzeczywista ilość × cena
