@@ -308,82 +308,6 @@ export default function MieszkancyPage() {
                   </Field>
                 </div>
               </div>
-
-              {/* Dane do pisma (opcjonalne) */}
-              <div className="space-y-6">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-1 h-8 bg-gradient-to-b from-purple-500 to-fuchsia-500 rounded-full"></div>
-                  <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200">
-                    Dane do pisma (opcjonalne)
-                  </h3>
-                </div>
-                <div className="grid md:grid-cols-2 gap-6">
-                  <Field label="Miejscowość" optional>
-                    <input
-                      name="letterCity"
-                      type="text"
-                      placeholder="np. Kraków"
-                      className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
-                    />
-                  </Field>
-                  <Field label="Zarządca — nazwa" optional>
-                    <input
-                      name="managerName"
-                      type="text"
-                      placeholder="np. ABC Zarządzanie Nieruchomościami Sp. z o.o."
-                      className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
-                    />
-                  </Field>
-                  <Field label="Zarządca — adres" optional>
-                    <input
-                      name="managerAddress"
-                      type="text"
-                      placeholder="np. ul. Długa 10, 00-001 Warszawa"
-                      className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
-                    />
-                  </Field>
-                  <Field label="Adres budynku" optional>
-                    <input
-                      name="buildingAddress"
-                      type="text"
-                      placeholder="np. ul. Kwiatowa 5, 30-000 Kraków"
-                      className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
-                    />
-                  </Field>
-                  <Field label="Numer lokalu" optional>
-                    <input
-                      name="apartmentNumber"
-                      type="text"
-                      placeholder="np. 12"
-                      className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
-                    />
-                  </Field>
-                  <Field label="Imię i nazwisko mieszkańca" optional>
-                    <input
-                      name="residentName"
-                      type="text"
-                      placeholder="np. Jan Kowalski"
-                      className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
-                    />
-                  </Field>
-                  <Field label="E-mail mieszkańca" optional>
-                    <input
-                      name="residentEmail"
-                      type="email"
-                      placeholder="np. jan.kowalski@example.com"
-                      className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
-                    />
-                  </Field>
-                  <Field label="Telefon mieszkańca" optional>
-                    <input
-                      name="residentPhone"
-                      type="tel"
-                      placeholder="np. 600 000 000"
-                      className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
-                    />
-                  </Field>
-                </div>
-              </div>
             </form>
           </CardContent>
         </Card>
@@ -678,6 +602,83 @@ export default function MieszkancyPage() {
                 </CardContent>
               </Card>
             )}
+            {/* Dane do pisma (opcjonalne) - przeniesione na koniec strony */}
+            <div className="max-w-3xl mx-auto mt-16 mb-8">
+              <div className="space-y-6">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-1 h-8 bg-gradient-to-b from-purple-500 to-fuchsia-500 rounded-full"></div>
+                  <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200">
+                    Dane do pisma (opcjonalne)
+                  </h3>
+                </div>
+                <div className="grid md:grid-cols-2 gap-6">
+                  <Field label="Miejscowość" optional>
+                    <input
+                      name="letterCity"
+                      type="text"
+                      placeholder="np. Kraków"
+                      className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
+                    />
+                  </Field>
+                  <Field label="Zarządca — nazwa" optional>
+                    <input
+                      name="managerName"
+                      type="text"
+                      placeholder="np. ABC Zarządzanie Nieruchomościami Sp. z o.o."
+                      className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
+                    />
+                  </Field>
+                  <Field label="Zarządca — adres" optional>
+                    <input
+                      name="managerAddress"
+                      type="text"
+                      placeholder="np. ul. Długa 10, 00-001 Warszawa"
+                      className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
+                    />
+                  </Field>
+                  <Field label="Adres budynku" optional>
+                    <input
+                      name="buildingAddress"
+                      type="text"
+                      placeholder="np. ul. Kwiatowa 5, 30-000 Kraków"
+                      className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
+                    />
+                  </Field>
+                  <Field label="Numer lokalu" optional>
+                    <input
+                      name="apartmentNumber"
+                      type="text"
+                      placeholder="np. 12"
+                      className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
+                    />
+                  </Field>
+                  <Field label="Imię i nazwisko mieszkańca" optional>
+                    <input
+                      name="residentName"
+                      type="text"
+                      placeholder="np. Jan Kowalski"
+                      className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
+                    />
+                  </Field>
+                  <Field label="E-mail mieszkańca" optional>
+                    <input
+                      name="residentEmail"
+                      type="email"
+                      placeholder="np. jan.kowalski@example.com"
+                      className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
+                    />
+                  </Field>
+                  <Field label="Telefon mieszkańca" optional>
+                    <input
+                      name="residentPhone"
+                      type="tel"
+                      placeholder="np. 600 000 000"
+                      className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
+                    />
+                  </Field>
+                </div>
+              </div>
+            </div>
 
             {/* Energy Loss Analysis */}
             <Card className="backdrop-blur-sm bg-white/70 dark:bg-slate-900/70 border-0 shadow-xl">
