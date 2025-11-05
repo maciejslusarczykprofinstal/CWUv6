@@ -106,10 +106,9 @@ export function ResidentBillPDFDocument({
       <Page size="A4" style={styles.page}>
         <Section title="2. Metodologia i założenia" />
         <View>
-          <Text style={styles.row}>• Energia do podgrzania 1 m³ wody: 0,004186 × (T_CWU − T_zimna) [GJ/m³]</Text>
-          <Text style={styles.row}>• Koszt teoretyczny: energia × cena ciepła [zł/m³]</Text>
-          <Text style={styles.row}>• Strata finansowa: (cena z rachunku − koszt teoretyczny) × zużycie [zł]</Text>
-          <Text style={styles.row}>• Uwzględniono rzeczywiste temperatury i ceny z danego okresu rozliczeniowego.</Text>
+          <Text style={styles.row}>Proces analizy kosztów CWU opiera się na precyzyjnych wzorach fizycznych oraz praktycznych założeniach branżowych. Energia niezbędna do podgrzania 1 m³ wody wyliczana jest według wzoru: 0,004186 × (T_CWU − T_zimna) [GJ/m³], gdzie 0,004186 to współczynnik przeliczeniowy wynikający z ciepła właściwego wody. W praktyce oznacza to, że każda różnica temperatury o 1°C przekłada się na proporcjonalny wzrost zużycia energii. W analizie uwzględniono rzeczywiste temperatury wody zimnej i ciepłej, a także aktualne ceny ciepła systemowego, co pozwala na uzyskanie wiarygodnych wyników.</Text>
+          <Text style={styles.row}>Koszt teoretyczny podgrzania wody obliczany jest jako iloczyn energii potrzebnej do podgrzania 1 m³ oraz ceny ciepła dostarczanej przez miejską sieć ciepłowniczą. Warto podkreślić, że wartości te mogą się różnić w zależności od sezonu grzewczego, sprawności wymienników ciepła oraz jakości izolacji przewodów. Strata finansowa, będąca różnicą pomiędzy ceną z rachunku a kosztem teoretycznym, wskazuje na potencjalne nieefektywności w systemie dystrybucji ciepła lub błędy w rozliczeniach.</Text>
+          <Text style={styles.row}>W analizie przyjęto, że zużycie wody jest rozliczane miesięcznie, a wszelkie odchylenia od wartości teoretycznych mogą wynikać z czynników takich jak: nieprawidłowa regulacja cyrkulacji, nieszczelności instalacji, zbyt długie przewody bez odpowiedniej izolacji czy też nieprecyzyjne pomiary liczników. Dodatkowo, uwzględniono wpływ taryf i opłat stałych, które mogą znacząco zawyżać końcowy koszt dla mieszkańca.</Text>
         </View>
         <Footer />
       </Page>
@@ -142,13 +141,21 @@ export function ResidentBillPDFDocument({
         <Section title="5. Interpretacja i komentarz ekspercki" />
         <View>
           <Text style={styles.row}>
-            Wyniki wskazują, że rzeczywiste koszty CWU są wyższe od teoretycznych o {n(r.monthlyFinancialLoss)} zł miesięcznie, co w skali roku daje stratę rzędu {n(r.yearlyFinancialLoss)} zł. Oznacza to, że mieszkańcy płacą więcej niż wynikałoby to z czystych kosztów energii potrzebnej do podgrzania wody.
+            Wyniki przeprowadzonej analizy jednoznacznie wskazują, że rzeczywiste koszty CWU ponoszone przez mieszkańców są wyższe od kosztów teoretycznych o {n(r.monthlyFinancialLoss)} zł miesięcznie, co w skali roku daje stratę rzędu {n(r.yearlyFinancialLoss)} zł. Taka rozbieżność jest typowa dla budynków wielorodzinnych z rozbudowaną instalacją cyrkulacyjną, gdzie straty ciepła mogą sięgać nawet 30% całkowitego zużycia energii na podgrzanie wody. W praktyce oznacza to, że znaczna część energii jest tracona zanim dotrze do punktu poboru, a mieszkańcy płacą nie tylko za faktycznie zużytą wodę, ale również za nieefektywności systemu.
           </Text>
           <Text style={styles.row}>
-            Najczęstsze przyczyny nadpłat to: straty ciepła w instalacji, nieoptymalna regulacja cyrkulacji, przestarzała armatura, błędy w rozliczeniach lub taryfach.
+            Do najczęstszych przyczyn nadpłat należą:
+            - Straty ciepła w przewodach rozprowadzających, szczególnie w przypadku braku lub degradacji izolacji termicznej.
+            - Nieoptymalna regulacja cyrkulacji, prowadząca do ciągłego przepływu wody i niepotrzebnego podgrzewania.
+            - Przestarzała armatura i zawory, które nie zapewniają szczelności i precyzyjnej regulacji.
+            - Błędy w rozliczeniach, np. nieprawidłowe odczyty liczników, stosowanie uśrednionych taryf lub nieuwzględnianie rzeczywistych strat.
+            - Zjawisko tzw. „zimnej cyrkulacji”, gdzie woda krąży w instalacji bez poboru, powodując nieustanne straty energii.
           </Text>
           <Text style={styles.row}>
-            Rekomendujemy szczegółowy audyt instalacji oraz analizę taryf i sposobu rozliczania CWU przez zarządcę budynku.
+            Warto podkreślić, że nawet niewielkie nieszczelności lub nieprawidłowości w pracy zaworów mogą generować znaczne, trudne do wykrycia straty. Przykładowo, nieszczelność rzędu 0,1 l/min przez cały miesiąc to ponad 4 m³ wody, za którą użytkownik zapłaci, mimo że jej nie wykorzystał. Dodatkowo, w budynkach o dużej liczbie pionów i rozległej instalacji, efekt skali potęguje straty, a ich identyfikacja wymaga specjalistycznych pomiarów i audytów.
+          </Text>
+          <Text style={styles.row}>
+            Rekomendujemy przeprowadzenie szczegółowego audytu instalacji CWU, obejmującego pomiary strat ciepła, ocenę stanu izolacji, analizę pracy cyrkulacji oraz weryfikację rozliczeń. Tylko kompleksowe podejście pozwoli na identyfikację głównych źródeł strat i wdrożenie skutecznych działań naprawczych. Warto również rozważyć wdrożenie systemów monitoringu zużycia oraz automatyzacji regulacji cyrkulacji, co w dłuższej perspektywie może przynieść wymierne oszczędności.
           </Text>
         </View>
         <Footer />
@@ -175,10 +182,11 @@ export function ResidentBillPDFDocument({
       <Page size="A4" style={styles.page}>
         <Section title="7. Rekomendacje i działania" />
         <View>
-          <Text style={styles.row}>1. Przeprowadzić audyt instalacji CWU pod kątem strat ciepła.</Text>
-          <Text style={styles.row}>2. Skonsultować taryfy i sposób rozliczania z zarządcą budynku.</Text>
-          <Text style={styles.row}>3. Rozważyć modernizację izolacji i armatury.</Text>
-          <Text style={styles.row}>4. Wdrożyć monitoring zużycia i strat CWU.</Text>
+          <Text style={styles.row}>1. Przeprowadzić szczegółowy audyt instalacji CWU pod kątem strat ciepła, obejmujący pomiary termowizyjne, analizę stanu izolacji oraz ocenę pracy zaworów i armatury. Wskazane jest wykonanie inspekcji kamerą termowizyjną, która pozwala na szybkie wykrycie miejsc o podwyższonych stratach energii.</Text>
+          <Text style={styles.row}>2. Skonsultować taryfy i sposób rozliczania z zarządcą budynku, zwracając uwagę na strukturę opłat stałych i zmiennych oraz ewentualne nieprawidłowości w naliczaniu kosztów. Warto poprosić o szczegółowe rozliczenie i porównać je z rzeczywistym zużyciem oraz danymi z liczników.</Text>
+          <Text style={styles.row}>3. Rozważyć modernizację izolacji przewodów oraz wymianę przestarzałej armatury na nowoczesne, energooszczędne rozwiązania. Inwestycja w wysokiej jakości izolację może przynieść zwrot już po kilku sezonach grzewczych, a nowoczesne zawory i automatyka pozwalają na precyzyjną regulację przepływu i temperatury.</Text>
+          <Text style={styles.row}>4. Wdrożyć system monitoringu zużycia i strat CWU, umożliwiający bieżącą kontrolę parametrów pracy instalacji oraz szybkie wykrywanie anomalii. Nowoczesne systemy pozwalają na zdalny odczyt danych, generowanie raportów i alarmowanie o nieprawidłowościach, co znacząco ułatwia zarządzanie budynkiem.</Text>
+          <Text style={styles.row}>5. Przeprowadzić cykliczne szkolenia dla mieszkańców i personelu technicznego z zakresu efektywnego korzystania z instalacji CWU oraz podstawowych zasad eksploatacji, co pozwala na ograniczenie niepotrzebnych strat i podniesienie świadomości użytkowników.</Text>
         </View>
         <Footer />
       </Page>
