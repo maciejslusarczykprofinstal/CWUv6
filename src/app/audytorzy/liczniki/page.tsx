@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Calculator, DollarSign, Thermometer } from "lucide-react";
+import { Calculator, DollarSign } from "lucide-react";
 import { useMemo, useState } from "react";
 
 export default function LicznikiPage() {
@@ -271,9 +271,13 @@ export default function LicznikiPage() {
                       };
                       const href = `/api/report/liczniki?data=${encodeURIComponent(JSON.stringify(payload))}`;
                       return (
-                        <Button asChild size="sm" variant="outline">
-                          <Link href={href}>Pobierz PDF podsumowania</Link>
-                        </Button>
+                        <a
+                          href={href}
+                          download={`raport-liczniki-${Date.now()}.pdf`}
+                          className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 px-3"
+                        >
+                          Pobierz PDF podsumowania
+                        </a>
                       );
                     })()}
                   </div>
