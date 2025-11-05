@@ -278,14 +278,14 @@ export default function MieszkancyPage() {
                   <Field 
                     label="Cena ciepła od miasta" 
                     unit="zł/GJ" 
-                    hint="Wartość zalecana: 90 zł/GJ (źródło: https://www.mpec.krakow.pl/taryfy-i-cenniki - MPEC Kraków 2025)"
+                    hint="Wartość z cennika: 90 zł/GJ (źródło: https://www.mpec.krakow.pl/taryfy-i-cenniki - MPEC Kraków 2025)"
                   >
                     <input
                       type="number"
                       step="0.01"
                       value={inputs.heatPriceFromCity}
                       onChange={(e) => handleInputChange('heatPriceFromCity', Number(e.target.value))}
-                      placeholder="Zalecane: 90 zł/GJ"
+                      placeholder="Z cennika: 90 zł/GJ"
                       className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
                     />
                   </Field>
