@@ -214,6 +214,11 @@ export async function makeResidentBillPDF(
           <Text style={styles.row}>• Dane wejściowe i pomiary: dokładność wyniku zależy od poprawności danych z rachunku/liczników oraz przyjętych nastaw temperatur.</Text>
           <Text style={styles.row}>• Wykresy: skala logarytmiczna włącza się automatycznie przy dużej rozpiętości wartości – służy porównaniu, nie bezwzględnej ocenie poziomów.</Text>
         </View>
+        <View style={{ marginTop: 4 }}>
+          <Text style={[styles.small, { fontWeight: 600 }]}>Co to oznacza dla Ciebie:</Text>
+          <Text style={styles.small}>Wyniki traktuj jako dobry punkt odniesienia do rozmowy z zarządcą i wstępnej diagnozy, a nie audyt zastępujący pomiary.</Text>
+          <Text style={styles.small}>Największy wpływ na różnice mają straty cyrkulacji, opłaty stałe i nastawy temperatur – to tam zwykle najszybciej odzyskasz pieniądze.</Text>
+        </View>
 
         <Text style={styles.h2}>3. Ekstrapolacja (rok)</Text>
         <View>

@@ -301,6 +301,11 @@ export function ResidentBillPDFDocument({
           <Text style={styles.row}>• Zależność od danych: wyniki są tak dobre, jak dane wejściowe (rachunki, nastawy, zużycie, temperatury) i dokładność liczników.</Text>
           <Text style={styles.row}>• Skala wykresów: automatyczny log-scale służy porównawczo; nie jest interpretacją bezwzględnej „skali problemu”.</Text>
         </View>
+        <View style={{ marginTop: 4 }}>
+          <Text style={[styles.small, { fontWeight: 600 }]}>Co to oznacza dla Ciebie:</Text>
+          <Text style={styles.small}>Te liczby to wiarygodny start do rozmowy i decyzji – pełna diagnoza wymaga audytu z pomiarami w budynku.</Text>
+          <Text style={styles.small}>Najczęściej szybkie efekty daje korekta nastaw CWU, opomiarowanie strat cyrkulacji i przegląd opłat stałych.</Text>
+        </View>
 
         <Section title="4. Ekstrapolacja roczna" />
         <View>
