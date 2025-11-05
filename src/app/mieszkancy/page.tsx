@@ -543,7 +543,7 @@ export default function MieszkancyPage() {
               </Card>
             )}
             {/* Dane do pisma (opcjonalne) - przeniesione na koniec strony */}
-            <div className="max-w-3xl mx-auto mt-16 mb-8">
+            <div className="max-w-6xl mx-auto mt-16 mb-8">
         {/* Przyciski PDF przeniesione na koniec strony */}
         {res && (
           <div className="flex flex-col md:flex-row items-stretch md:items-center justify-center gap-4 mb-12">
@@ -568,79 +568,100 @@ export default function MieszkancyPage() {
                     Dane do pisma (opcjonalne)
                   </h3>
                 </div>
-                <div className="grid md:grid-cols-2 gap-6">
-                  <Field label="Miejscowość" optional>
-                    <input
-                      type="text"
-                      placeholder="np. Kraków"
-                      value={inputs.letterCity || ''}
-                      onChange={(e) => handleInputChange('letterCity', e.target.value)}
-                      className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
-                    />
-                  </Field>
-                  <Field label="Zarządca — nazwa" optional>
-                    <input
-                      type="text"
-                      placeholder="np. ABC Zarządzanie Nieruchomościami Sp. z o.o."
-                      value={inputs.managerName || ''}
-                      onChange={(e) => handleInputChange('managerName', e.target.value)}
-                      className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
-                    />
-                  </Field>
-                  <Field label="Zarządca — adres" optional>
-                    <input
-                      type="text"
-                      placeholder="np. ul. Długa 10, 00-001 Warszawa"
-                      value={inputs.managerAddress || ''}
-                      onChange={(e) => handleInputChange('managerAddress', e.target.value)}
-                      className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
-                    />
-                  </Field>
-                  <Field label="Adres budynku" optional>
-                    <input
-                      type="text"
-                      placeholder="np. ul. Kwiatowa 5, 30-000 Kraków"
-                      value={inputs.buildingAddress || ''}
-                      onChange={(e) => handleInputChange('buildingAddress', e.target.value)}
-                      className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
-                    />
-                  </Field>
-                  <Field label="Numer lokalu" optional>
-                    <input
-                      type="text"
-                      placeholder="np. 12"
-                      value={inputs.apartmentNumber || ''}
-                      onChange={(e) => handleInputChange('apartmentNumber', e.target.value)}
-                      className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
-                    />
-                  </Field>
-                  <Field label="Imię i nazwisko mieszkańca" optional>
-                    <input
-                      type="text"
-                      placeholder="np. Jan Kowalski"
-                      value={inputs.residentName || ''}
-                      onChange={(e) => handleInputChange('residentName', e.target.value)}
-                      className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
-                    />
-                  </Field>
-                  <Field label="E-mail mieszkańca" optional>
-                    <input
-                      type="email"
-                      placeholder="np. jan.kowalski@example.com"
-                      value={inputs.residentEmail || ''}
-                      onChange={(e) => handleInputChange('residentEmail', e.target.value)}
-                      className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
-                    />
-                  </Field>
-                  <Field label="Telefon mieszkańca" optional>
-                    <input
-                      type="tel"
-                      placeholder="np. 600 000 000"
-                      value={inputs.residentPhone || ''}
-                      onChange={(e) => handleInputChange('residentPhone', e.target.value)}
-                      className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
-                    />
-                  </Field>
+                
+                {/* Układ dwukolumnowy: Nadawca (lewa) | Odbiorca (prawa) */}
+                <div className="grid md:grid-cols-2 gap-8">
+                  {/* Lewa kolumna - Nadawca (Mieszkaniec) */}
+                  <div className="space-y-6">
+                    <div className="flex items-center gap-2 mb-4">
+                      <div className="w-1 h-6 bg-gradient-to-b from-blue-500 to-cyan-500 rounded-full"></div>
+                      <h4 className="text-md font-semibold text-slate-700 dark:text-slate-300">
+                        Nadawca (Mieszkaniec)
+                      </h4>
+                    </div>
+                    <Field label="Imię i nazwisko" optional>
+                      <input
+                        type="text"
+                        placeholder="np. Jan Kowalski"
+                        value={inputs.residentName || ''}
+                        onChange={(e) => handleInputChange('residentName', e.target.value)}
+                        className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
+                      />
+                    </Field>
+                    <Field label="Numer lokalu" optional>
+                      <input
+                        type="text"
+                        placeholder="np. 12"
+                        value={inputs.apartmentNumber || ''}
+                        onChange={(e) => handleInputChange('apartmentNumber', e.target.value)}
+                        className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
+                      />
+                    </Field>
+                    <Field label="E-mail" optional>
+                      <input
+                        type="email"
+                        placeholder="np. jan.kowalski@example.com"
+                        value={inputs.residentEmail || ''}
+                        onChange={(e) => handleInputChange('residentEmail', e.target.value)}
+                        className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
+                      />
+                    </Field>
+                    <Field label="Telefon" optional>
+                      <input
+                        type="tel"
+                        placeholder="np. 600 000 000"
+                        value={inputs.residentPhone || ''}
+                        onChange={(e) => handleInputChange('residentPhone', e.target.value)}
+                        className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
+                      />
+                    </Field>
+                    <Field label="Miejscowość" optional>
+                      <input
+                        type="text"
+                        placeholder="np. Kraków"
+                        value={inputs.letterCity || ''}
+                        onChange={(e) => handleInputChange('letterCity', e.target.value)}
+                        className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
+                      />
+                    </Field>
+                  </div>
+
+                  {/* Prawa kolumna - Odbiorca (Zarządca) */}
+                  <div className="space-y-6">
+                    <div className="flex items-center gap-2 mb-4">
+                      <div className="w-1 h-6 bg-gradient-to-b from-purple-500 to-fuchsia-500 rounded-full"></div>
+                      <h4 className="text-md font-semibold text-slate-700 dark:text-slate-300">
+                        Odbiorca (Zarządca)
+                      </h4>
+                    </div>
+                    <Field label="Nazwa zarządcy" optional>
+                      <input
+                        type="text"
+                        placeholder="np. ABC Zarządzanie Nieruchomościami Sp. z o.o."
+                        value={inputs.managerName || ''}
+                        onChange={(e) => handleInputChange('managerName', e.target.value)}
+                        className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
+                      />
+                    </Field>
+                    <Field label="Adres zarządcy" optional>
+                      <input
+                        type="text"
+                        placeholder="np. ul. Długa 10, 00-001 Warszawa"
+                        value={inputs.managerAddress || ''}
+                        onChange={(e) => handleInputChange('managerAddress', e.target.value)}
+                        className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
+                      />
+                    </Field>
+                    <Field label="Adres budynku" optional>
+                      <input
+                        type="text"
+                        placeholder="np. ul. Kwiatowa 5, 30-000 Kraków"
+                        value={inputs.buildingAddress || ''}
+                        onChange={(e) => handleInputChange('buildingAddress', e.target.value)}
+                        className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
+                      />
+                    </Field>
+                  </div>
                 </div>
               </div>
             </div>
