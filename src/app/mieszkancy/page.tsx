@@ -247,30 +247,45 @@ export default function MieszkancyPage() {
                   </h3>
                 </div>
                 <div className="grid md:grid-cols-3 gap-6">
-                  <Field label="Temperatura zimnej wody" unit="°C" hint="zgodnie z PN-92/B-01706 oraz PN-EN 15316-3-1">
+                  <Field 
+                    label="Temperatura zimnej wody" 
+                    unit="°C" 
+                    hint="Wartość zalecana: 10°C (zgodnie z PN-92/B-01706 oraz PN-EN 15316-3-1)"
+                  >
                     <input
                       type="number"
                       step="0.1"
                       value={inputs.coldTempC}
                       onChange={(e) => handleInputChange('coldTempC', Number(e.target.value))}
+                      placeholder="Zalecane: 10°C"
                       className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
                     />
                   </Field>
-                  <Field label="Temperatura CWU" unit="°C" hint="Zgodnie z Rozporządzeniem Ministra Infrastruktury z dnia 12 kwietnia 2002 r. w sprawie warunków technicznych, jakim powinny odpowiadać budynki i ich usytuowanie (WT)">
+                  <Field 
+                    label="Temperatura CWU" 
+                    unit="°C" 
+                    hint="Wartość zalecana: 55°C (zgodnie z Rozporządzeniem Ministra Infrastruktury z dnia 12 kwietnia 2002 r. w sprawie warunków technicznych, jakim powinny odpowiadać budynki i ich usytuowanie - WT)"
+                  >
                     <input
                       type="number"
                       step="0.1"
                       value={inputs.hotTempC}
                       onChange={(e) => handleInputChange('hotTempC', Number(e.target.value))}
+                      placeholder="Zalecane: 55°C"
                       className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
                     />
                   </Field>
-                  <Field label="Cena ciepła od miasta" unit="zł/GJ" hint="Źródło: https://www.mpec.krakow.pl/taryfy-i-cenniki">
+                  <Field 
+                    label="Cena ciepła od miasta" 
+                    unit="zł/GJ" 
+                    hint="Wartość zalecana: 90 zł/GJ (źródło: https://www.mpec.krakow.pl/taryfy-i-cenniki - MPEC Kraków 2025)"
+                  >
                     <input
                       type="number"
                       step="0.01"
                       value={inputs.heatPriceFromCity}
                       onChange={(e) => handleInputChange('heatPriceFromCity', Number(e.target.value))}
+                      placeholder="Zalecane: 90 zł/GJ"
                       className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
                     />
                   </Field>
