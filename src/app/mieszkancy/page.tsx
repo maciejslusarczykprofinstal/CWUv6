@@ -431,21 +431,7 @@ export default function MieszkancyPage() {
               </CardContent>
             </Card>
 
-            {/* Action bar - PDF buttons */}
-            <div className="flex flex-col md:flex-row items-stretch md:items-center justify-center gap-4">
-              <Button 
-                onClick={onDownloadReport} 
-                className="px-8 py-6 text-lg font-bold bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all hover:scale-105"
-              >
-                📄 Pobierz raport PDF
-              </Button>
-              <Button 
-                onClick={onDownloadLetter} 
-                className="px-8 py-6 text-lg font-bold bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all hover:scale-105"
-              >
-                ✉️ Pismo do Zarządcy (PDF)
-              </Button>
-            </div>
+            {/* ...przyciski PDF przeniesione na koniec strony... */}
 
             {/* Breakdown button */}
             <div className="flex justify-center">
@@ -604,6 +590,23 @@ export default function MieszkancyPage() {
             )}
             {/* Dane do pisma (opcjonalne) - przeniesione na koniec strony */}
             <div className="max-w-3xl mx-auto mt-16 mb-8">
+        {/* Przyciski PDF przeniesione na koniec strony */}
+        {res && (
+          <div className="flex flex-col md:flex-row items-stretch md:items-center justify-center gap-4 mb-12">
+            <Button 
+              onClick={onDownloadReport} 
+              className="px-8 py-6 text-lg font-bold bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all hover:scale-105"
+            >
+              📄 Pobierz raport PDF
+            </Button>
+            <Button 
+              onClick={onDownloadLetter} 
+              className="px-8 py-6 text-lg font-bold bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all hover:scale-105"
+            >
+              ✉️ Pismo do Zarządcy (PDF)
+            </Button>
+          </div>
+        )}
               <div className="space-y-6">
                 <div className="flex items-center gap-3 mb-6">
                   <div className="w-1 h-8 bg-gradient-to-b from-purple-500 to-fuchsia-500 rounded-full"></div>
