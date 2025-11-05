@@ -61,17 +61,29 @@ export function ResidentBillPDFDocument({
     data,
     width = 500,
     height = 160,
+    autoLog = true,
   }: {
     title: string;
     unit: string;
     data: { label: string; value: number; color: string }[];
     width?: number;
     height?: number;
+    autoLog?: boolean;
   }) => {
     const margin = { top: 20, right: 20, bottom: 40, left: 40 };
     const iw = width - margin.left - margin.right;
     const ih = height - margin.top - margin.bottom;
-    const maxVal = Math.max(1, ...data.map((d) => Math.max(0, Number(d.value) || 0)));
+    const values = data.map((d) => Math.max(0, Number(d.value) || 0));
+    const maxVal = Math.max(1, ...values);
+    const positives = values.filter((v) => v > 0);
+    const minPos = positives.length ? Math.min(...positives) : 0;
+    const useLog = autoLog && minPos > 0 && maxVal / minPos >= 20;
+    const scale = (v: number) => {
+      const x = Math.max(0, v);
+      if (!useLog) return (x / maxVal) * (ih - 10);
+      const log = (y: number) => Math.log10(1 + y);
+      return (log(x) / log(maxVal)) * (ih - 10);
+    };
     const barSpace = iw / data.length;
     const barWidth = Math.max(20, Math.min(60, barSpace * 0.6));
     return (
@@ -82,10 +94,17 @@ export function ResidentBillPDFDocument({
           <Line x1={margin.left} y1={margin.top} x2={margin.left} y2={margin.top + ih} stroke="#999" strokeWidth={1} />
           <Line x1={margin.left} y1={margin.top + ih} x2={margin.left + iw} y2={margin.top + ih} stroke="#999" strokeWidth={1} />
 
+          {/* Siatka pozioma */}
+          {Array.from({ length: 4 }).map((_, k) => {
+            const t = (k + 1) / 5; // 20%, 40%, 60%, 80%
+            const y = margin.top + ih - t * (ih - 10);
+            return <Line key={`grid-${k}`} x1={margin.left} y1={y} x2={margin.left + iw} y2={y} stroke="#e5e7eb" strokeWidth={1} />;
+          })}
+
           {/* Słupki */}
           {data.map((d, idx) => {
             const val = Math.max(0, Number(d.value) || 0);
-            const h = (val / maxVal) * (ih - 10);
+            const h = scale(val);
             const x = margin.left + idx * barSpace + (barSpace - barWidth) / 2;
             const y = margin.top + ih - h;
             return (
@@ -101,6 +120,9 @@ export function ResidentBillPDFDocument({
               <Text style={{ fontSize: 10, color: "#333" }}>{d.label}: {Number(d.value || 0).toFixed(2)} {unit}</Text>
             </View>
           ))}
+          <Text style={{ fontSize: 9, color: "#666", marginTop: 2 }}>
+            Skala: {useLog ? "logarytmiczna (auto)" : "liniowa"} • Maks: {maxVal.toFixed(2)} {unit}
+          </Text>
         </View>
       </View>
     );
