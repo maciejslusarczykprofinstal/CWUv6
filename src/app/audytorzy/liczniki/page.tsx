@@ -16,35 +16,33 @@ export default function LicznikiPage() {
     return Number.isFinite(v) ? v : 0;
   };
 
-  const [downloading, setDownloading] = useState(false);
-
-  async function handleDownloadPDF(payload: Record<string, unknown>) {
+  // Klienckie generowanie PDF (jak u mieszkańca)
+  async function generatePdfClient(docComponent: React.ReactElement, filename: string) {
+    if (typeof window === "undefined") return;
     try {
-      setDownloading(true);
-      const href = `/api/report/liczniki?data=${encodeURIComponent(JSON.stringify(payload))}`;
-      const res = await fetch(href, { cache: "no-store" });
-      if (!res.ok) {
-        const text = await res.text().catch(() => "");
-        throw new Error(`Błąd generowania PDF (${res.status}): ${text || res.statusText}`);
+      const { pdf } = await import("@react-pdf/renderer");
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const blob = await pdf(docComponent as any).toBlob();
+      const objectUrl = URL.createObjectURL(blob);
+      const w = window.open(objectUrl, "_blank");
+      if (!w) {
+        const a = document.createElement("a");
+        a.href = objectUrl;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
       }
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      const date = new Date();
-      const yyyy = date.getFullYear();
-      const mm = String(date.getMonth() + 1).padStart(2, "0");
-      const dd = String(date.getDate()).padStart(2, "0");
-      a.href = url;
-      a.download = `raport-liczniki-${yyyy}-${mm}-${dd}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
+      setTimeout(() => URL.revokeObjectURL(objectUrl), 10_000);
     } catch (e) {
-      alert(`Nie udało się pobrać PDF: ${(e as Error).message}`);
-    } finally {
-      setDownloading(false);
+      alert(`Nie udało się wygenerować PDF: ${String(e)}`);
     }
+  }
+
+  async function onDownloadSummary(payload: Record<string, unknown>) {
+    const { LicznikiSummaryPDF } = await import("@/lib/report/liczniki-summary-pdf");
+    const doc = <LicznikiSummaryPDF data={payload as any} />;
+    void generatePdfClient(doc, "raport-liczniki.pdf");
   }
 
   // Ścieżka 2: controlled inputs
@@ -304,10 +302,9 @@ export default function LicznikiPage() {
                         <Button
                           size="sm"
                           variant="outline"
-                          disabled={downloading}
-                          onClick={() => handleDownloadPDF(payload)}
+                          onClick={() => onDownloadSummary(payload)}
                         >
-                          {downloading ? "Generowanie…" : "Pobierz PDF podsumowania"}
+                          📄 Pobierz PDF podsumowania
                         </Button>
                       );
                     })()}
