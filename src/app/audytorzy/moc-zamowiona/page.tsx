@@ -8,8 +8,9 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { z } from "zod";
-import { Gauge } from "lucide-react";
+import { Gauge, Info as InfoIcon } from "lucide-react";
 import { useState } from "react";
+import { KatexFormula } from "@/components/ui/katex-formula";
 
 const FormSchema = z.object({
   flats: z.coerce.number().int().positive(),
@@ -175,6 +176,44 @@ export default function MocZamowionaPage() {
           </Card>
         </div>
 
+        {/* Objaśnienia i założenia */}
+        <div className="grid gap-6 md:grid-cols-2">
+          <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur border-0 shadow-xl">
+            <CardHeader className="border-b border-slate-200/70 dark:border-slate-700/60">
+              <CardTitle className="flex items-center gap-2 text-slate-800 dark:text-slate-200">
+                <InfoIcon className="h-5 w-5" /> Objaśnienia symboli
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6 text-sm text-slate-700 dark:text-slate-300 space-y-2">
+              <ul className="list-disc pl-5 space-y-1">
+                <li><b>PkW</b> — moc szczytowa wymagana do pokrycia piku poboru [kW]</li>
+                <li><b>PnetkW</b> — moc po uwzględnieniu energii z bufora [kW]</li>
+                <li><b>j</b> — współczynnik jednoczesności [–]</li>
+                <li><b>ΔT</b> — różnica temperatur CWU i wody zimnej [K]</li>
+                <li><b>Ebufor</b> — energia zmagazynowana w buforze [kWh]</li>
+              </ul>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur border-0 shadow-xl">
+            <CardHeader className="border-b border-slate-200/70 dark:border-slate-700/60">
+              <CardTitle className="flex items-center gap-2 text-slate-800 dark:text-slate-200">Założenia i wzory</CardTitle>
+            </CardHeader>
+            <CardContent className="p-6 text-sm text-slate-700 dark:text-slate-300 space-y-3">
+              <div>
+                <div className="mb-1">Energia bufora:</div>
+                <KatexFormula displayMode formula={"E = m\,c\,\\Delta T"} />
+                <div className="mt-1 opacity-80">
+                  gdzie m = ρ·V, ρ ≈ 1 kg/L, c = 4{","}186 kJ/(kg·K), a <KatexFormula formula={"E_{kWh} = E_{kJ} / 3600"} />
+                </div>
+              </div>
+              <div className="opacity-80">
+                Profil jednoczesności (niski/średni/wysoki) wpływa na j i wynikową moc szczytową.
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
         <div>
           <Button asChild variant="outline">
             <Link href="/audytorzy">← Wróć do wyboru narzędzia</Link>
@@ -190,6 +229,7 @@ function Field({ label, error, children }: { label: string; error?: string; chil
     <div className="space-y-2">
       <Label>{label}</Label>
       {children}
+      {/* Hints/units can be expanded per field if potrzebne */}
       {error && <p className="text-sm text-red-600">{error}</p>}
     </div>
   );
