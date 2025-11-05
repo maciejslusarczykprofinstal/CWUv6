@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { z } from "zod";
-import { Gauge, Info as InfoIcon, HelpCircle } from "lucide-react";
+import { Gauge, Info as InfoIcon, HelpCircle, FileText } from "lucide-react";
 import { useState, useEffect } from "react";
 import { KatexFormula } from "@/components/ui/katex-formula";
 
@@ -35,9 +35,21 @@ type PowerResult = {
   Ebufor_kWh: number;
 };
 
+type HistoryEntry = {
+  timestamp: number;
+  inputs: FormValues;
+  result: PowerResult;
+};
+
 export default function MocZamowionaPage() {
   const [result, setResult] = useState<PowerResult | null>(null);
   const [loading, setLoading] = useState(false);
+  const [history, setHistory] = useState<HistoryEntry[]>([]);
+
+  function restoreFromHistory(entry: HistoryEntry) {
+    form.reset(entry.inputs);
+    setResult(entry.result);
+  }
 
   const form = useForm<FormValues>({
     defaultValues: {
@@ -54,7 +66,7 @@ export default function MocZamowionaPage() {
     mode: "onBlur",
   });
 
-  // Load last values from localStorage on mount
+  // Load last values and history from localStorage on mount
   useEffect(() => {
     const saved = localStorage.getItem("audytorzy-moc-zamowiona");
     if (saved) {
@@ -63,6 +75,14 @@ export default function MocZamowionaPage() {
         form.reset(vals);
       } catch {
         // ignore invalid saved state
+      }
+    }
+    const savedHistory = localStorage.getItem("audytorzy-moc-zamowiona-history");
+    if (savedHistory) {
+      try {
+        setHistory(JSON.parse(savedHistory));
+      } catch {
+        // ignore
       }
     }
   }, [form]);
@@ -83,7 +103,19 @@ export default function MocZamowionaPage() {
         throw new Error(typeof json.error === "string" ? json.error : JSON.stringify(json.error));
       }
       const power = json.result?.power as PowerResult | undefined;
-      if (power) setResult(power);
+      if (power) {
+        setResult(power);
+        
+        // Save to history
+        const entry: HistoryEntry = {
+          timestamp: Date.now(),
+          inputs: values,
+          result: power,
+        };
+        const newHistory = [entry, ...history].slice(0, 5);
+        setHistory(newHistory);
+        localStorage.setItem("audytorzy-moc-zamowiona-history", JSON.stringify(newHistory));
+      }
     } catch (e) {
       alert("Nie udało się wykonać obliczeń: " + (e as Error).message);
     } finally {
@@ -236,6 +268,42 @@ export default function MocZamowionaPage() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Historia obliczeń */}
+        {history.length > 0 && (
+          <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur border-0 shadow-xl">
+            <CardHeader className="border-b border-slate-200/70 dark:border-slate-700/60">
+              <CardTitle className="flex items-center gap-3 text-slate-800 dark:text-slate-200">
+                <FileText className="h-5 w-5" />
+                Historia obliczeń
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6 space-y-3">
+              {history.map((entry, i) => (
+                <button
+                  key={entry.timestamp}
+                  onClick={() => restoreFromHistory(entry)}
+                  className="w-full text-left p-4 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                      {new Date(entry.timestamp).toLocaleString("pl-PL")}
+                    </span>
+                    <span className="text-xs text-slate-500 dark:text-slate-400">
+                      Kliknij aby przywrócić
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-slate-600 dark:text-slate-400">
+                    <div>Mieszkania: {entry.inputs.flats}</div>
+                    <div>Moc: {entry.result.PkW.toFixed(1)} kW</div>
+                    <div>Piony: {entry.inputs.risers}</div>
+                    <div>Po buforze: {entry.result.PnetkW.toFixed(1)} kW</div>
+                  </div>
+                </button>
+              ))}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Objaśnienia i założenia */}
         <div className="grid gap-6 md:grid-cols-2">

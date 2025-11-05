@@ -1,4 +1,4 @@
-import { Document, Page, Text, View, StyleSheet, Font } from "@react-pdf/renderer";
+import { Document, Page, Text, View, StyleSheet, Font, Svg, Circle, Path } from "@react-pdf/renderer";
 
 Font.register({
   family: "Roboto",
@@ -7,6 +7,19 @@ Font.register({
     { src: "https://fonts.gstatic.com/s/roboto/v30/KFOlCnqEu92Fr1MmWUlvAx05IsDqlA.ttf", fontWeight: 700 },
   ],
 });
+
+// Helper to create pie chart segments
+function createPieSlice(cx: number, cy: number, r: number, startAngle: number, endAngle: number) {
+  const start = polarToCartesian(cx, cy, r, endAngle);
+  const end = polarToCartesian(cx, cy, r, startAngle);
+  const largeArcFlag = endAngle - startAngle <= 180 ? 0 : 1;
+  return `M ${cx} ${cy} L ${start.x} ${start.y} A ${r} ${r} 0 ${largeArcFlag} 0 ${end.x} ${end.y} Z`;
+}
+
+function polarToCartesian(cx: number, cy: number, r: number, angle: number) {
+  const rad = ((angle - 90) * Math.PI) / 180;
+  return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
+}
 
 const styles = StyleSheet.create({
   page: {
@@ -178,6 +191,57 @@ export function LossesPDF({ data }: { data: LossesData }) {
             Rekomenduje się modernizację izolacji przewodów cyrkulacyjnych oraz rozważenie 
             automatycznej regulacji temperatury w celu redukcji strat.
           </Text>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Wizualizacja rozkładu strat</Text>
+          <View style={{ flexDirection: "row", alignItems: "center", marginTop: 12 }}>
+            <View style={{ width: 180, height: 180 }}>
+              <Svg width="180" height="180" viewBox="0 0 180 180">
+                {/* Background circle */}
+                <Circle cx="90" cy="90" r="70" fill="#f1f5f9" />
+                {/* Losses slice (red) */}
+                <Path
+                  d={createPieSlice(90, 90, 70, 0, (data.circGJ / (data.circGJ + 100)) * 360)}
+                  fill="#ef4444"
+                />
+                {/* Useful energy slice (green) */}
+                <Path
+                  d={createPieSlice(90, 90, 70, (data.circGJ / (data.circGJ + 100)) * 360, 360)}
+                  fill="#10b981"
+                />
+                {/* Center hole for donut effect */}
+                <Circle cx="90" cy="90" r="45" fill="white" />
+                <Text
+                  x="90"
+                  y="85"
+                  style={{ fontSize: 16, fontWeight: 700, textAnchor: "middle", fill: "#0f172a" }}
+                >
+                  {((data.circGJ / (data.circGJ + 100)) * 100).toFixed(0)}%
+                </Text>
+                <Text
+                  x="90"
+                  y="100"
+                  style={{ fontSize: 8, textAnchor: "middle", fill: "#64748b" }}
+                >
+                  strat
+                </Text>
+              </Svg>
+            </View>
+            <View style={{ marginLeft: 20, flex: 1 }}>
+              <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 8 }}>
+                <View style={{ width: 12, height: 12, backgroundColor: "#ef4444", marginRight: 8 }} />
+                <Text style={styles.label}>Straty cyrkulacji: {data.circGJ.toFixed(2)} GJ/rok</Text>
+              </View>
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <View style={{ width: 12, height: 12, backgroundColor: "#10b981", marginRight: 8 }} />
+                <Text style={styles.label}>Energia użyteczna (szacunek)</Text>
+              </View>
+              <Text style={{ ...styles.label, marginTop: 8, fontSize: 9, color: "#64748b" }}>
+                Wykres pokazuje udział strat cyrkulacyjnych w całkowitym zużyciu energii cieplnej na CWU.
+              </Text>
+            </View>
+          </View>
         </View>
 
         <View style={styles.section}>

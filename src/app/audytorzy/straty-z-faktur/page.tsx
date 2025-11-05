@@ -12,12 +12,19 @@ import { useState, useEffect } from "react";
 
 type LastMethod = { method: "percent"; purchasedGJ: number; circulationPct: number; pricePerGJ: number } | { method: "ua"; UA_WK: number; dT_circ: number; hours_circ: number; pricePerGJ: number };
 
+type HistoryEntry = {
+  timestamp: number;
+  method: LastMethod;
+  result: { circGJ: number; costPLN: number };
+};
+
 export default function StratyZFakturPage() {
   const [result, setResult] = useState<{ circGJ: number; costPLN: number } | null>(null);
   const [loading, setLoading] = useState(false);
   const [percentDefaults, setPercentDefaults] = useState({ purchasedGJ: 850, circulationPct: 35, pricePerGJ: 75 });
   const [uaDefaults, setUaDefaults] = useState({ UA_WK: 420, dT_circ: 25, hours_circ: 8760, pricePerGJ: 75 });
   const [lastMethod, setLastMethod] = useState<LastMethod | null>(null);
+  const [history, setHistory] = useState<HistoryEntry[]>([]);
   
   const defaultPower = {
     flats: 120,
@@ -31,7 +38,7 @@ export default function StratyZFakturPage() {
     peakDurationSec: 600,
   };
 
-  // Load last values
+  // Load last values and history
   useEffect(() => {
     const savedP = localStorage.getItem("audytorzy-straty-percent");
     if (savedP) {
@@ -45,6 +52,14 @@ export default function StratyZFakturPage() {
     if (savedU) {
       try {
         setUaDefaults(JSON.parse(savedU));
+      } catch {
+        // ignore
+      }
+    }
+    const savedHistory = localStorage.getItem("audytorzy-straty-history");
+    if (savedHistory) {
+      try {
+        setHistory(JSON.parse(savedHistory));
       } catch {
         // ignore
       }
@@ -78,8 +93,16 @@ export default function StratyZFakturPage() {
       const json = await r.json();
       if (!json.ok) throw new Error(JSON.stringify(json.error));
       const circGJ: number = json.result?.circGJ ?? 0;
-      setResult({ circGJ, costPLN: Math.round(circGJ * pricePerGJ) });
-      setLastMethod({ method: "percent", purchasedGJ, circulationPct, pricePerGJ });
+      const resData = { circGJ, costPLN: Math.round(circGJ * pricePerGJ) };
+      setResult(resData);
+      const methodData: LastMethod = { method: "percent", purchasedGJ, circulationPct, pricePerGJ };
+      setLastMethod(methodData);
+      
+      // Save to history
+      const entry: HistoryEntry = { timestamp: Date.now(), method: methodData, result: resData };
+      const newHistory = [entry, ...history].slice(0, 5);
+      setHistory(newHistory);
+      localStorage.setItem("audytorzy-straty-history", JSON.stringify(newHistory));
     } catch (err) {
       alert("Błąd: " + (err as Error).message);
     } finally {
@@ -114,8 +137,16 @@ export default function StratyZFakturPage() {
       const json = await r.json();
       if (!json.ok) throw new Error(JSON.stringify(json.error));
       const circGJ: number = json.result?.circGJ ?? 0;
-      setResult({ circGJ, costPLN: Math.round(circGJ * pricePerGJ) });
-      setLastMethod({ method: "ua", UA_WK, dT_circ, hours_circ, pricePerGJ });
+      const resData = { circGJ, costPLN: Math.round(circGJ * pricePerGJ) };
+      setResult(resData);
+      const methodData: LastMethod = { method: "ua", UA_WK, dT_circ, hours_circ, pricePerGJ };
+      setLastMethod(methodData);
+      
+      // Save to history
+      const entry: HistoryEntry = { timestamp: Date.now(), method: methodData, result: resData };
+      const newHistory = [entry, ...history].slice(0, 5);
+      setHistory(newHistory);
+      localStorage.setItem("audytorzy-straty-history", JSON.stringify(newHistory));
     } catch (err) {
       alert("Błąd: " + (err as Error).message);
     } finally {
@@ -132,6 +163,25 @@ export default function StratyZFakturPage() {
     };
     const params = new URLSearchParams({ data: JSON.stringify(pdfData) });
     window.open(`/api/report/losses?${params}`, "_blank");
+  }
+
+  function restoreFromHistory(entry: HistoryEntry) {
+    if (entry.method.method === "percent") {
+      setPercentDefaults({
+        purchasedGJ: entry.method.purchasedGJ,
+        circulationPct: entry.method.circulationPct,
+        pricePerGJ: entry.method.pricePerGJ,
+      });
+    } else {
+      setUaDefaults({
+        UA_WK: entry.method.UA_WK,
+        dT_circ: entry.method.dT_circ,
+        hours_circ: entry.method.hours_circ,
+        pricePerGJ: entry.method.pricePerGJ,
+      });
+    }
+    setResult(entry.result);
+    setLastMethod(entry.method);
   }
 
   return (
@@ -238,6 +288,41 @@ export default function StratyZFakturPage() {
             )}
           </CardContent>
         </Card>
+
+        {/* Historia obliczeń */}
+        {history.length > 0 && (
+          <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur border-0 shadow-xl">
+            <CardHeader className="border-b border-slate-200/70 dark:border-slate-700/60">
+              <CardTitle className="flex items-center gap-3 text-slate-800 dark:text-slate-200">
+                <FileText className="h-5 w-5" />
+                Historia obliczeń
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6 space-y-3">
+              {history.map((entry) => (
+                <button
+                  key={entry.timestamp}
+                  onClick={() => restoreFromHistory(entry)}
+                  className="w-full text-left p-4 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                      {new Date(entry.timestamp).toLocaleString("pl-PL")}
+                    </span>
+                    <span className="text-xs text-slate-500 dark:text-slate-400">
+                      Kliknij aby przywrócić
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-slate-600 dark:text-slate-400">
+                    <div>Metoda: {entry.method.method === "percent" ? "% z zakupu" : "UA×ΔT×t"}</div>
+                    <div>Straty: {entry.result.circGJ.toFixed(1)} GJ/rok</div>
+                    <div>Koszt: {entry.result.costPLN.toLocaleString("pl-PL")} zł/rok</div>
+                  </div>
+                </button>
+              ))}
+            </CardContent>
+          </Card>
+        )}
 
         <div>
           <Button asChild variant="outline">
