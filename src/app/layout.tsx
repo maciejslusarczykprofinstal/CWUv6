@@ -85,7 +85,7 @@ export default function RootLayout({
                   href="/komponenty"
                   className="ml-2 px-5 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold hover:shadow-lg transition-all hover:scale-105"
                 >
-                  Wypróbuj
+                  CEL
                 </Link>
               </div>
             </nav>
