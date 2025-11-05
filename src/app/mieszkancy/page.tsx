@@ -5,6 +5,7 @@ import { Home, Calculator, TrendingDown, Info as InfoIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { KatexFormula } from "@/components/ui/katex-formula";
+import { toast } from "sonner";
 
 type Result = {
   energyLossPerM3: number;
@@ -117,7 +118,7 @@ export default function MieszkancyPage() {
       // Sprzątanie po chwili
       setTimeout(() => URL.revokeObjectURL(objectUrl), 10_000);
     } catch (e) {
-      alert(`Nie udało się wygenerować PDF: ${String(e)}`);
+      toast.error("Nie udało się wygenerować PDF", { description: String(e) });
     }
   }
 

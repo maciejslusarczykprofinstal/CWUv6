@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Calculator, DollarSign } from "lucide-react";
 import { useMemo, useState } from "react";
+import { toast } from "sonner";
 
 export default function LicznikiPage() {
   // Helpers
@@ -35,7 +36,7 @@ export default function LicznikiPage() {
       }
       setTimeout(() => URL.revokeObjectURL(objectUrl), 10_000);
     } catch (e) {
-      alert(`Nie udało się wygenerować PDF: ${String(e)}`);
+      toast.error("Nie udało się wygenerować PDF", { description: String(e) });
     }
   }
 
