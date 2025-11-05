@@ -85,23 +85,32 @@ export default function LicznikiPage() {
     }
   }
 
-  // Ścieżka 3: Alternatywna metoda (podobna do ścieżki 1)
+  // Ścieżka 3: Alternatywna metoda (m³ wody → koszt całkowity)
   async function handleSubmit3(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
     
     const pricePerGJ = Number(fd.get("pricePerGJ3"));
-    const cwuGJ = Number(fd.get("cwuGJ3"));
+    const waterVolumeM3 = Number(fd.get("waterVolumeM3_3"));
     
     try {
-      const deltaT = 55 - 10;
-      const specificHeat = 4186;
-      const energyPerM3_J = 1000 * specificHeat * deltaT;
-      const energyPerM3_GJ = energyPerM3_J / 1e9;
+      // Fizyka: grzejemy wodę od 10°C do 55°C
+      const deltaT = 55 - 10; // 45 K
+      const specificHeat = 4186; // J/(kg·K) = J/(L·K) dla wody
       
-      const waterVolume = cwuGJ / energyPerM3_GJ;
-      const totalCost = cwuGJ * pricePerGJ;
-      const pricePerM3 = totalCost / waterVolume;
+      // Energia na 1 m3 (1000 L) wody:
+      // E = m * c * ΔT = 1000 kg * 4186 J/(kg·K) * 45 K
+      const energyPerM3_J = 1000 * specificHeat * deltaT;
+      const energyPerM3_GJ = energyPerM3_J / 1e9; // konwersja J → GJ
+      
+      // Całkowita energia potrzebna do podgrzania waterVolumeM3
+      const totalEnergyGJ = waterVolumeM3 * energyPerM3_GJ;
+      
+      // Koszt całkowity
+      const totalCost = totalEnergyGJ * pricePerGJ;
+      
+      // Cena za m3
+      const pricePerM3 = totalCost / waterVolumeM3;
       
       setResult3({
         pricePerM3,
@@ -273,7 +282,7 @@ export default function LicznikiPage() {
                 <span>Metoda alternatywna</span>
               </CardTitle>
               <p className="text-xs text-slate-600 dark:text-slate-400 mt-2">
-                Energia → Cena/m³ (v2)
+                m³ wody → Koszt podgrzania
               </p>
             </CardHeader>
             <CardContent className="p-4">
@@ -290,14 +299,15 @@ export default function LicznikiPage() {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label className="text-sm">Zużycie CWU [GJ]</Label>
+                  <Label className="text-sm">Zużycie CWU [m³]</Label>
                   <Input 
-                    name="cwuGJ3" 
+                    name="waterVolumeM3_3" 
                     type="number" 
                     step="0.01" 
-                    defaultValue="150"
+                    defaultValue="800"
                     required 
                   />
+                  <p className="text-xs text-slate-500">80 mieszkań: 600-1000 m³/rok</p>
                 </div>
 
                 <div className="flex gap-2">
@@ -311,15 +321,15 @@ export default function LicznikiPage() {
               {result3 && (
                 <div className="mt-4 space-y-3">
                   <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
-                    <div className="text-xs text-blue-600 dark:text-blue-400">Cena za m³</div>
+                    <div className="text-xs text-blue-600 dark:text-blue-400">Koszt całkowity podgrzania</div>
                     <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">
-                      {result3.pricePerM3.toFixed(2)} zł/m³
+                      {result3.totalCost.toLocaleString("pl-PL", { minimumFractionDigits: 2 })} zł
                     </div>
                   </div>
                   <div className="p-2 rounded bg-slate-50 dark:bg-slate-800/50">
-                    <div className="text-xs text-slate-600 dark:text-slate-400">Koszt całkowity</div>
+                    <div className="text-xs text-slate-600 dark:text-slate-400">Cena za m³</div>
                     <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                      {result3.totalCost.toLocaleString("pl-PL", { minimumFractionDigits: 2 })} zł
+                      {result3.pricePerM3.toFixed(2)} zł/m³
                     </div>
                   </div>
                 </div>
