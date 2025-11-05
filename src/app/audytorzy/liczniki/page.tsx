@@ -46,22 +46,23 @@ export default function LicznikiPage() {
     void generatePdfClient(doc, "raport-liczniki.pdf");
   }
 
+  // Wspólna wartość zużycia wody dla obu ścieżek
+  const [waterVolumeM3, setWaterVolumeM3] = useState<number>(800);
+  
   // Ścieżka 2: controlled inputs
-  const [waterVolumeM3_2, setWaterVolumeM3_2] = useState<number>(800);
   const [pricePerM3_2, setPricePerM3_2] = useState<number>(65);
 
   const result2 = useMemo(() => {
-    const w = coerce(waterVolumeM3_2);
+    const w = coerce(waterVolumeM3);
     const p = coerce(pricePerM3_2);
     return {
       totalPaid: w * p,
       waterVolume: w,
     };
-  }, [waterVolumeM3_2, pricePerM3_2]);
+  }, [waterVolumeM3, pricePerM3_2]);
 
   // Ścieżka 3: controlled inputs
   const [pricePerGJ3, setPricePerGJ3] = useState<number>(90);
-  const [waterVolumeM3_3, setWaterVolumeM3_3] = useState<number>(800);
 
   const result3 = useMemo(() => {
     // Fizyka: grzejemy wodę od 10°C do 55°C
@@ -71,12 +72,12 @@ export default function LicznikiPage() {
     const energyPerM3_GJ = energyPerM3_J / 1e9; // ~0.18837 GJ/m3
 
     const pricePerGJ = coerce(pricePerGJ3);
-    const w = coerce(waterVolumeM3_3);
+    const w = coerce(waterVolumeM3);
     const totalEnergyGJ = w * energyPerM3_GJ;
     const totalCost = totalEnergyGJ * pricePerGJ;
     const pricePerM3 = w > 0 ? totalCost / w : 0;
     return { pricePerM3, totalCost };
-  }, [pricePerGJ3, waterVolumeM3_3]);
+  }, [pricePerGJ3, waterVolumeM3]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50 dark:from-slate-900 dark:via-slate-900 dark:to-slate-900">
@@ -112,8 +113,8 @@ export default function LicznikiPage() {
                     name="waterVolumeM3"
                     type="number"
                     step="0.01"
-                    value={waterVolumeM3_2}
-                    onChange={(e) => setWaterVolumeM3_2(Number.isFinite(e.currentTarget.valueAsNumber) ? e.currentTarget.valueAsNumber : 0)}
+                    value={waterVolumeM3}
+                    onChange={(e) => setWaterVolumeM3(Number.isFinite(e.currentTarget.valueAsNumber) ? e.currentTarget.valueAsNumber : 0)}
                     required
                   />
                   <p className="text-xs text-slate-500">80 mieszkań: 600-1000 m³/rok</p>
@@ -137,7 +138,7 @@ export default function LicznikiPage() {
                     size="sm"
                     variant="ghost"
                     onClick={() => {
-                      setWaterVolumeM3_2(800);
+                      setWaterVolumeM3(800);
                       setPricePerM3_2(65);
                     }}
                   >
@@ -195,11 +196,11 @@ export default function LicznikiPage() {
                 <div className="space-y-2">
                   <Label className="text-sm">Zużycie CWU [m³]</Label>
                   <Input 
-                    name="waterVolumeM3_3"
+                    name="waterVolumeM3"
                     type="number"
                     step="0.01"
-                    value={waterVolumeM3_3}
-                    onChange={(e) => setWaterVolumeM3_3(Number.isFinite(e.currentTarget.valueAsNumber) ? e.currentTarget.valueAsNumber : 0)}
+                    value={waterVolumeM3}
+                    onChange={(e) => setWaterVolumeM3(Number.isFinite(e.currentTarget.valueAsNumber) ? e.currentTarget.valueAsNumber : 0)}
                     required
                   />
                   <p className="text-xs text-slate-500">80 mieszkań: 600-1000 m³/rok</p>
@@ -212,7 +213,7 @@ export default function LicznikiPage() {
                     variant="ghost"
                     onClick={() => {
                       setPricePerGJ3(90);
-                      setWaterVolumeM3_3(800);
+                      setWaterVolumeM3(800);
                     }}
                   >
                     Wyczyść
@@ -290,9 +291,9 @@ export default function LicznikiPage() {
                   <div className="mt-4">
                     {(() => {
                       const payload = {
-                        waterVolumeM3: waterVolumeM3_3,
-                        paidVolumeM3: waterVolumeM3_2,
-                        theoreticalVolumeM3: waterVolumeM3_3,
+                        waterVolumeM3: waterVolumeM3,
+                        paidVolumeM3: waterVolumeM3,
+                        theoreticalVolumeM3: waterVolumeM3,
                         pricePerM3: pricePerM3_2,
                         pricePerGJ: pricePerGJ3,
                         totalPaid: result2.totalPaid,
