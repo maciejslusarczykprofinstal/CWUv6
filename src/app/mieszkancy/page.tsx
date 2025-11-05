@@ -495,7 +495,7 @@ export default function MieszkancyPage() {
                   </div>
 
                   {/* Where losses occur */}
-                  <div className="bg-white dark:bg-slate-900 rounded-xl p-6 shadow-lg border border-emerald-200 dark:border-emerald-800">
+                  <div className="bg-white dark:bg-slate-900 rounded-xl p-6 shadow-lg border border-blue-200 dark:border-blue-800">
                     <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200 mb-4">
                       🔍 Gdzie najczęściej ginie te ~{res.energyLossPerM3.toFixed(3)} GJ/m³?
                     </h3>
@@ -507,7 +507,7 @@ export default function MieszkancyPage() {
                         symptom="Wysoka temp. powrotu (np. 52–55°C), brak 'schłodzenia' rurociągów"
                         energyRange={`${(res.energyLossPerM3 * 0.30).toFixed(3)}–${(res.energyLossPerM3 * 0.50).toFixed(3)} GJ/m³`}
                         costRange={`${(res.lossPerM3 * 0.30).toFixed(2)}–${(res.lossPerM3 * 0.50).toFixed(2)} zł/m³`}
-                        color="red"
+                        color="blue"
                       />
                       
                       <LossItem 
@@ -516,7 +516,7 @@ export default function MieszkancyPage() {
                         symptom="Piwnice 'grzeją' za darmo"
                         energyRange={`${(res.energyLossPerM3 * 0.10).toFixed(3)}–${(res.energyLossPerM3 * 0.25).toFixed(3)} GJ/m³`}
                         costRange={`${(res.lossPerM3 * 0.10).toFixed(2)}–${(res.lossPerM3 * 0.25).toFixed(2)} zł/m³`}
-                        color="orange"
+                        color="blue"
                       />
                       
                       <LossItem 
@@ -525,7 +525,7 @@ export default function MieszkancyPage() {
                         symptom="Pompy pracują non-stop bez optymalizacji"
                         energyRange={`${(res.energyLossPerM3 * 0.05).toFixed(3)}–${(res.energyLossPerM3 * 0.15).toFixed(3)} GJ/m³`}
                         costRange={`${(res.lossPerM3 * 0.05).toFixed(2)}–${(res.lossPerM3 * 0.15).toFixed(2)} zł/m³`}
-                        color="amber"
+                        color="blue"
                       />
                       
                       <LossItem 
@@ -534,7 +534,7 @@ export default function MieszkancyPage() {
                         symptom="'Pseudo-cyrkulacja' i mieszanie temperatur"
                         energyRange={`${(res.energyLossPerM3 * 0.05).toFixed(3)}–${(res.energyLossPerM3 * 0.15).toFixed(3)} GJ/m³`}
                         costRange={`${(res.lossPerM3 * 0.05).toFixed(2)}–${(res.lossPerM3 * 0.15).toFixed(2)} zł/m³`}
-                        color="yellow"
+                        color="blue"
                       />
                       
                       <LossItem 
@@ -543,7 +543,7 @@ export default function MieszkancyPage() {
                         symptom="Temperatura 60–62°C non stop zamiast 55°C"
                         energyRange={`${(res.energyLossPerM3 * 0.05).toFixed(3)}–${(res.energyLossPerM3 * 0.10).toFixed(3)} GJ/m³`}
                         costRange={`${(res.lossPerM3 * 0.05).toFixed(2)}–${(res.lossPerM3 * 0.10).toFixed(2)} zł/m³`}
-                        color="lime"
+                        color="blue"
                       />
                       
                       <LossItem 
@@ -552,7 +552,7 @@ export default function MieszkancyPage() {
                         symptom="Część pętli przegrzana, część niedogrzana"
                         energyRange={`${(res.energyLossPerM3 * 0.05).toFixed(3)}–${(res.energyLossPerM3 * 0.10).toFixed(3)} GJ/m³`}
                         costRange={`${(res.lossPerM3 * 0.05).toFixed(2)}–${(res.lossPerM3 * 0.10).toFixed(2)} zł/m³`}
-                        color="green"
+                        color="blue"
                       />
                       
                       <LossItem 
@@ -561,7 +561,7 @@ export default function MieszkancyPage() {
                         symptom="Zimna woda wchodzi z inną temperaturą niż założono"
                         energyRange={`${(res.energyLossPerM3 * 0.05).toFixed(3)}–${(res.energyLossPerM3 * 0.10).toFixed(3)} GJ/m³`}
                         costRange={`${(res.lossPerM3 * 0.05).toFixed(2)}–${(res.lossPerM3 * 0.10).toFixed(2)} zł/m³`}
-                        color="emerald"
+                        color="blue"
                       />
                     </div>
 
@@ -869,6 +869,7 @@ function LossItem({ percentage, title, symptom, energyRange, costRange, color }:
   color: string;
 }) {
   const colorClasses: Record<string, { bg: string; border: string; text: string; badge: string }> = {
+    blue: { bg: 'bg-blue-50 dark:bg-blue-950/20', border: 'border-blue-200 dark:border-blue-800', text: 'text-blue-800 dark:text-blue-300', badge: 'bg-blue-500 text-white' },
     red: { bg: 'bg-red-50 dark:bg-red-950/20', border: 'border-red-200 dark:border-red-800', text: 'text-red-800 dark:text-red-300', badge: 'bg-red-500 text-white' },
     orange: { bg: 'bg-orange-50 dark:bg-orange-950/20', border: 'border-orange-200 dark:border-orange-800', text: 'text-orange-800 dark:text-orange-300', badge: 'bg-orange-500 text-white' },
     amber: { bg: 'bg-amber-50 dark:bg-amber-950/20', border: 'border-amber-200 dark:border-amber-800', text: 'text-amber-800 dark:text-amber-300', badge: 'bg-amber-500 text-white' },
