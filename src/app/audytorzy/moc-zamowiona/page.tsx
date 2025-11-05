@@ -45,6 +45,7 @@ export default function MocZamowionaPage() {
   const [result, setResult] = useState<PowerResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   function restoreFromHistory(entry: HistoryEntry) {
     form.reset(entry.inputs);
@@ -87,40 +88,55 @@ export default function MocZamowionaPage() {
     }
   }, [form]);
 
-  const onSubmit: SubmitHandler<FormValues> = async (values) => {
-    setLoading(true);
-    try {
-      // Save to localStorage
-      localStorage.setItem("audytorzy-moc-zamowiona", JSON.stringify(values));
-      
-      const r = await fetch("/api/calc/auditor", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(values),
-      });
-      const json = await r.json();
-      if (!json.ok) {
-        throw new Error(typeof json.error === "string" ? json.error : JSON.stringify(json.error));
+  // Live calc: obliczenia uruchamiane automatycznie po zmianie pól (z debounce)
+  const watchAll = form.watch();
+  useEffect(() => {
+    const timer = setTimeout(async () => {
+      const vals = form.getValues();
+      const parsed = FormSchema.safeParse(vals);
+      if (!parsed.success) {
+        setResult(null);
+        setErrorMsg(null);
+        return;
       }
-      const power = json.result?.power as PowerResult | undefined;
-      if (power) {
-        setResult(power);
-        
-        // Save to history
-        const entry: HistoryEntry = {
-          timestamp: Date.now(),
-          inputs: values,
-          result: power,
-        };
-        const newHistory = [entry, ...history].slice(0, 5);
-        setHistory(newHistory);
-        localStorage.setItem("audytorzy-moc-zamowiona-history", JSON.stringify(newHistory));
+      try {
+        setLoading(true);
+        setErrorMsg(null);
+        localStorage.setItem("audytorzy-moc-zamowiona", JSON.stringify(parsed.data));
+        const r = await fetch("/api/calc/auditor", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(parsed.data),
+        });
+        const json = await r.json();
+        if (!json.ok) {
+          throw new Error(typeof json.error === "string" ? json.error : JSON.stringify(json.error));
+        }
+        const power = json.result?.power as PowerResult | undefined;
+        if (power) {
+          setResult(power);
+        }
+      } catch (e) {
+        setErrorMsg((e as Error).message);
+      } finally {
+        setLoading(false);
       }
-    } catch (e) {
-      alert("Nie udało się wykonać obliczeń: " + (e as Error).message);
-    } finally {
-      setLoading(false);
-    }
+    }, 350);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [watchAll]);
+
+  function addToHistory() {
+    const vals = form.getValues();
+    if (!result) return;
+    const entry: HistoryEntry = {
+      timestamp: Date.now(),
+      inputs: vals as FormValues,
+      result,
+    };
+    const newHistory = [entry, ...history].slice(0, 5);
+    setHistory(newHistory);
+    localStorage.setItem("audytorzy-moc-zamowiona-history", JSON.stringify(newHistory));
   }
 
   return (
@@ -146,7 +162,7 @@ export default function MocZamowionaPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6 space-y-6">
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <form onSubmit={(e) => e.preventDefault()} className="space-y-6">
                 <div className="grid gap-4 md:grid-cols-2">
                   <Field 
                     label="Liczba mieszkań" 
@@ -237,13 +253,13 @@ export default function MocZamowionaPage() {
                   </Field>
                 </div>
 
-                <div className="flex gap-3">
-                  <Button type="submit" disabled={loading} className="px-8">
-                    {loading ? "Liczenie…" : "Oblicz moc"}
-                  </Button>
-                  <Button type="button" variant="ghost" onClick={() => { form.reset(); setResult(null); }}>
+                <div className="flex flex-wrap gap-3 items-center">
+                  <Button type="button" size="sm" variant="outline" onClick={addToHistory} disabled={!result}>Zapisz do historii</Button>
+                  <Button type="button" size="sm" variant="ghost" onClick={() => { form.reset(); setResult(null); }}>
                     Wyczyść
                   </Button>
+                  {loading && <span className="text-xs text-slate-500">Liczenie…</span>}
+                  {errorMsg && <span className="text-xs text-red-600">Błąd: {errorMsg}</span>}
                 </div>
               </form>
             </CardContent>
@@ -263,7 +279,7 @@ export default function MocZamowionaPage() {
                   <Info label="Energia bufora" value={`${result.Ebufor_kWh.toFixed(2)} kWh`} />
                 </div>
               ) : (
-                <p className="text-slate-600 dark:text-slate-400">Wyniki pojawią się po wykonaniu obliczeń.</p>
+                <p className="text-slate-600 dark:text-slate-400">{loading ? "Liczenie…" : "Wyniki pojawią się po wprowadzeniu kompletnych danych."}</p>
               )}
             </CardContent>
           </Card>
