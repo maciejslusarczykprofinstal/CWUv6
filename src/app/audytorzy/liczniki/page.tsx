@@ -5,8 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Activity, Calculator, DollarSign, Thermometer } from "lucide-react";
+import { Calculator, DollarSign, Thermometer } from "lucide-react";
 import { useState } from "react";
 
 export default function LicznikiPage() {
@@ -115,246 +114,219 @@ export default function LicznikiPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50 dark:from-slate-900 dark:via-slate-900 dark:to-slate-900">
-      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-16 space-y-10">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16 space-y-10">
         <header className="space-y-2">
           <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
             Analiza liczników CWU
           </h1>
           <p className="text-slate-600 dark:text-slate-400">
-            Trzy metody obliczania kosztów ciepłej wody użytkowej dla budynku.
+            Trzy metody obliczania kosztów ciepłej wody użytkowej dla budynku. Wszystkie obliczenia działają równolegle.
           </p>
         </header>
 
-        <Tabs defaultValue="path1" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="path1">
-              <Thermometer className="h-4 w-4 mr-2" />
-              Energia → Cena/m³
-            </TabsTrigger>
-            <TabsTrigger value="path2">
-              <DollarSign className="h-4 w-4 mr-2" />
-              Ile zapłacili
-            </TabsTrigger>
-            <TabsTrigger value="path3">
-              <Calculator className="h-4 w-4 mr-2" />
-              Metoda alternatywna
-            </TabsTrigger>
-          </TabsList>
-
+        <div className="grid gap-6 lg:grid-cols-3">
           {/* Ścieżka 1: Energia + zużycie CWU → cena za m3 */}
-          <TabsContent value="path1" className="space-y-6">
-            <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur border-0 shadow-xl">
-              <CardHeader className="border-b border-slate-200/70 dark:border-slate-700/60">
-                <CardTitle className="flex items-center gap-3 text-slate-800 dark:text-slate-200">
-                  <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-purple-600 text-white">
-                    <Thermometer className="h-5 w-5" />
-                  </span>
-                  Oblicz cenę za m³ z energii
-                </CardTitle>
-                <p className="text-sm text-slate-600 dark:text-slate-400 mt-2">
-                  Grzejemy wodę od 10°C do 55°C. Wprowadź cenę energii i zużycie CWU w GJ.
-                </p>
-              </CardHeader>
-              <CardContent className="p-6">
-                <form onSubmit={handleSubmit1} className="space-y-6">
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label>Energia cieplna – cena [zł/GJ]</Label>
-                      <Input 
-                        name="pricePerGJ1" 
-                        type="number" 
-                        step="0.01" 
-                        defaultValue="90"
-                        required 
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label>Zużycie CWU [GJ]</Label>
-                      <Input 
-                        name="cwuGJ1" 
-                        type="number" 
-                        step="0.01" 
-                        defaultValue="150"
-                        placeholder="Dla 80 mieszkań typowo 120-180 GJ/rok"
-                        required 
-                      />
-                    </div>
-                  </div>
+          <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur border-0 shadow-xl">
+            <CardHeader className="border-b border-slate-200/70 dark:border-slate-700/60">
+              <CardTitle className="flex items-center gap-2 text-slate-800 dark:text-slate-200 text-base">
+                <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-purple-600 text-white flex-shrink-0">
+                  <Thermometer className="h-5 w-5" />
+                </span>
+                <span>Energia → Cena/m³</span>
+              </CardTitle>
+              <p className="text-xs text-slate-600 dark:text-slate-400 mt-2">
+                Woda 10°C → 55°C
+              </p>
+            </CardHeader>
+            <CardContent className="p-4">
+              <form onSubmit={handleSubmit1} className="space-y-4">
+                <div className="space-y-2">
+                  <Label className="text-sm">Energia [zł/GJ]</Label>
+                  <Input 
+                    name="pricePerGJ1" 
+                    type="number" 
+                    step="0.01" 
+                    defaultValue="90"
+                    required 
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label className="text-sm">Zużycie CWU [GJ]</Label>
+                  <Input 
+                    name="cwuGJ1" 
+                    type="number" 
+                    step="0.01" 
+                    defaultValue="150"
+                    required 
+                  />
+                  <p className="text-xs text-slate-500">80 mieszkań: 120-180 GJ/rok</p>
+                </div>
 
-                  <div className="flex gap-3">
-                    <Button type="submit">Oblicz</Button>
-                    <Button type="button" variant="ghost" onClick={() => setResult1(null)}>
-                      Wyczyść
-                    </Button>
-                  </div>
-                </form>
+                <div className="flex gap-2">
+                  <Button type="submit" size="sm" className="flex-1">Oblicz</Button>
+                  <Button type="button" size="sm" variant="ghost" onClick={() => setResult1(null)}>
+                    Wyczyść
+                  </Button>
+                </div>
+              </form>
 
-                {result1 && (
-                  <div className="mt-6 space-y-4">
-                    <div className="p-4 rounded-lg bg-purple-50 dark:bg-purple-900/20 border-2 border-purple-200 dark:border-purple-800">
-                      <div className="text-sm text-purple-600 dark:text-purple-400">Cena za m³ wody</div>
-                      <div className="text-3xl font-bold text-purple-900 dark:text-purple-100">
-                        {result1.pricePerM3.toFixed(2)} zł/m³
+              {result1 && (
+                <div className="mt-4 space-y-3">
+                  <div className="p-3 rounded-lg bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800">
+                    <div className="text-xs text-purple-600 dark:text-purple-400">Cena za m³</div>
+                    <div className="text-2xl font-bold text-purple-900 dark:text-purple-100">
+                      {result1.pricePerM3.toFixed(2)} zł/m³
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="p-2 rounded bg-slate-50 dark:bg-slate-800/50">
+                      <div className="text-xs text-slate-600 dark:text-slate-400">Koszt całkowity</div>
+                      <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                        {result1.totalCost.toLocaleString("pl-PL", { minimumFractionDigits: 2 })} zł
                       </div>
                     </div>
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <div className="p-4 rounded-lg bg-slate-50 dark:bg-slate-800/50">
-                        <div className="text-sm text-slate-600 dark:text-slate-400">Całkowity koszt</div>
-                        <div className="text-xl font-bold text-slate-900 dark:text-slate-100">
-                          {result1.totalCost.toLocaleString("pl-PL", { minimumFractionDigits: 2 })} zł
-                        </div>
-                      </div>
-                      <div className="p-4 rounded-lg bg-slate-50 dark:bg-slate-800/50">
-                        <div className="text-sm text-slate-600 dark:text-slate-400">Energia użyta</div>
-                        <div className="text-xl font-bold text-slate-900 dark:text-slate-100">
-                          {result1.energyUsedGJ.toFixed(2)} GJ
-                        </div>
+                    <div className="p-2 rounded bg-slate-50 dark:bg-slate-800/50">
+                      <div className="text-xs text-slate-600 dark:text-slate-400">Energia</div>
+                      <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                        {result1.energyUsedGJ.toFixed(2)} GJ
                       </div>
                     </div>
                   </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
           {/* Ścieżka 2: Rzeczywista ilość wody + cena → ile zapłacili */}
-          <TabsContent value="path2" className="space-y-6">
-            <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur border-0 shadow-xl">
-              <CardHeader className="border-b border-slate-200/70 dark:border-slate-700/60">
-                <CardTitle className="flex items-center gap-3 text-slate-800 dark:text-slate-200">
-                  <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-green-600 text-white">
-                    <DollarSign className="h-5 w-5" />
-                  </span>
-                  Ile zapłacili mieszkańcy
-                </CardTitle>
-                <p className="text-sm text-slate-600 dark:text-slate-400 mt-2">
-                  Wprowadź rzeczywistą ilość zużytej wody i cenę za m³.
-                </p>
-              </CardHeader>
-              <CardContent className="p-6">
-                <form onSubmit={handleSubmit2} className="space-y-6">
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label>Zużyta woda [m³]</Label>
-                      <Input 
-                        name="waterVolumeM3" 
-                        type="number" 
-                        step="0.01" 
-                        defaultValue="800"
-                        placeholder="Dla 80 mieszkań typowo 600-1000 m³/rok"
-                        required 
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label>Cena za m³ [zł/m³]</Label>
-                      <Input 
-                        name="pricePerM3_2" 
-                        type="number" 
-                        step="0.01" 
-                        defaultValue="65"
-                        required 
-                      />
-                    </div>
-                  </div>
+          <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur border-0 shadow-xl">
+            <CardHeader className="border-b border-slate-200/70 dark:border-slate-700/60">
+              <CardTitle className="flex items-center gap-2 text-slate-800 dark:text-slate-200 text-base">
+                <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-green-600 text-white flex-shrink-0">
+                  <DollarSign className="h-5 w-5" />
+                </span>
+                <span>Ile zapłacili</span>
+              </CardTitle>
+              <p className="text-xs text-slate-600 dark:text-slate-400 mt-2">
+                Rzeczywista ilość × cena
+              </p>
+            </CardHeader>
+            <CardContent className="p-4">
+              <form onSubmit={handleSubmit2} className="space-y-4">
+                <div className="space-y-2">
+                  <Label className="text-sm">Zużyta woda [m³]</Label>
+                  <Input 
+                    name="waterVolumeM3" 
+                    type="number" 
+                    step="0.01" 
+                    defaultValue="800"
+                    required 
+                  />
+                  <p className="text-xs text-slate-500">80 mieszkań: 600-1000 m³/rok</p>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label className="text-sm">Cena [zł/m³]</Label>
+                  <Input 
+                    name="pricePerM3_2" 
+                    type="number" 
+                    step="0.01" 
+                    defaultValue="65"
+                    required 
+                  />
+                </div>
 
-                  <div className="flex gap-3">
-                    <Button type="submit">Oblicz</Button>
-                    <Button type="button" variant="ghost" onClick={() => setResult2(null)}>
-                      Wyczyść
-                    </Button>
-                  </div>
-                </form>
+                <div className="flex gap-2">
+                  <Button type="submit" size="sm" className="flex-1">Oblicz</Button>
+                  <Button type="button" size="sm" variant="ghost" onClick={() => setResult2(null)}>
+                    Wyczyść
+                  </Button>
+                </div>
+              </form>
 
-                {result2 && (
-                  <div className="mt-6 space-y-4">
-                    <div className="p-4 rounded-lg bg-green-50 dark:bg-green-900/20 border-2 border-green-200 dark:border-green-800">
-                      <div className="text-sm text-green-600 dark:text-green-400">Mieszkańcy zapłacili</div>
-                      <div className="text-3xl font-bold text-green-900 dark:text-green-100">
-                        {result2.totalPaid.toLocaleString("pl-PL", { minimumFractionDigits: 2 })} zł
-                      </div>
-                    </div>
-                    <div className="p-4 rounded-lg bg-slate-50 dark:bg-slate-800/50">
-                      <div className="text-sm text-slate-600 dark:text-slate-400">Zużyta woda</div>
-                      <div className="text-xl font-bold text-slate-900 dark:text-slate-100">
-                        {result2.waterVolume.toLocaleString("pl-PL", { minimumFractionDigits: 2 })} m³
-                      </div>
+              {result2 && (
+                <div className="mt-4 space-y-3">
+                  <div className="p-3 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
+                    <div className="text-xs text-green-600 dark:text-green-400">Zapłacili</div>
+                    <div className="text-2xl font-bold text-green-900 dark:text-green-100">
+                      {result2.totalPaid.toLocaleString("pl-PL", { minimumFractionDigits: 2 })} zł
                     </div>
                   </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
+                  <div className="p-2 rounded bg-slate-50 dark:bg-slate-800/50">
+                    <div className="text-xs text-slate-600 dark:text-slate-400">Zużyta woda</div>
+                    <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                      {result2.waterVolume.toLocaleString("pl-PL", { minimumFractionDigits: 2 })} m³
+                    </div>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
           {/* Ścieżka 3: Alternatywna metoda */}
-          <TabsContent value="path3" className="space-y-6">
-            <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur border-0 shadow-xl">
-              <CardHeader className="border-b border-slate-200/70 dark:border-slate-700/60">
-                <CardTitle className="flex items-center gap-3 text-slate-800 dark:text-slate-200">
-                  <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-white">
-                    <Calculator className="h-5 w-5" />
-                  </span>
-                  Metoda alternatywna
-                </CardTitle>
-                <p className="text-sm text-slate-600 dark:text-slate-400 mt-2">
-                  Oblicz cenę za m³ na podstawie ceny energii i zużycia CWU (10°C → 55°C).
-                </p>
-              </CardHeader>
-              <CardContent className="p-6">
-                <form onSubmit={handleSubmit3} className="space-y-6">
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label>Energia cieplna – cena [zł/GJ]</Label>
-                      <Input 
-                        name="pricePerGJ3" 
-                        type="number" 
-                        step="0.01" 
-                        defaultValue="90"
-                        required 
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label>Zużycie CWU [GJ]</Label>
-                      <Input 
-                        name="cwuGJ3" 
-                        type="number" 
-                        step="0.01" 
-                        defaultValue="150"
-                        required 
-                      />
-                    </div>
-                  </div>
+          <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur border-0 shadow-xl">
+            <CardHeader className="border-b border-slate-200/70 dark:border-slate-700/60">
+              <CardTitle className="flex items-center gap-2 text-slate-800 dark:text-slate-200 text-base">
+                <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-white flex-shrink-0">
+                  <Calculator className="h-5 w-5" />
+                </span>
+                <span>Metoda alternatywna</span>
+              </CardTitle>
+              <p className="text-xs text-slate-600 dark:text-slate-400 mt-2">
+                Energia → Cena/m³ (v2)
+              </p>
+            </CardHeader>
+            <CardContent className="p-4">
+              <form onSubmit={handleSubmit3} className="space-y-4">
+                <div className="space-y-2">
+                  <Label className="text-sm">Energia [zł/GJ]</Label>
+                  <Input 
+                    name="pricePerGJ3" 
+                    type="number" 
+                    step="0.01" 
+                    defaultValue="90"
+                    required 
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label className="text-sm">Zużycie CWU [GJ]</Label>
+                  <Input 
+                    name="cwuGJ3" 
+                    type="number" 
+                    step="0.01" 
+                    defaultValue="150"
+                    required 
+                  />
+                </div>
 
-                  <div className="flex gap-3">
-                    <Button type="submit">Oblicz</Button>
-                    <Button type="button" variant="ghost" onClick={() => setResult3(null)}>
-                      Wyczyść
-                    </Button>
-                  </div>
-                </form>
+                <div className="flex gap-2">
+                  <Button type="submit" size="sm" className="flex-1">Oblicz</Button>
+                  <Button type="button" size="sm" variant="ghost" onClick={() => setResult3(null)}>
+                    Wyczyść
+                  </Button>
+                </div>
+              </form>
 
-                {result3 && (
-                  <div className="mt-6 space-y-4">
-                    <div className="p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-200 dark:border-blue-800">
-                      <div className="text-sm text-blue-600 dark:text-blue-400">Cena za m³ wody</div>
-                      <div className="text-3xl font-bold text-blue-900 dark:text-blue-100">
-                        {result3.pricePerM3.toFixed(2)} zł/m³
-                      </div>
-                    </div>
-                    <div className="p-4 rounded-lg bg-slate-50 dark:bg-slate-800/50">
-                      <div className="text-sm text-slate-600 dark:text-slate-400">Całkowity koszt</div>
-                      <div className="text-xl font-bold text-slate-900 dark:text-slate-100">
-                        {result3.totalCost.toLocaleString("pl-PL", { minimumFractionDigits: 2 })} zł
-                      </div>
+              {result3 && (
+                <div className="mt-4 space-y-3">
+                  <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
+                    <div className="text-xs text-blue-600 dark:text-blue-400">Cena za m³</div>
+                    <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">
+                      {result3.pricePerM3.toFixed(2)} zł/m³
                     </div>
                   </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+                  <div className="p-2 rounded bg-slate-50 dark:bg-slate-800/50">
+                    <div className="text-xs text-slate-600 dark:text-slate-400">Koszt całkowity</div>
+                    <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                      {result3.totalCost.toLocaleString("pl-PL", { minimumFractionDigits: 2 })} zł
+                    </div>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
 
         <div>
           <Button asChild variant="outline">
