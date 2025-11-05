@@ -63,6 +63,16 @@ export function ResidentBillPDFDocument({
     </View>
   );
 
+  // Footer fixed - render on every physical page of the flowing content
+  const FooterFixed = () => (
+    <Text
+      fixed
+      style={{ position: "absolute", fontSize: 9, color: "#666", bottom: 24, left: 36, right: 36, textAlign: "center" }}
+    >
+      © 2025 PROF INSTAL Maciej Ślusarczyk. Wszelkie prawa zastrzeżone.
+    </Text>
+  );
+
   return (
     <Document>
       {/* Strona 1: Okładka i wstęp */}
@@ -89,8 +99,11 @@ export function ResidentBillPDFDocument({
         <Footer />
       </Page>
 
-      {/* Strona 2: Dane wejściowe */}
+      {/* Strona 2+: Płynny, ciągły raport (automatyczne łamanie stron) */}
       <Page size="A4" style={styles.page}>
+        {/* Stała stopka na każdej fizycznej stronie */}
+        <FooterFixed />
+
         <Section title="1. Dane wejściowe (z rachunku)" />
         <View>
           <Text style={styles.row}>Cena CWU z rachunku: {n(i.cwuPriceFromBill)} zł/m³</Text>
@@ -99,22 +112,14 @@ export function ResidentBillPDFDocument({
           <Text style={styles.row}>Temperatura CWU: {n(i.hotTempC, 1)} °C</Text>
           <Text style={styles.row}>Cena ciepła od miasta: {n(i.heatPriceFromCity)} zł/GJ</Text>
         </View>
-        <Footer />
-      </Page>
 
-      {/* Strona 3: Metodologia i założenia */}
-      <Page size="A4" style={styles.page}>
         <Section title="2. Metodologia i założenia" />
         <View>
           <Text style={styles.row}>Proces analizy kosztów CWU opiera się na precyzyjnych wzorach fizycznych oraz praktycznych założeniach branżowych. Energia niezbędna do podgrzania 1 m³ wody wyliczana jest według wzoru: 0,004186 × (T_CWU − T_zimna) [GJ/m³], gdzie 0,004186 to współczynnik przeliczeniowy wynikający z ciepła właściwego wody. W praktyce oznacza to, że każda różnica temperatury o 1°C przekłada się na proporcjonalny wzrost zużycia energii. W analizie uwzględniono rzeczywiste temperatury wody zimnej i ciepłej, a także aktualne ceny ciepła systemowego, co pozwala na uzyskanie wiarygodnych wyników.</Text>
           <Text style={styles.row}>Koszt teoretyczny podgrzania wody obliczany jest jako iloczyn energii potrzebnej do podgrzania 1 m³ oraz ceny ciepła dostarczanej przez miejską sieć ciepłowniczą. Warto podkreślić, że wartości te mogą się różnić w zależności od sezonu grzewczego, sprawności wymienników ciepła oraz jakości izolacji przewodów. Strata finansowa, będąca różnicą pomiędzy ceną z rachunku a kosztem teoretycznym, wskazuje na potencjalne nieefektywności w systemie dystrybucji ciepła lub błędy w rozliczeniach.</Text>
           <Text style={styles.row}>W analizie przyjęto, że zużycie wody jest rozliczane miesięcznie, a wszelkie odchylenia od wartości teoretycznych mogą wynikać z czynników takich jak: nieprawidłowa regulacja cyrkulacji, nieszczelności instalacji, zbyt długie przewody bez odpowiedniej izolacji czy też nieprecyzyjne pomiary liczników. Dodatkowo, uwzględniono wpływ taryf i opłat stałych, które mogą znacząco zawyżać końcowy koszt dla mieszkańca.</Text>
         </View>
-        <Footer />
-      </Page>
 
-      {/* Strona 4: Wyniki i szczegółowa analiza */}
-      <Page size="A4" style={styles.page}>
         <Section title="3. Wyniki obliczeń" />
         <View style={styles.grid}>
           <View style={styles.col}>
@@ -128,16 +133,13 @@ export function ResidentBillPDFDocument({
             <Text style={styles.row}>Strata finansowa (mies.): {n(r.monthlyFinancialLoss)} zł/mies.</Text>
           </View>
         </View>
+
         <Section title="4. Ekstrapolacja roczna" />
         <View>
           <Text style={styles.row}>Strata energii (rok): {n(r.yearlyEnergyLoss, 3)} GJ/rok</Text>
           <Text style={styles.row}>Strata finansowa (rok): {n(r.yearlyFinancialLoss)} zł/rok</Text>
         </View>
-        <Footer />
-      </Page>
 
-      {/* Strona 5: Interpretacja wyników */}
-      <Page size="A4" style={styles.page}>
         <Section title="5. Interpretacja i komentarz ekspercki" />
         <View>
           <Text style={styles.row}>
@@ -158,11 +160,7 @@ export function ResidentBillPDFDocument({
             Rekomendujemy przeprowadzenie szczegółowego audytu instalacji CWU, obejmującego pomiary strat ciepła, ocenę stanu izolacji, analizę pracy cyrkulacji oraz weryfikację rozliczeń. Tylko kompleksowe podejście pozwoli na identyfikację głównych źródeł strat i wdrożenie skutecznych działań naprawczych. Warto również rozważyć wdrożenie systemów monitoringu zużycia oraz automatyzacji regulacji cyrkulacji, co w dłuższej perspektywie może przynieść wymierne oszczędności.
           </Text>
         </View>
-        <Footer />
-      </Page>
 
-      {/* Strona 6: Porównanie wariantów i symulacje */}
-      <Page size="A4" style={styles.page}>
         <Section title="6. Porównanie wariantów i symulacje" />
         <View>
           <Text style={styles.row}>
@@ -171,15 +169,9 @@ export function ResidentBillPDFDocument({
           <Text style={styles.row}>• Wariant 1: Modernizacja izolacji – potencjalna oszczędność do 20%</Text>
           <Text style={styles.row}>• Wariant 2: Optymalizacja cyrkulacji – oszczędność do 15%</Text>
           <Text style={styles.row}>• Wariant 3: Zmiana taryfy – oszczędność do 10%</Text>
-          <Text style={styles.row}>
-            Łączny potencjał redukcji strat: nawet {n(r.yearlyFinancialLoss * 0.4)} zł/rok.
-          </Text>
+          <Text style={styles.row}>Łączny potencjał redukcji strat: nawet {n(r.yearlyFinancialLoss * 0.4)} zł/rok.</Text>
         </View>
-        <Footer />
-      </Page>
 
-      {/* Strona 7: Rekomendacje i działania */}
-      <Page size="A4" style={styles.page}>
         <Section title="7. Rekomendacje i działania" />
         <View>
           <Text style={styles.row}>1. Przeprowadzić szczegółowy audyt instalacji CWU pod kątem strat ciepła, obejmujący pomiary termowizyjne, analizę stanu izolacji oraz ocenę pracy zaworów i armatury. Wskazane jest wykonanie inspekcji kamerą termowizyjną, która pozwala na szybkie wykrycie miejsc o podwyższonych stratach energii.</Text>
@@ -188,11 +180,7 @@ export function ResidentBillPDFDocument({
           <Text style={styles.row}>4. Wdrożyć system monitoringu zużycia i strat CWU, umożliwiający bieżącą kontrolę parametrów pracy instalacji oraz szybkie wykrywanie anomalii. Nowoczesne systemy pozwalają na zdalny odczyt danych, generowanie raportów i alarmowanie o nieprawidłowościach, co znacząco ułatwia zarządzanie budynkiem.</Text>
           <Text style={styles.row}>5. Przeprowadzić cykliczne szkolenia dla mieszkańców i personelu technicznego z zakresu efektywnego korzystania z instalacji CWU oraz podstawowych zasad eksploatacji, co pozwala na ograniczenie niepotrzebnych strat i podniesienie świadomości użytkowników.</Text>
         </View>
-        <Footer />
-      </Page>
 
-      {/* Strona 8: Słownik pojęć */}
-      <Page size="A4" style={styles.page}>
         <Section title="8. Słownik pojęć" />
         <View>
           <Text style={styles.row}><Text style={{ fontWeight: 700 }}>CWU</Text> – Ciepła Woda Użytkowa</Text>
@@ -200,31 +188,20 @@ export function ResidentBillPDFDocument({
           <Text style={styles.row}><Text style={{ fontWeight: 700 }}>Cyrkulacja</Text> – obieg wody w instalacji zapewniający natychmiastowy dostęp do ciepłej wody</Text>
           <Text style={styles.row}><Text style={{ fontWeight: 700 }}>Taryfa</Text> – sposób rozliczania kosztów energii</Text>
         </View>
-        <Footer />
-      </Page>
 
-      {/* Strona 9: Źródła i bibliografia */}
-      <Page size="A4" style={styles.page}>
         <Section title="9. Źródła i bibliografia" />
         <View>
           <Text style={styles.row}>1. Rozporządzenie Ministra Infrastruktury ws. warunków technicznych budynków</Text>
           <Text style={styles.row}>2. PN-EN 806-2:2015-10 Instalacje wodociągowe</Text>
           <Text style={styles.row}>3. Materiały własne PROF INSTAL</Text>
         </View>
-        <Footer />
-      </Page>
 
-      {/* Strona 10: Podsumowanie i kontakt */}
-      <Page size="A4" style={styles.page}>
         <Section title="10. Podsumowanie i kontakt" />
         <View>
-          <Text style={styles.row}>
-            Raport przygotowano automatycznie na podstawie wprowadzonych danych. W celu uzyskania indywidualnej analizy lub konsultacji prosimy o kontakt z ekspertami PROF INSTAL.
-          </Text>
+          <Text style={styles.row}>Raport przygotowano automatycznie na podstawie wprowadzonych danych. W celu uzyskania indywidualnej analizy lub konsultacji prosimy o kontakt z ekspertami PROF INSTAL.</Text>
           <Text style={styles.row}>E-mail: biuro@profinstal.info</Text>
           <Text style={styles.row}>Telefon: 600 123 456</Text>
         </View>
-        <Footer />
       </Page>
     </Document>
   );
