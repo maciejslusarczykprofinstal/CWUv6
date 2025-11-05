@@ -264,14 +264,14 @@ export default function MieszkancyPage() {
                   <Field 
                     label="Temperatura CWU" 
                     unit="°C" 
-                    hint="Wartość zalecana: 55°C (zgodnie z Rozporządzeniem Ministra Infrastruktury z dnia 12 kwietnia 2002 r. w sprawie warunków technicznych, jakim powinny odpowiadać budynki i ich usytuowanie - WT)"
+                    hint="Wartość obowiązkowa: min 55°C (zgodnie z Rozporządzeniem Ministra Infrastruktury z dnia 12 kwietnia 2002 r. w sprawie warunków technicznych, jakim powinny odpowiadać budynki i ich usytuowanie - WT)"
                   >
                     <input
                       type="number"
                       step="0.1"
                       value={inputs.hotTempC}
                       onChange={(e) => handleInputChange('hotTempC', Number(e.target.value))}
-                      placeholder="Zalecane: 55°C"
+                      placeholder="Obowiązkowo: min 55°C"
                       className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
                     />
                   </Field>
