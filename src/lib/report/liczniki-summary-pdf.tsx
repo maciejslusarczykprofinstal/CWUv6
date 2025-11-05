@@ -35,6 +35,15 @@ function fmt(v: number, digits = 2) {
   return dec ? `${intFormatted},${dec}` : intFormatted;
 }
 
+function fmtDate(d: Date) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  const hh = String(d.getHours()).padStart(2, "0");
+  const mm = String(d.getMinutes()).padStart(2, "0");
+  return `${y}-${m}-${day} ${hh}:${mm}`;
+}
+
 function computeFrom(data: LicznikiSummaryData) {
   const w = Math.max(0, Number(data.waterVolumeM3) || 0);
   const wPaid = Number.isFinite(Number(data.paidVolumeM3)) ? Math.max(0, Number(data.paidVolumeM3)) : w;
@@ -114,7 +123,7 @@ export function LicznikiSummaryPDF({ data }: { data: LicznikiSummaryData }) {
           <Link src="https://profinstal.info" style={styles.site}>profinstal.info</Link>
         </View>
         <Text style={styles.h1}>PROFINSTAL — Podsumowanie liczniki CWU</Text>
-        <Text style={styles.small}>Data: {createdAt.toLocaleString("pl-PL")}</Text>
+  <Text style={styles.small}>Data: {fmtDate(createdAt)}</Text>
 
         <Text style={styles.h2}>1. Dane wejściowe</Text>
         <View>
