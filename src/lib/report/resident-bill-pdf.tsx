@@ -33,7 +33,7 @@ export async function makeResidentBillPDF(
     title,
     unit,
     data,
-    width = 480,
+    width = 380,
     height = 150,
     autoLog = true,
   }: {

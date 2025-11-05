@@ -59,7 +59,7 @@ export function ResidentBillPDFDocument({
     title,
     unit,
     data,
-    width = 500,
+    width = 380,
     height = 160,
     autoLog = true,
   }: {
