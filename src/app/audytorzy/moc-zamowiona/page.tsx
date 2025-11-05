@@ -6,10 +6,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { z } from "zod";
-import { Gauge, Info as InfoIcon } from "lucide-react";
-import { useState } from "react";
+import { Gauge, Info as InfoIcon, HelpCircle } from "lucide-react";
+import { useState, useEffect } from "react";
 import { KatexFormula } from "@/components/ui/katex-formula";
 
 const FormSchema = z.object({
@@ -53,9 +54,25 @@ export default function MocZamowionaPage() {
     mode: "onBlur",
   });
 
+  // Load last values from localStorage on mount
+  useEffect(() => {
+    const saved = localStorage.getItem("audytorzy-moc-zamowiona");
+    if (saved) {
+      try {
+        const vals = JSON.parse(saved) as Partial<FormValues>;
+        form.reset(vals);
+      } catch {
+        // ignore invalid saved state
+      }
+    }
+  }, [form]);
+
   const onSubmit: SubmitHandler<FormValues> = async (values) => {
     setLoading(true);
     try {
+      // Save to localStorage
+      localStorage.setItem("audytorzy-moc-zamowiona", JSON.stringify(values));
+      
       const r = await fetch("/api/calc/auditor", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -99,23 +116,55 @@ export default function MocZamowionaPage() {
             <CardContent className="p-6 space-y-6">
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                 <div className="grid gap-4 md:grid-cols-2">
-                  <Field label="Liczba mieszkań" error={form.formState.errors.flats?.message}>
+                  <Field 
+                    label="Liczba mieszkań" 
+                    hint="Typowo 50–300 mieszkań"
+                    error={form.formState.errors.flats?.message}
+                  >
                     <Input type="number" step="1" {...form.register("flats", { valueAsNumber: true })} />
                   </Field>
-                  <Field label="Liczba pionów" error={form.formState.errors.risers?.message}>
+                  <Field 
+                    label="Liczba pionów" 
+                    hint="Zwykle 10–50 pionów CWU"
+                    error={form.formState.errors.risers?.message}
+                  >
                     <Input type="number" step="1" {...form.register("risers", { valueAsNumber: true })} />
                   </Field>
-                  <Field label="T. zimnej [°C]" error={form.formState.errors.coldTempC?.message}>
+                  <Field 
+                    label="T. zimnej [°C]" 
+                    hint="Typowo 5–10°C"
+                    error={form.formState.errors.coldTempC?.message}
+                  >
                     <Input type="number" step="0.1" {...form.register("coldTempC", { valueAsNumber: true })} />
                   </Field>
-                  <Field label="T. CWU [°C]" error={form.formState.errors.hotTempC?.message}>
+                  <Field 
+                    label="T. CWU [°C]" 
+                    hint="Standard 50–60°C"
+                    error={form.formState.errors.hotTempC?.message}
+                  >
                     <Input type="number" step="0.1" {...form.register("hotTempC", { valueAsNumber: true })} />
                   </Field>
-                  <Field label="Szczytowy pobór [L/min]" error={form.formState.errors.drawPeakLpm?.message}>
+                  <Field 
+                    label="Szczytowy pobór [L/min]" 
+                    hint="Dla budynków 80–250 L/min"
+                    error={form.formState.errors.drawPeakLpm?.message}
+                  >
                     <Input type="number" step="1" {...form.register("drawPeakLpm", { valueAsNumber: true })} />
                   </Field>
                   <div className="space-y-2">
-                    <Label>Profil jednoczesności</Label>
+                    <Label className="flex items-center gap-1">
+                      Profil jednoczesności
+                      <TooltipProvider delayDuration={200}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <HelpCircle className="h-3.5 w-3.5 text-slate-400 cursor-help" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="text-xs">Niski: mało mieszkańców równocześnie, Wysoki: duże obciążenie w szczycie</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </Label>
                     <Select
                       value={form.watch("simultProfile")}
                       onValueChange={(v) => form.setValue("simultProfile", v as FormValues["simultProfile"])}
@@ -133,13 +182,25 @@ export default function MocZamowionaPage() {
                       <p className="text-sm text-red-600">{form.formState.errors.simultProfile.message}</p>
                     )}
                   </div>
-                  <Field label="Bufor [L]" error={form.formState.errors.bufferL?.message}>
+                  <Field 
+                    label="Bufor [L]" 
+                    hint="0 lub 500–3000 L w systemach z magazynem"
+                    error={form.formState.errors.bufferL?.message}
+                  >
                     <Input type="number" step="1" {...form.register("bufferL", { valueAsNumber: true })} />
                   </Field>
-                  <Field label="ΔT bufora [K]" error={form.formState.errors.bufferDeltaC?.message}>
+                  <Field 
+                    label="ΔT bufora [K]" 
+                    hint="Zwykle 10–20 K, 0 jeśli brak bufora"
+                    error={form.formState.errors.bufferDeltaC?.message}
+                  >
                     <Input type="number" step="1" {...form.register("bufferDeltaC", { valueAsNumber: true })} />
                   </Field>
-                  <Field label="Czas piku [s]" error={form.formState.errors.peakDurationSec?.message}>
+                  <Field 
+                    label="Czas piku [s]" 
+                    hint="Typowo 300–900 s (5–15 min)"
+                    error={form.formState.errors.peakDurationSec?.message}
+                  >
                     <Input type="number" step="1" {...form.register("peakDurationSec", { valueAsNumber: true })} />
                   </Field>
                 </div>
@@ -224,12 +285,30 @@ export default function MocZamowionaPage() {
   );
 }
 
-function Field({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
+function Field({ label, error, hint, children }: { 
+  label: string; 
+  error?: string; 
+  hint?: string; 
+  children: React.ReactNode 
+}) {
   return (
     <div className="space-y-2">
-      <Label>{label}</Label>
+      <Label className="flex items-center gap-1">
+        {label}
+        {hint && (
+          <TooltipProvider delayDuration={200}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <HelpCircle className="h-3.5 w-3.5 text-slate-400 cursor-help" />
+              </TooltipTrigger>
+              <TooltipContent>
+                <p className="text-xs">{hint}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
+      </Label>
       {children}
-      {/* Hints/units can be expanded per field if potrzebne */}
       {error && <p className="text-sm text-red-600">{error}</p>}
     </div>
   );

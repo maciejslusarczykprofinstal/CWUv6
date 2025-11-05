@@ -6,12 +6,19 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FileText, Percent, Thermometer } from "lucide-react";
-import { useState } from "react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { FileText, Percent, Thermometer, HelpCircle } from "lucide-react";
+import { useState, useEffect } from "react";
+
+type LastMethod = { method: "percent"; purchasedGJ: number; circulationPct: number; pricePerGJ: number } | { method: "ua"; UA_WK: number; dT_circ: number; hours_circ: number; pricePerGJ: number };
 
 export default function StratyZFakturPage() {
   const [result, setResult] = useState<{ circGJ: number; costPLN: number } | null>(null);
   const [loading, setLoading] = useState(false);
+  const [percentDefaults, setPercentDefaults] = useState({ purchasedGJ: 850, circulationPct: 35, pricePerGJ: 75 });
+  const [uaDefaults, setUaDefaults] = useState({ UA_WK: 420, dT_circ: 25, hours_circ: 8760, pricePerGJ: 75 });
+  const [lastMethod, setLastMethod] = useState<LastMethod | null>(null);
+  
   const defaultPower = {
     flats: 120,
     risers: 24,
@@ -24,6 +31,26 @@ export default function StratyZFakturPage() {
     peakDurationSec: 600,
   };
 
+  // Load last values
+  useEffect(() => {
+    const savedP = localStorage.getItem("audytorzy-straty-percent");
+    if (savedP) {
+      try {
+        setPercentDefaults(JSON.parse(savedP));
+      } catch {
+        // ignore
+      }
+    }
+    const savedU = localStorage.getItem("audytorzy-straty-ua");
+    if (savedU) {
+      try {
+        setUaDefaults(JSON.parse(savedU));
+      } catch {
+        // ignore
+      }
+    }
+  }, []);
+
   async function submitPercent(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
@@ -31,6 +58,10 @@ export default function StratyZFakturPage() {
     const purchasedGJ = Number(fd.get("purchasedGJ"));
     const circulationPct = Number(fd.get("circulationPct"));
     const pricePerGJ = Number(fd.get("pricePerGJ"));
+    
+    // Save to localStorage
+    localStorage.setItem("audytorzy-straty-percent", JSON.stringify({ purchasedGJ, circulationPct, pricePerGJ }));
+    
     try {
       const r = await fetch("/api/calc/auditor", {
         method: "POST",
@@ -48,6 +79,7 @@ export default function StratyZFakturPage() {
       if (!json.ok) throw new Error(JSON.stringify(json.error));
       const circGJ: number = json.result?.circGJ ?? 0;
       setResult({ circGJ, costPLN: Math.round(circGJ * pricePerGJ) });
+      setLastMethod({ method: "percent", purchasedGJ, circulationPct, pricePerGJ });
     } catch (err) {
       alert("Błąd: " + (err as Error).message);
     } finally {
@@ -63,6 +95,10 @@ export default function StratyZFakturPage() {
     const dT_circ = Number(fd.get("dT_circ"));
     const hours_circ = Number(fd.get("hours_circ"));
     const pricePerGJ = Number(fd.get("pricePerGJ"));
+    
+    // Save to localStorage
+    localStorage.setItem("audytorzy-straty-ua", JSON.stringify({ UA_WK, dT_circ, hours_circ, pricePerGJ }));
+    
     try {
       const r = await fetch("/api/calc/auditor", {
         method: "POST",
@@ -79,11 +115,23 @@ export default function StratyZFakturPage() {
       if (!json.ok) throw new Error(JSON.stringify(json.error));
       const circGJ: number = json.result?.circGJ ?? 0;
       setResult({ circGJ, costPLN: Math.round(circGJ * pricePerGJ) });
+      setLastMethod({ method: "ua", UA_WK, dT_circ, hours_circ, pricePerGJ });
     } catch (err) {
       alert("Błąd: " + (err as Error).message);
     } finally {
       setLoading(false);
     }
+  }
+
+  function downloadPDF(res: { circGJ: number; costPLN: number }) {
+    if (!lastMethod) return;
+    const pdfData = {
+      ...lastMethod,
+      circGJ: res.circGJ,
+      costPLN: res.costPLN,
+    };
+    const params = new URLSearchParams({ data: JSON.stringify(pdfData) });
+    window.open(`/api/report/losses?${params}`, "_blank");
   }
 
   return (
@@ -117,14 +165,14 @@ export default function StratyZFakturPage() {
               </CardHeader>
               <CardContent className="p-6">
                 <form onSubmit={submitPercent} className="grid gap-4 md:grid-cols-3">
-                  <Field label="Ciepło zakupione [GJ]">
-                    <Input name="purchasedGJ" type="number" step="1" defaultValue={850} />
+                  <Field label="Ciepło zakupione [GJ]" hint="Z rocznych faktur, typowo 500–2000 GJ">
+                    <Input name="purchasedGJ" type="number" step="1" defaultValue={percentDefaults.purchasedGJ} />
                   </Field>
-                  <Field label="Udział strat [%]">
-                    <Input name="circulationPct" type="number" step="1" defaultValue={35} />
+                  <Field label="Udział strat [%]" hint="Z audytu lub szacunek 20–50%">
+                    <Input name="circulationPct" type="number" step="1" defaultValue={percentDefaults.circulationPct} />
                   </Field>
-                  <Field label="Cena [zł/GJ]">
-                    <Input name="pricePerGJ" type="number" step="1" defaultValue={75} />
+                  <Field label="Cena [zł/GJ]" hint="Zgodnie z cennikiem dostawcy">
+                    <Input name="pricePerGJ" type="number" step="1" defaultValue={percentDefaults.pricePerGJ} />
                   </Field>
                   <div className="md:col-span-3 flex gap-3 pt-2">
                     <Button type="submit" disabled={loading}>Oblicz</Button>
@@ -144,17 +192,17 @@ export default function StratyZFakturPage() {
               </CardHeader>
               <CardContent className="p-6">
                 <form onSubmit={submitUA} className="grid gap-4 md:grid-cols-4">
-                  <Field label="UA [W/K]">
-                    <Input name="UA_WK" type="number" step="1" defaultValue={420} />
+                  <Field label="UA [W/K]" hint="Z inwentaryzacji, typowo 200–800 W/K">
+                    <Input name="UA_WK" type="number" step="1" defaultValue={uaDefaults.UA_WK} />
                   </Field>
-                  <Field label="ΔT cyrkulacji [K]">
-                    <Input name="dT_circ" type="number" step="1" defaultValue={25} />
+                  <Field label="ΔT cyrkulacji [K]" hint="Różnica T między podajnikiem a powrotem, zwykle 20–30 K">
+                    <Input name="dT_circ" type="number" step="1" defaultValue={uaDefaults.dT_circ} />
                   </Field>
-                  <Field label="Godziny/rok [h]">
-                    <Input name="hours_circ" type="number" step="1" defaultValue={8760} />
+                  <Field label="Godziny/rok [h]" hint="Zwykle 8760 (cały rok non-stop)">
+                    <Input name="hours_circ" type="number" step="1" defaultValue={uaDefaults.hours_circ} />
                   </Field>
-                  <Field label="Cena [zł/GJ]">
-                    <Input name="pricePerGJ" type="number" step="1" defaultValue={75} />
+                  <Field label="Cena [zł/GJ]" hint="Zgodnie z cennikiem dostawcy">
+                    <Input name="pricePerGJ" type="number" step="1" defaultValue={uaDefaults.pricePerGJ} />
                   </Field>
                   <div className="md:col-span-4 flex gap-3 pt-2">
                     <Button type="submit" disabled={loading}>Oblicz</Button>
@@ -172,12 +220,21 @@ export default function StratyZFakturPage() {
           </CardHeader>
           <CardContent className="p-6">
             {result ? (
-              <div className="grid gap-4 md:grid-cols-2">
-                <Info label="Straty cyrkulacji" value={`${result.circGJ.toFixed(2)} GJ/rok`} />
-                <Info label="Koszt strat" value={`${result.costPLN.toLocaleString("pl-PL")} zł/rok`} />
+              <div className="space-y-4">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <Info label="Straty cyrkulacji" value={`${result.circGJ.toFixed(2)} GJ/rok`} />
+                  <Info label="Koszt strat" value={`${result.costPLN.toLocaleString("pl-PL")} zł/rok`} />
+                </div>
+                <Button 
+                  onClick={() => downloadPDF(result)} 
+                  variant="outline" 
+                  className="w-full"
+                >
+                  <FileText className="h-4 w-4 mr-2" /> Pobierz raport PDF
+                </Button>
               </div>
             ) : (
-              <p className="text-slate-600 dark:text-slate-400">Wprowadź dane i użyj przycisku „Oblicz”.</p>
+              <p className="text-slate-600 dark:text-slate-400">Wprowadź dane i użyj przycisku „Oblicz".</p>
             )}
           </CardContent>
         </Card>
@@ -192,10 +249,24 @@ export default function StratyZFakturPage() {
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
   return (
     <div className="space-y-2">
-      <Label>{label}</Label>
+      <Label className="flex items-center gap-1">
+        {label}
+        {hint && (
+          <TooltipProvider delayDuration={200}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <HelpCircle className="h-3.5 w-3.5 text-slate-400 cursor-help" />
+              </TooltipTrigger>
+              <TooltipContent>
+                <p className="text-xs">{hint}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
+      </Label>
       {children}
     </div>
   );
