@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Document, Page, Text, View, StyleSheet, pdf, Link, Svg, Rect, Line } from "@react-pdf/renderer";
+import { Document, Page, Text, View, StyleSheet, pdf, Link, Svg, Rect, Line, Path } from "@react-pdf/renderer";
 import type { ResidentReportInput, ResidentReportResult } from "@/lib/report/types";
 
 const styles = StyleSheet.create({
@@ -107,33 +107,54 @@ export async function makeResidentBillPDF(
     );
   };
 
-  // 100% stacked bar: udział użyteczne vs straty
-  const ShareBar = ({
+  // Wykres kołowy: udział użyteczne vs straty
+  const PieChart = ({
     title,
     useful,
     loss,
-    width = 480,
-    height = 60,
-  }: { title: string; useful: number; loss: number; width?: number; height?: number }) => {
-    const margin = { top: 20, right: 20, bottom: 10, left: 36 };
-    const iw = width - margin.left - margin.right;
-    const ih = height - margin.top - margin.bottom;
+    size = 140,
+  }: { title: string; useful: number; loss: number; size?: number }) => {
     const total = Math.max(0.0001, (useful || 0) + (loss || 0));
     const pu = (useful || 0) / total;
     const pl = (loss || 0) / total;
-    const uW = iw * pu;
-    const lW = iw * pl;
-    const x0 = margin.left;
-    const y0 = margin.top;
+    
+    const centerX = size / 2;
+    const centerY = size / 2;
+    const radius = size / 2 - 10;
+    
+    // Kąt startowy dla użytecznej (od góry, 12 o'clock)
+    const startAngleUseful = -90; // -90° = góra
+    const endAngleUseful = startAngleUseful + (pu * 360);
+    
+    // Kąt dla strat
+    const startAngleLoss = endAngleUseful;
+    const endAngleLoss = startAngleLoss + (pl * 360);
+    
+    // Funkcja do obliczenia ścieżki łuku
+    const getArcPath = (startAngle: number, endAngle: number, r: number) => {
+      const startRad = (startAngle * Math.PI) / 180;
+      const endRad = (endAngle * Math.PI) / 180;
+      
+      const x1 = centerX + r * Math.cos(startRad);
+      const y1 = centerY + r * Math.sin(startRad);
+      const x2 = centerX + r * Math.cos(endRad);
+      const y2 = centerY + r * Math.sin(endRad);
+      
+      const largeArc = endAngle - startAngle > 180 ? 1 : 0;
+      
+      return `M ${centerX} ${centerY} L ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2} Z`;
+    };
+    
     return (
-      <View style={{ marginTop: 8, marginBottom: 8 }}>
-        <Text style={{ fontSize: 11, fontWeight: 600, marginBottom: 4 }}>{title}</Text>
-        <Svg width={width} height={height}>
-          <Rect x={margin.left} y={y0} width={iw} height={ih} fill="#f3f4f6" stroke="#d1d5db" strokeWidth={1} />
-          <Rect x={x0} y={y0} width={uW} height={ih} fill="#60a5fa" />
-          <Rect x={x0 + uW} y={y0} width={lW} height={ih} fill="#fbbf24" />
+      <View style={{ marginTop: 8, marginBottom: 8, alignItems: "center" }}>
+        <Text style={{ fontSize: 11, fontWeight: 600, marginBottom: 8 }}>{title}</Text>
+        <Svg width={size} height={size}>
+          {/* Użyteczne - niebieski */}
+          <Path d={getArcPath(startAngleUseful, endAngleUseful, radius)} fill="#60a5fa" stroke="#fff" strokeWidth={2} />
+          {/* Straty - żółty */}
+          <Path d={getArcPath(startAngleLoss, endAngleLoss, radius)} fill="#fbbf24" stroke="#fff" strokeWidth={2} />
         </Svg>
-        <View style={{ marginTop: 6 }}>
+        <View style={{ marginTop: 8 }}>
           <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 2 }}>
             <View style={{ width: 10, height: 10, backgroundColor: "#60a5fa", marginRight: 6 }} />
             <Text style={{ fontSize: 10, color: "#333" }}>Użyteczne: {(pu * 100).toFixed(0)}% ({(useful || 0).toFixed(3)} GJ/m³)</Text>
@@ -199,7 +220,7 @@ export async function makeResidentBillPDF(
             { label: "Strata", value: Number(r.energyLossPerM3) || 0, color: "#fbbf24" },
           ]}
         />
-        <ShareBar
+        <PieChart
           title="Udział energii: użyteczne vs straty"
           useful={Number(r.energyPerM3) || 0}
           loss={Number(r.energyLossPerM3) || 0}
