@@ -16,6 +16,37 @@ export default function LicznikiPage() {
     return Number.isFinite(v) ? v : 0;
   };
 
+  const [downloading, setDownloading] = useState(false);
+
+  async function handleDownloadPDF(payload: Record<string, unknown>) {
+    try {
+      setDownloading(true);
+      const href = `/api/report/liczniki?data=${encodeURIComponent(JSON.stringify(payload))}`;
+      const res = await fetch(href, { cache: "no-store" });
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        throw new Error(`Błąd generowania PDF (${res.status}): ${text || res.statusText}`);
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      const date = new Date();
+      const yyyy = date.getFullYear();
+      const mm = String(date.getMonth() + 1).padStart(2, "0");
+      const dd = String(date.getDate()).padStart(2, "0");
+      a.href = url;
+      a.download = `raport-liczniki-${yyyy}-${mm}-${dd}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      alert(`Nie udało się pobrać PDF: ${(e as Error).message}`);
+    } finally {
+      setDownloading(false);
+    }
+  }
+
   // Ścieżka 2: controlled inputs
   const [waterVolumeM3_2, setWaterVolumeM3_2] = useState<number>(800);
   const [pricePerM3_2, setPricePerM3_2] = useState<number>(65);
@@ -269,15 +300,15 @@ export default function LicznikiPage() {
                         totalCost: result3.totalCost,
                         createdAt: new Date().toISOString(),
                       };
-                      const href = `/api/report/liczniki?data=${encodeURIComponent(JSON.stringify(payload))}`;
                       return (
-                        <a
-                          href={href}
-                          download={`raport-liczniki-${Date.now()}.pdf`}
-                          className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 px-3"
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={downloading}
+                          onClick={() => handleDownloadPDF(payload)}
                         >
-                          Pobierz PDF podsumowania
-                        </a>
+                          {downloading ? "Generowanie…" : "Pobierz PDF podsumowania"}
+                        </Button>
                       );
                     })()}
                   </div>
