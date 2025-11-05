@@ -291,6 +291,17 @@ export function ResidentBillPDFDocument({
           loss={Number(r.energyLossPerM3) || 0}
         />
 
+        {/* Założenia i ograniczenia metody */}
+        <Section title="Założenia i ograniczenia metody" />
+        <View>
+          <Text style={styles.row}>• Stałe właściwości wody: gęstość 1000 kg/m³ i ciepło właściwe 4,186 kJ/kgK; brak korekt na domieszki i osady.</Text>
+          <Text style={styles.row}>• Temperatury uśrednione: wartości T_zimnej i T_CWU traktowane jako średnie; brak pełnego profilu dobowego i sezonowego.</Text>
+          <Text style={styles.row}>• Sprawności i straty lokalne: nie modelujemy szczegółowo wymienników, zaworów i izolacji; ujęto je wskaźnikowo w różnicy kosztów.</Text>
+          <Text style={styles.row}>• Cenniki i opłaty stałe: obliczenia bazują na cenie [zł/GJ]; opłaty stałe/abonamentowe mogą zwiększać rozbieżności z rachunkiem.</Text>
+          <Text style={styles.row}>• Zależność od danych: wyniki są tak dobre, jak dane wejściowe (rachunki, nastawy, zużycie, temperatury) i dokładność liczników.</Text>
+          <Text style={styles.row}>• Skala wykresów: automatyczny log-scale służy porównawczo; nie jest interpretacją bezwzględnej „skali problemu”.</Text>
+        </View>
+
         <Section title="4. Ekstrapolacja roczna" />
         <View>
           <Text style={styles.row}>Strata energii (rok): {n(r.yearlyEnergyLoss, 3)} GJ/rok</Text>
