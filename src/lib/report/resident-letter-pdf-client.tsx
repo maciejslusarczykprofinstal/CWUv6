@@ -46,7 +46,6 @@ const styles = StyleSheet.create({
   tableCellBold: { flex: 1, padding: 6, fontSize: 10, fontWeight: 700, backgroundColor: "#f5f5f5" },
   highlight: { backgroundColor: "#fef3c7", padding: 8, marginVertical: 8, borderRadius: 4 },
   section: { marginBottom: 16 },
-  pageBreak: { marginTop: 40 },
 });
 
 function n(v: unknown, d = 2) {
@@ -245,13 +244,11 @@ export function ResidentLetterPDFDocument({
           rzeczywistymi.
         </Text>
 
-        {/* Przejście na drugą stronę */}
-        <View style={styles.pageBreak} break>
-          <Text style={styles.h2}>5. SKUTKI FINANSOWE DLA MIESZKAŃCÓW</Text>
+        <Text style={styles.h2}>5. SKUTKI FINANSOWE DLA MIESZKAŃCÓW</Text>
 
-          <Text style={styles.para}>
-            Łączne skutki finansowe występującej rozbieżności przedstawiają się następująco:
-          </Text>
+        <Text style={styles.para}>
+          Łączne skutki finansowe występującej rozbieżności przedstawiają się następująco:
+        </Text>
 
           <View style={styles.table}>
             <View style={styles.tableRow}>
@@ -342,11 +339,8 @@ export function ResidentLetterPDFDocument({
               • Instalacja inteligentnego systemu monitoringu zużycia i strat energii
             </Text>
           </View>
-        </View>
 
-        {/* Trzecia strona */}
-        <View style={styles.pageBreak} break>
-          <Text style={styles.h2}>7. ASPEKTY PRAWNE I OBOWIĄZKI ZARZĄDCY</Text>
+        <Text style={styles.h2}>7. ASPEKTY PRAWNE I OBOWIĄZKI ZARZĄDCY</Text>
 
           <Text style={styles.para}>
             Zgodnie z art. 4 ust. 1 ustawy o własności lokali, zarządca jest obowiązany do
@@ -476,7 +470,6 @@ export function ResidentLetterPDFDocument({
           <Text style={[styles.small, { marginTop: 12, textAlign: "center", fontWeight: 600 }]}>
             © 2025 PROF INSTAL Maciej Ślusarczyk. Wszelkie prawa zastrzeżone.
           </Text>
-        </View>
       </Page>
     </Document>
   );
