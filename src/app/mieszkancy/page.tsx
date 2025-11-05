@@ -26,6 +26,7 @@ type Inputs = {
   hotTempC: number;
   heatPriceFromCity: number;
   // Dane do pisma (opcjonalne)
+  useLetterData?: boolean;
   managerName?: string;
   managerAddress?: string;
   buildingAddress?: string;
@@ -44,6 +45,7 @@ export default function MieszkancyPage() {
     coldTempC: 10,
     hotTempC: 55,
     heatPriceFromCity: 90,
+    useLetterData: false,
   });
   const [showBreakdown, setShowBreakdown] = useState(false);
 
@@ -89,7 +91,7 @@ export default function MieszkancyPage() {
     calculateResults(inputs);
   }, [inputs]);
 
-  function handleInputChange(field: keyof Inputs, value: number | string) {
+  function handleInputChange(field: keyof Inputs, value: number | string | boolean) {
     setInputs(prev => ({ ...prev, [field]: value }));
   }
 
@@ -129,7 +131,19 @@ export default function MieszkancyPage() {
   async function onDownloadLetter() {
     if (!res || !inputs) return;
     const { ResidentLetterPDFDocument } = await import("@/lib/report/resident-letter-pdf-client");
-    const doc = <ResidentLetterPDFDocument input={inputs} result={res} />;
+    // Jeśli checkbox nie jest zaznaczony, przekaż puste dane
+    const letterInput = inputs.useLetterData ? inputs : { 
+      ...inputs, 
+      managerName: '', 
+      managerAddress: '', 
+      buildingAddress: '', 
+      apartmentNumber: '', 
+      residentName: '', 
+      letterCity: '', 
+      residentEmail: '', 
+      residentPhone: '' 
+    };
+    const doc = <ResidentLetterPDFDocument input={letterInput} result={res} />;
     void generatePdfClient(doc, "pismo-do-zarzadcy.pdf");
   }
 
@@ -562,11 +576,24 @@ export default function MieszkancyPage() {
           </div>
         )}
               <div className="space-y-6">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-1 h-8 bg-gradient-to-b from-purple-500 to-fuchsia-500 rounded-full"></div>
-                  <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200">
-                    Dane do pisma (opcjonalne)
-                  </h3>
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-3">
+                    <div className="w-1 h-8 bg-gradient-to-b from-purple-500 to-fuchsia-500 rounded-full"></div>
+                    <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200">
+                      Dane do pisma (opcjonalne)
+                    </h3>
+                  </div>
+                  <label className="flex items-center gap-3 cursor-pointer px-4 py-2 bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800 rounded-xl hover:bg-purple-100 dark:hover:bg-purple-900/40 transition-all">
+                    <input
+                      type="checkbox"
+                      checked={inputs.useLetterData || false}
+                      onChange={(e) => handleInputChange('useLetterData', e.target.checked)}
+                      className="w-5 h-5 text-purple-600 bg-white dark:bg-slate-800 border-purple-300 dark:border-purple-700 rounded focus:ring-2 focus:ring-purple-500 cursor-pointer"
+                    />
+                    <span className="text-sm font-semibold text-purple-800 dark:text-purple-300">
+                      ✓ Wykorzystaj w piśmie do zarządcy
+                    </span>
+                  </label>
                 </div>
                 
                 {/* Układ dwukolumnowy: Nadawca (lewa) | Odbiorca (prawa) */}
