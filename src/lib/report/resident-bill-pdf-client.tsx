@@ -297,14 +297,6 @@ export function ResidentBillPDFDocument({
               { label: "Różnica", value: Number(r.monthlyFinancialLoss) || 0, color: "#f87171" },
             ]}
           />
-          <BarChart
-            title="Energia na m³"
-            unit="GJ/m³"
-            data={[
-              { label: "Teoria", value: Number(r.energyPerM3) || 0, color: "#60a5fa" },
-              { label: "Strata", value: Number(r.energyLossPerM3) || 0, color: "#fbbf24" },
-            ]}
-          />
         </View>
 
         <PieChart
