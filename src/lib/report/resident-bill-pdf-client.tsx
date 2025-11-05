@@ -1,5 +1,5 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Document, Page, Text, View, StyleSheet, Link, Font, Image, Svg, Rect, Line } from "@react-pdf/renderer";
+import type { ResidentReportInput, ResidentReportResult } from "@/lib/report/types";
 
 // Rejestracja czcionki Roboto z lokalnych plików (TTF z pełnym wsparciem polskich znaków)
 Font.register({
@@ -42,12 +42,12 @@ export function ResidentBillPDFDocument({
   result,
   createdAt = new Date(),
 }: {
-  input: any;
-  result: any;
+  input: ResidentReportInput;
+  result: ResidentReportResult;
   createdAt?: Date;
 }) {
-  const i = (input ?? {}) as Record<string, any>;
-  const r = (result ?? {}) as Record<string, any>;
+  const i = input;
+  const r = result;
 
   // Helper for section headers
   const Section = ({ title }: { title: string }) => (

@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Document, Page, Text, View, StyleSheet, pdf, Link, Svg, Rect, Line } from "@react-pdf/renderer";
+import type { ResidentReportInput, ResidentReportResult } from "@/lib/report/types";
 
 const styles = StyleSheet.create({
   page: { padding: 36, fontSize: 11 },
@@ -20,12 +21,12 @@ function n(v: unknown, d = 2) {
 }
 
 export async function makeResidentBillPDF(
-  input: unknown,
-  result: unknown,
+  input: ResidentReportInput,
+  result: ResidentReportResult,
   createdAt: Date = new Date()
 ): Promise<Uint8Array> {
-  const i = (input ?? {}) as Record<string, any>;
-  const r = (result ?? {}) as Record<string, any>;
+  const i = input;
+  const r = result;
 
   // Prosty wykres słupkowy (SVG) — używany w sekcji wyników
   const BarChart = ({
@@ -154,11 +155,6 @@ export async function makeResidentBillPDF(
           <Text style={styles.brand}>PROFINSTAL</Text>
           <Link src="https://profinstal.info" style={styles.site}>profinstal.info</Link>
         </View>
-        <ShareBar
-          title="Udział energii: użyteczne vs straty"
-          useful={Number(r.energyPerM3) || 0}
-          loss={Number(r.energyLossPerM3) || 0}
-        />
         <Text style={styles.h1}>PROFINSTAL — Raport z obliczeń CWU (Mieszkańcy)</Text>
         <Text style={styles.small}>Data: {createdAt.toLocaleString("pl-PL")}</Text>
 
@@ -202,6 +198,11 @@ export async function makeResidentBillPDF(
             { label: "Teoria", value: Number(r.energyPerM3) || 0, color: "#60a5fa" },
             { label: "Strata", value: Number(r.energyLossPerM3) || 0, color: "#fbbf24" },
           ]}
+        />
+        <ShareBar
+          title="Udział energii: użyteczne vs straty"
+          useful={Number(r.energyPerM3) || 0}
+          loss={Number(r.energyLossPerM3) || 0}
         />
 
         <Text style={styles.h2}>3. Ekstrapolacja (rok)</Text>
