@@ -81,6 +81,7 @@ export function ResidentLetterPDFDocument({
         {/* Branding */}
         <View style={styles.brandRow}>
           <View style={styles.brandLeft}>
+            {/* eslint-disable-next-line jsx-a11y/alt-text */}
             <Image 
               src="/logo.png" 
               style={styles.logo}

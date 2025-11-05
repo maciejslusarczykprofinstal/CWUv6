@@ -1,5 +1,5 @@
 ﻿import Link from "next/link";
-import { ArrowRight, Calculator, Users, BarChart3, Zap, Building, CheckCircle, Shield, Clock, TrendingDown } from "lucide-react";
+import { ArrowRight, Users, BarChart3, Zap, Building } from "lucide-react";
 
 export default function Home() {
   return (

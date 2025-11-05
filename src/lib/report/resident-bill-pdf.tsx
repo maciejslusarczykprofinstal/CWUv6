@@ -51,11 +51,12 @@ export async function makeResidentBillPDF(
     const positives = values.filter((v) => v > 0);
     const minPos = positives.length ? Math.min(...positives) : 0;
     const useLog = autoLog && minPos > 0 && maxVal / minPos >= 20;
+    const log = (y: number) => Math.log10(1 + y);
+    const logDen = log(maxVal);
     const scale = (v: number) => {
       const x = Math.max(0, v);
       if (!useLog) return (x / maxVal) * (ih - 10);
-      const log = (y: number) => Math.log10(1 + y);
-      return (log(x) / log(maxVal)) * (ih - 10);
+      return (log(x) / (logDen || 1)) * (ih - 10);
     };
     const barSpace = iw / data.length;
     const barWidth = Math.max(18, Math.min(56, barSpace * 0.6));
@@ -78,6 +79,18 @@ export async function makeResidentBillPDF(
             return <Rect key={`bar-${idx}`} x={x} y={y} width={barWidth} height={h} fill={d.color} />;
           })}
         </Svg>
+        {/* Etykiety osi poza SVG */}
+        <View style={{ marginTop: 2 }}>
+          {Array.from({ length: 4 }).map((_, k) => {
+            const t = (k + 1) / 5;
+            const val = useLog ? Math.pow(10, t * (logDen || 1)) - 1 : t * maxVal;
+            return (
+              <Text key={`ytick-${k}`} style={{ fontSize: 8, color: "#666" }}>
+                Linia siatki {Math.round(t * 100)}% ≈ {val.toFixed(2)} {unit}
+              </Text>
+            );
+          })}
+        </View>
         <View style={{ marginTop: 6 }}>
           {data.map((d, idx) => (
             <View key={`leg-${idx}`} style={{ flexDirection: "row", alignItems: "center", marginBottom: 2 }}>
@@ -93,6 +106,46 @@ export async function makeResidentBillPDF(
     );
   };
 
+  // 100% stacked bar: udział użyteczne vs straty
+  const ShareBar = ({
+    title,
+    useful,
+    loss,
+    width = 480,
+    height = 60,
+  }: { title: string; useful: number; loss: number; width?: number; height?: number }) => {
+    const margin = { top: 20, right: 20, bottom: 10, left: 36 };
+    const iw = width - margin.left - margin.right;
+    const ih = height - margin.top - margin.bottom;
+    const total = Math.max(0.0001, (useful || 0) + (loss || 0));
+    const pu = (useful || 0) / total;
+    const pl = (loss || 0) / total;
+    const uW = iw * pu;
+    const lW = iw * pl;
+    const x0 = margin.left;
+    const y0 = margin.top;
+    return (
+      <View style={{ marginTop: 8, marginBottom: 8 }}>
+        <Text style={{ fontSize: 11, fontWeight: 600, marginBottom: 4 }}>{title}</Text>
+        <Svg width={width} height={height}>
+          <Rect x={margin.left} y={y0} width={iw} height={ih} fill="#f3f4f6" stroke="#d1d5db" strokeWidth={1} />
+          <Rect x={x0} y={y0} width={uW} height={ih} fill="#60a5fa" />
+          <Rect x={x0 + uW} y={y0} width={lW} height={ih} fill="#fbbf24" />
+        </Svg>
+        <View style={{ marginTop: 6 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 2 }}>
+            <View style={{ width: 10, height: 10, backgroundColor: "#60a5fa", marginRight: 6 }} />
+            <Text style={{ fontSize: 10, color: "#333" }}>Użyteczne: {(pu * 100).toFixed(0)}% ({(useful || 0).toFixed(3)} GJ/m³)</Text>
+          </View>
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <View style={{ width: 10, height: 10, backgroundColor: "#fbbf24", marginRight: 6 }} />
+            <Text style={{ fontSize: 10, color: "#333" }}>Straty: {(pl * 100).toFixed(0)}% ({(loss || 0).toFixed(3)} GJ/m³)</Text>
+          </View>
+        </View>
+      </View>
+    );
+  };
+
   const Doc = (
     <Document>
       <Page size="A4" style={styles.page}>
@@ -101,6 +154,11 @@ export async function makeResidentBillPDF(
           <Text style={styles.brand}>PROFINSTAL</Text>
           <Link src="https://profinstal.info" style={styles.site}>profinstal.info</Link>
         </View>
+        <ShareBar
+          title="Udział energii: użyteczne vs straty"
+          useful={Number(r.energyPerM3) || 0}
+          loss={Number(r.energyLossPerM3) || 0}
+        />
         <Text style={styles.h1}>PROFINSTAL — Raport z obliczeń CWU (Mieszkańcy)</Text>
         <Text style={styles.small}>Data: {createdAt.toLocaleString("pl-PL")}</Text>
 

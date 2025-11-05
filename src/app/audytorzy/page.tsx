@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Wrench, Calculator, BarChart3, Settings, Zap, TrendingUp, FileText, Download, Eye, Building2, Thermometer, Gauge, Coins } from "lucide-react";
+import { Wrench, Calculator, BarChart3, Settings, Zap, TrendingUp, FileText, Download, Eye, Building2, Gauge, Coins } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -70,7 +70,7 @@ export default function AudytorzyPage() {
       } else {
         alert("Błąd: " + JSON.stringify(json.error));
       }
-    } catch (error) {
+    } catch {
       alert("Błąd komunikacji z serwerem");
     }
     setLoading(false);

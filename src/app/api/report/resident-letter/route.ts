@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import { z } from "zod";
 import { makeResidentLetterPDF } from "@/lib/report/resident-letter-pdf";
 
 export const runtime = "nodejs";
@@ -8,9 +9,32 @@ export const maxDuration = 60; // Zwiększ timeout do 60s (Vercel Pro)
 export async function GET(req: NextRequest) {
   try {
     const raw = req.nextUrl.searchParams.get("data");
-    type Payload = { input?: any; result?: any };
-    let input: any;
-    let result: any;
+    const InputSchema = z.object({
+      cwuPriceFromBill: z.coerce.number(),
+      monthlyConsumption: z.coerce.number(),
+      coldTempC: z.coerce.number(),
+      hotTempC: z.coerce.number(),
+      heatPriceFromCity: z.coerce.number(),
+      letterCity: z.string().optional(),
+    });
+    const ResultSchema = z.object({
+      energyPerM3: z.coerce.number(),
+      energyLossPerM3: z.coerce.number(),
+      lossPerM3: z.coerce.number(),
+      monthlyFinancialLoss: z.coerce.number(),
+      monthlyEnergyLoss: z.coerce.number(),
+      yearlyFinancialLoss: z.coerce.number(),
+      yearlyEnergyLoss: z.coerce.number(),
+      theoreticalCostPerM3: z.coerce.number(),
+      theoreticalMonthlyPayment: z.coerce.number(),
+      actualMonthlyPayment: z.coerce.number(),
+    });
+    const PayloadSchema = z.object({ input: InputSchema.optional(), result: ResultSchema.optional() });
+    type Payload = z.infer<typeof PayloadSchema>;
+    type ResidentInput = z.infer<typeof InputSchema>;
+    type ResidentResult = z.infer<typeof ResultSchema>;
+    let input: ResidentInput;
+    let result: ResidentResult;
 
     if (!raw) {
       // Fallback demo payload dla wejścia GET bez ?data
@@ -48,15 +72,15 @@ export async function GET(req: NextRequest) {
     } else {
       let payload: Payload;
       try {
-        payload = JSON.parse(raw) as Payload;
+        payload = PayloadSchema.parse(JSON.parse(raw));
       } catch {
         return new Response(JSON.stringify({ ok: false, error: "Invalid JSON" }), {
           status: 400,
           headers: { "Content-Type": "application/json" },
         });
       }
-      input = payload.input;
-      result = payload.result;
+      input = InputSchema.parse(payload.input);
+      result = ResultSchema.parse(payload.result);
     }
 
     const bytes = await makeResidentLetterPDF(input, result);
@@ -84,10 +108,31 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    type Payload = { input?: unknown; result?: unknown };
+    const InputSchema = z.object({
+      cwuPriceFromBill: z.coerce.number(),
+      monthlyConsumption: z.coerce.number(),
+      coldTempC: z.coerce.number(),
+      hotTempC: z.coerce.number(),
+      heatPriceFromCity: z.coerce.number(),
+      letterCity: z.string().optional(),
+    });
+    const ResultSchema = z.object({
+      energyPerM3: z.coerce.number(),
+      energyLossPerM3: z.coerce.number(),
+      lossPerM3: z.coerce.number(),
+      monthlyFinancialLoss: z.coerce.number(),
+      monthlyEnergyLoss: z.coerce.number(),
+      yearlyFinancialLoss: z.coerce.number(),
+      yearlyEnergyLoss: z.coerce.number(),
+      theoreticalCostPerM3: z.coerce.number(),
+      theoreticalMonthlyPayment: z.coerce.number(),
+      actualMonthlyPayment: z.coerce.number(),
+    });
+    const PayloadSchema = z.object({ input: InputSchema.optional(), result: ResultSchema.optional() });
+    type Payload = z.infer<typeof PayloadSchema>;
     let payload: Payload;
     try {
-      payload = (await req.json()) as Payload;
+      payload = PayloadSchema.parse(await req.json());
     } catch {
       return new Response(JSON.stringify({ ok: false, error: "Invalid JSON" }), {
         status: 400,
@@ -95,7 +140,8 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const { input, result } = payload || {};
+    const input = payload.input!;
+    const result = payload.result!;
     const bytes = await makeResidentLetterPDF(input, result);
     const stream = new ReadableStream<Uint8Array>({
       start(controller) {

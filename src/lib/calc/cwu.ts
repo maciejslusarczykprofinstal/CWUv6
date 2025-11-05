@@ -101,7 +101,6 @@ export function orderedPowerCWU(params: {
 }) {
   const {
     flats,
-    risers, // używane do potencjalnych przyszłych obliczeń
     coldTempC,
     hotTempC,
     drawPeakLpm,
