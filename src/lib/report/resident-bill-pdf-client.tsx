@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Document, Page, Text, View, StyleSheet, Link, Font, Image } from "@react-pdf/renderer";
+import { Document, Page, Text, View, StyleSheet, Link, Font, Image, Svg, Rect, Line } from "@react-pdf/renderer";
 
 // Rejestracja czcionki Roboto z lokalnych plików (TTF z pełnym wsparciem polskich znaków)
 Font.register({
@@ -53,6 +53,58 @@ export function ResidentBillPDFDocument({
   const Section = ({ title }: { title: string }) => (
     <Text style={styles.h2}>{title}</Text>
   );
+
+  // Prosty komponent wykresu słupkowego (SVG) do @react-pdf/renderer
+  const BarChart = ({
+    title,
+    unit,
+    data,
+    width = 500,
+    height = 160,
+  }: {
+    title: string;
+    unit: string;
+    data: { label: string; value: number; color: string }[];
+    width?: number;
+    height?: number;
+  }) => {
+    const margin = { top: 20, right: 20, bottom: 40, left: 40 };
+    const iw = width - margin.left - margin.right;
+    const ih = height - margin.top - margin.bottom;
+    const maxVal = Math.max(1, ...data.map((d) => Math.max(0, Number(d.value) || 0)));
+    const barSpace = iw / data.length;
+    const barWidth = Math.max(20, Math.min(60, barSpace * 0.6));
+    return (
+      <View style={{ marginTop: 8, marginBottom: 8 }}>
+        <Text style={{ fontSize: 11, fontWeight: 600, marginBottom: 4 }}>{title} ({unit})</Text>
+        <Svg width={width} height={height}>
+          {/* Oś X i Y */}
+          <Line x1={margin.left} y1={margin.top} x2={margin.left} y2={margin.top + ih} stroke="#999" strokeWidth={1} />
+          <Line x1={margin.left} y1={margin.top + ih} x2={margin.left + iw} y2={margin.top + ih} stroke="#999" strokeWidth={1} />
+
+          {/* Słupki */}
+          {data.map((d, idx) => {
+            const val = Math.max(0, Number(d.value) || 0);
+            const h = (val / maxVal) * (ih - 10);
+            const x = margin.left + idx * barSpace + (barSpace - barWidth) / 2;
+            const y = margin.top + ih - h;
+            return (
+              <Rect key={`bar-${idx}`} x={x} y={y} width={barWidth} height={h} fill={d.color} />
+            );
+          })}
+        </Svg>
+        {/* Legenda i wartości pod wykresem */}
+        <View style={{ marginTop: 6 }}>
+          {data.map((d, idx) => (
+            <View key={`leg-${idx}`} style={{ flexDirection: "row", alignItems: "center", marginBottom: 2 }}>
+              <View style={{ width: 10, height: 10, backgroundColor: d.color, marginRight: 6 }} />
+              <Text style={{ fontSize: 10, color: "#333" }}>{d.label}: {Number(d.value || 0).toFixed(2)} {unit}</Text>
+            </View>
+          ))}
+        </View>
+      </View>
+    );
+  };
 
   // Helper for page footer
   const Footer = () => (
@@ -132,6 +184,27 @@ export function ResidentBillPDFDocument({
             <Text style={styles.row}>Płatność rzeczywista (mies.): {n(r.actualMonthlyPayment)} zł/mies.</Text>
             <Text style={styles.row}>Strata finansowa (mies.): {n(r.monthlyFinancialLoss)} zł/mies.</Text>
           </View>
+        </View>
+
+        {/* Wykresy do sekcji "Wyniki obliczeń" */}
+        <View style={{ marginTop: 8 }}>
+          <BarChart
+            title="Koszty miesięczne"
+            unit="zł/mies."
+            data={[
+              { label: "Teoretyczny", value: Number(r.theoreticalMonthlyPayment) || 0, color: "#60a5fa" },
+              { label: "Rzeczywisty", value: Number(r.actualMonthlyPayment) || 0, color: "#34d399" },
+              { label: "Różnica", value: Number(r.monthlyFinancialLoss) || 0, color: "#f87171" },
+            ]}
+          />
+          <BarChart
+            title="Energia na m³"
+            unit="GJ/m³"
+            data={[
+              { label: "Teoria", value: Number(r.energyPerM3) || 0, color: "#60a5fa" },
+              { label: "Strata", value: Number(r.energyLossPerM3) || 0, color: "#fbbf24" },
+            ]}
+          />
         </View>
 
         <Section title="4. Ekstrapolacja roczna" />

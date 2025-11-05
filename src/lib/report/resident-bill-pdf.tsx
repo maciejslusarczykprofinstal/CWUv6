@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Document, Page, Text, View, StyleSheet, pdf, Link } from "@react-pdf/renderer";
+import { Document, Page, Text, View, StyleSheet, pdf, Link, Svg, Rect, Line } from "@react-pdf/renderer";
 
 const styles = StyleSheet.create({
   page: { padding: 36, fontSize: 11 },
@@ -26,6 +26,52 @@ export async function makeResidentBillPDF(
 ): Promise<Uint8Array> {
   const i = (input ?? {}) as Record<string, any>;
   const r = (result ?? {}) as Record<string, any>;
+
+  // Prosty wykres słupkowy (SVG) — używany w sekcji wyników
+  const BarChart = ({
+    title,
+    unit,
+    data,
+    width = 480,
+    height = 150,
+  }: {
+    title: string;
+    unit: string;
+    data: { label: string; value: number; color: string }[];
+    width?: number;
+    height?: number;
+  }) => {
+    const margin = { top: 18, right: 20, bottom: 34, left: 36 };
+    const iw = width - margin.left - margin.right;
+    const ih = height - margin.top - margin.bottom;
+    const maxVal = Math.max(1, ...data.map((d) => Math.max(0, Number(d.value) || 0)));
+    const barSpace = iw / data.length;
+    const barWidth = Math.max(18, Math.min(56, barSpace * 0.6));
+    return (
+      <View style={{ marginTop: 6, marginBottom: 6 }}>
+        <Text style={{ fontSize: 11, fontWeight: 600, marginBottom: 4 }}>{title} ({unit})</Text>
+        <Svg width={width} height={height}>
+          <Line x1={margin.left} y1={margin.top} x2={margin.left} y2={margin.top + ih} stroke="#999" strokeWidth={1} />
+          <Line x1={margin.left} y1={margin.top + ih} x2={margin.left + iw} y2={margin.top + ih} stroke="#999" strokeWidth={1} />
+          {data.map((d, idx) => {
+            const val = Math.max(0, Number(d.value) || 0);
+            const h = (val / maxVal) * (ih - 10);
+            const x = margin.left + idx * barSpace + (barSpace - barWidth) / 2;
+            const y = margin.top + ih - h;
+            return <Rect key={`bar-${idx}`} x={x} y={y} width={barWidth} height={h} fill={d.color} />;
+          })}
+        </Svg>
+        <View style={{ marginTop: 6 }}>
+          {data.map((d, idx) => (
+            <View key={`leg-${idx}`} style={{ flexDirection: "row", alignItems: "center", marginBottom: 2 }}>
+              <View style={{ width: 10, height: 10, backgroundColor: d.color, marginRight: 6 }} />
+              <Text style={{ fontSize: 10, color: "#333" }}>{d.label}: {Number(d.value || 0).toFixed(2)} {unit}</Text>
+            </View>
+          ))}
+        </View>
+      </View>
+    );
+  };
 
   const Doc = (
     <Document>
@@ -60,6 +106,25 @@ export async function makeResidentBillPDF(
             <Text style={styles.row}>Strata finansowa (mies.): {n(r.monthlyFinancialLoss)} zł/mies.</Text>
           </View>
         </View>
+
+        {/* Wykresy dla sekcji wyników */}
+        <BarChart
+          title="Koszty miesięczne"
+          unit="zł/mies."
+          data={[
+            { label: "Teoretyczny", value: Number(r.theoreticalMonthlyPayment) || 0, color: "#60a5fa" },
+            { label: "Rzeczywisty", value: Number(r.actualMonthlyPayment) || 0, color: "#34d399" },
+            { label: "Różnica", value: Number(r.monthlyFinancialLoss) || 0, color: "#f87171" },
+          ]}
+        />
+        <BarChart
+          title="Energia na m³"
+          unit="GJ/m³"
+          data={[
+            { label: "Teoria", value: Number(r.energyPerM3) || 0, color: "#60a5fa" },
+            { label: "Strata", value: Number(r.energyLossPerM3) || 0, color: "#fbbf24" },
+          ]}
+        />
 
         <Text style={styles.h2}>3. Ekstrapolacja (rok)</Text>
         <View>
