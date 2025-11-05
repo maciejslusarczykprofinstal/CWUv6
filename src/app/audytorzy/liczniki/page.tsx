@@ -9,13 +9,6 @@ import { Calculator, DollarSign, Thermometer } from "lucide-react";
 import { useState } from "react";
 
 export default function LicznikiPage() {
-  // Ścieżka 1: Koszt za m3 z energii i zużycia CWU
-  const [result1, setResult1] = useState<{
-    pricePerM3: number;
-    totalCost: number;
-    energyUsedGJ: number;
-  } | null>(null);
-
   // Ścieżka 2: Ile zapłacili mieszkańcy
   const [result2, setResult2] = useState<{
     totalPaid: number;
@@ -27,43 +20,6 @@ export default function LicznikiPage() {
     pricePerM3: number;
     totalCost: number;
   } | null>(null);
-
-  // Ścieżka 1: Energia cieplna + zużycie CWU → cena za m3
-  async function handleSubmit1(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    const fd = new FormData(e.currentTarget);
-    
-    const pricePerGJ = Number(fd.get("pricePerGJ1"));
-    const cwuGJ = Number(fd.get("cwuGJ1"));
-    
-    try {
-      // Fizyka: grzejemy wodę od 10°C do 55°C
-      const deltaT = 55 - 10; // 45 K
-      const specificHeat = 4186; // J/(kg·K) = J/(L·K) dla wody
-      
-      // Energia na 1 m3 (1000 L) wody:
-      // E = m * c * ΔT = 1000 kg * 4186 J/(kg·K) * 45 K
-      const energyPerM3_J = 1000 * specificHeat * deltaT;
-      const energyPerM3_GJ = energyPerM3_J / 1e9; // konwersja J → GJ
-      
-      // Ile m3 wody podgrzano?
-      const waterVolume = cwuGJ / energyPerM3_GJ;
-      
-      // Całkowity koszt
-      const totalCost = cwuGJ * pricePerGJ;
-      
-      // Cena za m3
-      const pricePerM3 = totalCost / waterVolume;
-      
-      setResult1({
-        pricePerM3,
-        totalCost,
-        energyUsedGJ: cwuGJ,
-      });
-    } catch (err) {
-      alert("Błąd obliczeń: " + (err as Error).message);
-    }
-  }
 
   // Ścieżka 2: Rzeczywista ilość wody + cena za m3 → ile zapłacili
   async function handleSubmit2(e: React.FormEvent<HTMLFormElement>) {
@@ -133,80 +89,7 @@ export default function LicznikiPage() {
           </p>
         </header>
 
-        <div className="grid gap-6 lg:grid-cols-3">
-          {/* Ścieżka 1: Energia + zużycie CWU → cena za m3 */}
-          <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur border-0 shadow-xl">
-            <CardHeader className="border-b border-slate-200/70 dark:border-slate-700/60">
-              <CardTitle className="flex items-center gap-2 text-slate-800 dark:text-slate-200 text-base">
-                <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-purple-600 text-white flex-shrink-0">
-                  <Thermometer className="h-5 w-5" />
-                </span>
-                <span>Energia → Cena/m³</span>
-              </CardTitle>
-              <p className="text-xs text-slate-600 dark:text-slate-400 mt-2">
-                Woda 10°C → 55°C
-              </p>
-            </CardHeader>
-            <CardContent className="p-4">
-              <form onSubmit={handleSubmit1} className="space-y-4">
-                <div className="space-y-2">
-                  <Label className="text-sm">Energia [zł/GJ]</Label>
-                  <Input 
-                    name="pricePerGJ1" 
-                    type="number" 
-                    step="0.01" 
-                    defaultValue="90"
-                    required 
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label className="text-sm">Zużycie CWU [GJ]</Label>
-                  <Input 
-                    name="cwuGJ1" 
-                    type="number" 
-                    step="0.01" 
-                    defaultValue="150"
-                    required 
-                  />
-                  <p className="text-xs text-slate-500">80 mieszkań: 120-180 GJ/rok</p>
-                </div>
-
-                <div className="flex gap-2">
-                  <Button type="submit" size="sm" className="flex-1">Oblicz</Button>
-                  <Button type="button" size="sm" variant="ghost" onClick={() => setResult1(null)}>
-                    Wyczyść
-                  </Button>
-                </div>
-              </form>
-
-              {result1 && (
-                <div className="mt-4 space-y-3">
-                  <div className="p-3 rounded-lg bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800">
-                    <div className="text-xs text-purple-600 dark:text-purple-400">Cena za m³</div>
-                    <div className="text-2xl font-bold text-purple-900 dark:text-purple-100">
-                      {result1.pricePerM3.toFixed(2)} zł/m³
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="p-2 rounded bg-slate-50 dark:bg-slate-800/50">
-                      <div className="text-xs text-slate-600 dark:text-slate-400">Koszt całkowity</div>
-                      <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                        {result1.totalCost.toLocaleString("pl-PL", { minimumFractionDigits: 2 })} zł
-                      </div>
-                    </div>
-                    <div className="p-2 rounded bg-slate-50 dark:bg-slate-800/50">
-                      <div className="text-xs text-slate-600 dark:text-slate-400">Energia</div>
-                      <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                        {result1.energyUsedGJ.toFixed(2)} GJ
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
+        <div className="grid gap-6 lg:grid-cols-2">
           {/* Ścieżka 2: Rzeczywista ilość wody + cena → ile zapłacili */}
           <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur border-0 shadow-xl">
             <CardHeader className="border-b border-slate-200/70 dark:border-slate-700/60">
@@ -272,17 +155,17 @@ export default function LicznikiPage() {
             </CardContent>
           </Card>
 
-          {/* Ścieżka 3: Alternatywna metoda */}
+          {/* Ścieżka 3: Energia → Cena/m³ */}
           <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur border-0 shadow-xl">
             <CardHeader className="border-b border-slate-200/70 dark:border-slate-700/60">
               <CardTitle className="flex items-center gap-2 text-slate-800 dark:text-slate-200 text-base">
                 <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-white flex-shrink-0">
                   <Calculator className="h-5 w-5" />
                 </span>
-                <span>Metoda alternatywna</span>
+                <span>Energia → Cena/m³</span>
               </CardTitle>
               <p className="text-xs text-slate-600 dark:text-slate-400 mt-2">
-                m³ wody → Koszt podgrzania
+                m³ wody → Koszt podgrzania (10°C → 55°C)
               </p>
             </CardHeader>
             <CardContent className="p-4">
