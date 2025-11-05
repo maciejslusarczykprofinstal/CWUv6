@@ -18,7 +18,7 @@ export default function CalPage() {
       <section className="space-y-8">
         <h2 className="text-3xl font-bold text-slate-900 dark:text-slate-100">Komu pomagamy</h2>
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-2xl border-2 border-blue-200 dark:border-blue-800 bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950/50 dark:to-slate-900 p-8 shadow-lg hover:shadow-xl transition-all hover:scale-105">
+          <div className="rounded-2xl border-2 border-blue-200 dark:border-blue-800 bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950/50 dark:to-slate-900 p-8 shadow-lg">
             <h3 className="text-xl font-bold text-blue-900 dark:text-blue-100 mb-4">Dla Mieszkańców</h3>
             <ul className="space-y-3 text-slate-800 dark:text-slate-200 list-disc pl-5">
               <li>Pokazujemy skąd biorą się koszty CWU i co je podbija.</li>
@@ -26,7 +26,7 @@ export default function CalPage() {
               <li>Jasne pisma/raporty PDF do spółdzielni.</li>
             </ul>
           </div>
-          <div className="rounded-2xl border-2 border-indigo-200 dark:border-indigo-800 bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-950/50 dark:to-slate-900 p-8 shadow-lg hover:shadow-xl transition-all hover:scale-105">
+          <div className="rounded-2xl border-2 border-indigo-200 dark:border-indigo-800 bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-950/50 dark:to-slate-900 p-8 shadow-lg">
             <h3 className="text-xl font-bold text-indigo-900 dark:text-indigo-100 mb-4">Dla Zarządców</h3>
             <ul className="space-y-3 text-slate-800 dark:text-slate-200 list-disc pl-5">
               <li>Obliczenia: moc zamówiona, straty cyrkulacji, bufory, warianty „co-jeśli".</li>
@@ -34,7 +34,7 @@ export default function CalPage() {
               <li>Priorytety modernizacji wg efektu (zł/kW, zł/m³).</li>
             </ul>
           </div>
-          <div className="rounded-2xl border-2 border-cyan-200 dark:border-cyan-800 bg-gradient-to-br from-cyan-50 to-teal-50 dark:from-cyan-950/50 dark:to-slate-900 p-8 shadow-lg hover:shadow-xl transition-all hover:scale-105">
+          <div className="rounded-2xl border-2 border-cyan-200 dark:border-cyan-800 bg-gradient-to-br from-cyan-50 to-teal-50 dark:from-cyan-950/50 dark:to-slate-900 p-8 shadow-lg">
             <h3 className="text-xl font-bold text-cyan-900 dark:text-cyan-100 mb-4">Dla Miast i Gmin</h3>
             <ul className="space-y-3 text-slate-800 dark:text-slate-200 list-disc pl-5">
               <li>Ujednolicone sprawozdania z budynków — jeden format.</li>
@@ -42,7 +42,7 @@ export default function CalPage() {
               <li>Załączniki do programów modernizacji i wniosków o finansowanie.</li>
             </ul>
           </div>
-          <div className="rounded-2xl border-2 border-green-200 dark:border-green-800 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/50 dark:to-slate-900 p-8 shadow-lg hover:shadow-xl transition-all hover:scale-105">
+          <div className="rounded-2xl border-2 border-green-200 dark:border-green-800 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/50 dark:to-slate-900 p-8 shadow-lg">
             <h3 className="text-xl font-bold text-green-900 dark:text-green-100 mb-4">Dla Ekologii</h3>
             <p className="text-slate-800 dark:text-slate-200 leading-relaxed">
               Najczystsza energia to ta, której nie zmarnowaliśmy. Redukujemy straty i niepotrzebnie zamawianą moc — mniej spalania, mniej emisji. Komfort bez przegrzewania instalacji.
@@ -69,7 +69,7 @@ export default function CalPage() {
             "Wspólne raportowanie (budynek → osiedle → gmina)",
             "Proces: parametry → obliczenia → warianty → decyzja → wdrożenie → sprawdzenie efektu",
           ].map((t, i) => (
-            <div key={i} className="rounded-2xl border-2 border-slate-300 dark:border-slate-700 p-7 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 shadow-lg hover:shadow-xl transition-all hover:scale-105">
+            <div key={i} className="rounded-2xl border-2 border-slate-300 dark:border-slate-700 p-7 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 shadow-lg">
               <p className="text-slate-900 dark:text-slate-100 font-medium leading-relaxed">{t}</p>
             </div>
           ))}
@@ -96,7 +96,7 @@ export default function CalPage() {
             "Decyzje > PDF — wskazujemy priorytety i spodziewany efekt, nie tylko tabelki.",
             "Dane należą do Was — eksport, kopia, usunięcie na życzenie.",
           ].map((t, i) => (
-            <div key={i} className="rounded-2xl border-2 border-slate-300 dark:border-slate-700 p-8 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 shadow-lg hover:shadow-xl transition-all hover:scale-105">
+            <div key={i} className="rounded-2xl border-2 border-slate-300 dark:border-slate-700 p-8 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 shadow-lg">
               <p className="text-slate-900 dark:text-slate-100 font-medium text-lg leading-relaxed">{t}</p>
             </div>
           ))}
@@ -107,15 +107,15 @@ export default function CalPage() {
       <section className="rounded-3xl border-2 border-indigo-200 dark:border-indigo-800 p-8 md:p-12 bg-gradient-to-br from-indigo-100 via-blue-100 to-cyan-100 dark:from-indigo-950 dark:via-blue-950 dark:to-slate-900 shadow-xl">
         <h2 className="text-3xl font-bold text-indigo-900 dark:text-indigo-100 mb-6">Wezwanie do współpracy</h2>
         <div className="grid gap-6 md:grid-cols-3">
-          <div className="rounded-2xl border-2 border-white/50 dark:border-slate-700 p-7 bg-white/90 dark:bg-slate-900/80 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all hover:scale-105">
+          <div className="rounded-2xl border-2 border-white/50 dark:border-slate-700 p-7 bg-white/90 dark:bg-slate-900/80 backdrop-blur-sm shadow-lg">
             <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 mb-3">Mieszkańcy</h3>
             <p className="text-slate-800 dark:text-slate-200 leading-relaxed">Sprawdźcie, za co płacicie — i co można poprawić.</p>
           </div>
-          <div className="rounded-2xl border-2 border-white/50 dark:border-slate-700 p-7 bg-white/90 dark:bg-slate-900/80 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all hover:scale-105">
+          <div className="rounded-2xl border-2 border-white/50 dark:border-slate-700 p-7 bg-white/90 dark:bg-slate-900/80 backdrop-blur-sm shadow-lg">
             <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 mb-3">Zarządcy</h3>
             <p className="text-slate-800 dark:text-slate-200 leading-relaxed">Zamieńcie dyskusje na decyzje — na liczbach.</p>
           </div>
-          <div className="rounded-2xl border-2 border-white/50 dark:border-slate-700 p-7 bg-white/90 dark:bg-slate-900/80 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all hover:scale-105">
+          <div className="rounded-2xl border-2 border-white/50 dark:border-slate-700 p-7 bg-white/90 dark:bg-slate-900/80 backdrop-blur-sm shadow-lg">
             <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 mb-3">Miasta i Gminy</h3>
             <p className="text-slate-800 dark:text-slate-200 leading-relaxed">Zobaczcie potencjał oszczędności w skali i planujcie modernizacje tam, gdzie najbardziej się zwrócą.</p>
           </div>
