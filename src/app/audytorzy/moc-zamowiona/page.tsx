@@ -153,13 +153,22 @@ export default function MocZamowionaPage() {
             <CardContent className="space-y-6">
               <div className="space-y-2">
                 <Label>Norma</Label>
-                <Select value={standard} onValueChange={v => setStandard(v as Standard)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="PN_EN_806_3">PN-EN 806-3</SelectItem>
-                    <SelectItem value="PN_92_B_01706">PN-92/B-01706</SelectItem>
-                  </SelectContent>
-                </Select>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant={standard === "PN_EN_806_3" ? "default" : "outline"}
+                    onClick={() => setStandard("PN_EN_806_3")}
+                  >
+                    PN-EN 806-3
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={standard === "PN_92_B_01706" ? "default" : "outline"}
+                    onClick={() => setStandard("PN_92_B_01706")}
+                  >
+                    PN-92/B-01706
+                  </Button>
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2"><Label>Liczba mieszkań</Label><Input type="number" value={liczbaMieszkan} onChange={e=>setLiczbaMieszkan(+e.target.value)} /></div>
