@@ -247,56 +247,119 @@ export default function MocZamowionaPage() {
                   </Button>
                 </div>
                 {showNormInfo && (
-                <div className="mt-3 space-y-3 text-xs leading-relaxed text-slate-600 dark:text-slate-300">
-                  <div className="border rounded-md p-3 bg-white/70 dark:bg-slate-900/50">
-                    <div className="font-semibold mb-1 flex items-center gap-2">
-                      <span>Algorytm PN-EN 806-3</span>
-                      {standard === 'PN_EN_806_3' && <span className="inline-block px-2 py-0.5 text-[10px] rounded-full bg-primary/15 text-primary">aktywny</span>}
+                <div className="mt-3 space-y-4 text-xs leading-relaxed text-slate-600 dark:text-slate-300">
+                  {/* PN-EN 806-3 */}
+                  <div className="border rounded-xl p-4 bg-gradient-to-br from-blue-50/80 to-indigo-50/80 dark:from-slate-800/60 dark:to-indigo-900/20 shadow-sm">
+                    <div className="flex items-start gap-3 mb-3">
+                      <div className="flex-shrink-0 w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-sm">
+                        EN
+                      </div>
+                      <div className="flex-1">
+                        <div className="font-bold text-base mb-1 flex items-center gap-2 text-slate-800 dark:text-slate-100">
+                          PN-EN 806-3
+                          <span className="text-[10px] font-normal px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300">Norma aktualniejsza</span>
+                          {standard === 'PN_EN_806_3' && <span className="inline-block px-2 py-0.5 text-[10px] rounded-full bg-primary/15 text-primary">aktywna</span>}
+                        </div>
+                        <p className="text-xs italic text-slate-600 dark:text-slate-400">Obliczasz rzeczywiste zapotrzebowanie chwilowe na wodę.</p>
+                      </div>
                     </div>
-                    <ol className="list-decimal pl-4 space-y-1">
-                      <li>Zlicz jednostki wypływu (FU): umywalka 0.5, zlewozmywak 0.7, prysznic 1.0, wanna 1.5.</li>
-                      <li>Jeśli FU &gt; 1 oblicz przepływ obliczeniowy qd = 0.5 · √(FU − 1) [l/s].</li>
-                      <li>Jeżeli FU ≤ 1 zastosuj fallback: qd = 0.15 · liczba mieszkań.</li>
-                      <li>Moc szczytowa <KatexFormula formula="P_{peak}=1.163\, q_d\, \Delta T" /> (1.163 ≈ c·ρ dla wody w kW·s/(l·K)).</li>
-                      <li>Dla bufora: qBuf = Vbuf / (tOdbioru·60); qNet = max(qd − qBuf, 0); Pcwu = 1.163 · qNet · ΔT.</li>
-                      <li>Dla przepływowego: Pcwu = Ppeak.</li>
-                      <li>Cyrkulacja: dane → Pcirc = 1.163 · (Q[m³/h]/3.6) · ΔT; szacunek → stała wartość kW.</li>
-                      <li>Rezerwa: <KatexFormula formula="P_{rez}=(P_{cwu}+P_{circ})\cdot r" /> gdzie r = rezerwa/100.</li>
-                      <li>Moc zamówiona: <KatexFormula formula="P_{zam}=\lceil P_{cwu}+P_{circ}+P_{rez} \rceil" />.</li>
-                    </ol>
+                    <div className="space-y-2">
+                      <div>
+                        <div className="font-semibold text-slate-700 dark:text-slate-200">Filozofia</div>
+                        <p className="text-xs">Odbiorniki nie pracują jednocześnie — używa współczynnika jednoczesności z prawdopodobieństwa. Podejście statystyczne, precyzyjne przy dużej liczbie punktów.</p>
+                      </div>
+                      <div>
+                        <div className="font-semibold text-slate-700 dark:text-slate-200">Jak działa</div>
+                        <p className="text-xs">Każdemu punktowi przypisuje się jednostki obciążenia LU (Loading Units). Z wykresu/wzoru oblicza równoważny przepływ w L/s zależny od liczby i typów odbiorników.</p>
+                      </div>
+                      <div>
+                        <div className="font-semibold text-slate-700 dark:text-slate-200">Zastosowanie</div>
+                        <p className="text-xs">Współczesne budynki, projektowanie instalacji zimnej i ciepłej wody. Uwzględnia instalacje z pompami, zasobnikami, cyrkulacją.</p>
+                      </div>
+                      <div>
+                        <div className="font-semibold text-slate-700 dark:text-slate-200">Co daje</div>
+                        <p className="text-xs">✅ Cieńsze rury (oszczędność + mniejsze straty ciepła)<br/>✅ Realne odwzorowanie pracy systemu → mniejsze ryzyko stagnacji</p>
+                      </div>
+                      <details className="mt-2">
+                        <summary className="font-semibold cursor-pointer text-slate-700 dark:text-slate-200 hover:text-blue-600">Algorytm krok po kroku</summary>
+                        <ol className="list-decimal pl-4 space-y-1 mt-2">
+                          <li>Zlicz jednostki wypływu (FU): umywalka 0.5, zlewozmywak 0.7, prysznic 1.0, wanna 1.5.</li>
+                          <li>Jeśli FU &gt; 1 oblicz przepływ obliczeniowy qd = 0.5 · √(FU − 1) [l/s].</li>
+                          <li>Jeżeli FU ≤ 1 zastosuj fallback: qd = 0.15 · liczba mieszkań.</li>
+                          <li>Moc szczytowa <KatexFormula formula="P_{peak}=1.163\, q_d\, \Delta T" /> (1.163 ≈ c·ρ dla wody w kW·s/(l·K)).</li>
+                          <li>Dla bufora: qBuf = Vbuf / (tOdbioru·60); qNet = max(qd − qBuf, 0); Pcwu = 1.163 · qNet · ΔT.</li>
+                          <li>Dla przepływowego: Pcwu = Ppeak.</li>
+                          <li>Cyrkulacja: dane → Pcirc = 1.163 · (Q[m³/h]/3.6) · ΔT; szacunek → stała wartość kW.</li>
+                          <li>Rezerwa: <KatexFormula formula="P_{rez}=(P_{cwu}+P_{circ})\cdot r" /> gdzie r = rezerwa/100.</li>
+                          <li>Moc zamówiona: <KatexFormula formula="P_{zam}=\lceil P_{cwu}+P_{circ}+P_{rez} \rceil" />.</li>
+                        </ol>
+                      </details>
+                    </div>
                   </div>
-                  <div className="border rounded-md p-3 bg-white/70 dark:bg-slate-900/50">
-                    <div className="font-semibold mb-1 flex items-center gap-2">
-                      <span>Algorytm PN-92/B-01706</span>
-                      {standard === 'PN_92_B_01706' && <span className="inline-block px-2 py-0.5 text-[10px] rounded-full bg-primary/15 text-primary">aktywny</span>}
+
+                  {/* PN-92/B-01706 */}
+                  <div className="border rounded-xl p-4 bg-gradient-to-br from-amber-50/80 to-orange-50/80 dark:from-slate-800/60 dark:to-amber-900/20 shadow-sm">
+                    <div className="flex items-start gap-3 mb-3">
+                      <div className="flex-shrink-0 w-10 h-10 rounded-full bg-amber-600 text-white flex items-center justify-center font-bold text-sm">
+                        PL
+                      </div>
+                      <div className="flex-1">
+                        <div className="font-bold text-base mb-1 flex items-center gap-2 text-slate-800 dark:text-slate-100">
+                          PN-92/B-01706
+                          <span className="text-[10px] font-normal px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300">Norma Polska starsza</span>
+                          {standard === 'PN_92_B_01706' && <span className="inline-block px-2 py-0.5 text-[10px] rounded-full bg-primary/15 text-primary">aktywna</span>}
+                        </div>
+                        <p className="text-xs italic text-slate-600 dark:text-slate-400">&bdquo;Bezpieczniej będzie przewymiarować.&rdquo;</p>
+                      </div>
                     </div>
-                    <ol className="list-decimal pl-4 space-y-1">
-                      <li>Oblicz qMax: umywalka 0.1, zlewozmywak 0.15, prysznic 0.2, wanna 0.3 (suma) [l/s].</li>
-                      <li>Wyznacz współczynnik jednoczesności k na podstawie liczby mieszkań (przedziały 5/10/20/50/100/&gt;100).</li>
-                      <li>Przepływ obliczeniowy <KatexFormula formula="q_d = q_{Max} \cdot k" />.</li>
-                      <li>Moc szczytowa <KatexFormula formula="P_{peak}=1.163\, q_d\, \Delta T" /> (jak wyżej).</li>
-                      <li>Bufor / przepływowy oraz cyrkulacja jak w PN-EN 806-3.</li>
-                      <li>Rezerwa i Pzam identycznie: <KatexFormula formula="P_{rez}=(P_{cwu}+P_{circ})\cdot r" />; <KatexFormula formula="P_{zam}=\lceil P_{cwu}+P_{circ}+P_{rez} \rceil" />.</li>
-                      <li>Notuj k i qMax w uwagach dla audytu.</li>
-                    </ol>
-                    <div className="mt-2">
-                      <div className="font-medium mb-1">Tabela współczynnika k</div>
-                      <table className="w-full text-[11px] border-collapse">
-                        <thead>
-                          <tr className="bg-slate-200 dark:bg-slate-700">
-                            <th className="p-1 font-semibold text-left">Liczba mieszkań</th>
-                            <th className="p-1 font-semibold text-left">k</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr><td className="p-1">≤ 5</td><td className="p-1">1.00</td></tr>
-                          <tr className="bg-slate-50 dark:bg-slate-800/40"><td className="p-1">6–10</td><td className="p-1">0.90</td></tr>
-                          <tr><td className="p-1">11–20</td><td className="p-1">0.70</td></tr>
-                          <tr className="bg-slate-50 dark:bg-slate-800/40"><td className="p-1">21–50</td><td className="p-1">0.50</td></tr>
-                          <tr><td className="p-1">51–100</td><td className="p-1">0.35</td></tr>
-                          <tr className="bg-slate-50 dark:bg-slate-800/40"><td className="p-1">&gt; 100</td><td className="p-1">0.25</td></tr>
-                        </tbody>
-                      </table>
+                    <div className="space-y-2">
+                      <div>
+                        <div className="font-semibold text-slate-700 dark:text-slate-200">Filozofia</div>
+                        <p className="text-xs">Wartości przepływu przypisane sztywno do każdego odbiornika, potem przemnożone przez współczynnik jednoczesności. Współczynnik z tabeli zależy od łącznej liczby urządzeń.</p>
+                      </div>
+                      <div>
+                        <div className="font-semibold text-slate-700 dark:text-slate-200">Jak działa</div>
+                        <p className="text-xs">Każdy odbiornik ma określony przepływ (np. umywalka 0,07 L/s). Sumujesz przepływy i stosujesz współczynnik jednoczesności z tabeli.</p>
+                      </div>
+                      <div>
+                        <div className="font-semibold text-slate-700 dark:text-slate-200">Zastosowanie</div>
+                        <p className="text-xs">Starsze projekty w blokach, szkołach, biurach. Dużo większe średnice rur.</p>
+                      </div>
+                      <div>
+                        <div className="font-semibold text-slate-700 dark:text-slate-200">Skutek</div>
+                        <p className="text-xs">⚠️ Instalacja przewymiarowana → większe straty ciepła, więcej wody martwej w rurach</p>
+                      </div>
+                      <details className="mt-2">
+                        <summary className="font-semibold cursor-pointer text-slate-700 dark:text-slate-200 hover:text-amber-600">Algorytm krok po kroku</summary>
+                        <ol className="list-decimal pl-4 space-y-1 mt-2">
+                          <li>Oblicz qMax: umywalka 0.1, zlewozmywak 0.15, prysznic 0.2, wanna 0.3 (suma) [l/s].</li>
+                          <li>Wyznacz współczynnik jednoczesności k na podstawie liczby mieszkań (przedziały 5/10/20/50/100/&gt;100).</li>
+                          <li>Przepływ obliczeniowy <KatexFormula formula="q_d = q_{Max} \cdot k" />.</li>
+                          <li>Moc szczytowa <KatexFormula formula="P_{peak}=1.163\, q_d\, \Delta T" /> (jak wyżej).</li>
+                          <li>Bufor / przepływowy oraz cyrkulacja jak w PN-EN 806-3.</li>
+                          <li>Rezerwa i Pzam identycznie: <KatexFormula formula="P_{rez}=(P_{cwu}+P_{circ})\cdot r" />; <KatexFormula formula="P_{zam}=\lceil P_{cwu}+P_{circ}+P_{rez} \rceil" />.</li>
+                          <li>Notuj k i qMax w uwagach dla audytu.</li>
+                        </ol>
+                        <div className="mt-2">
+                          <div className="font-medium mb-1">Tabela współczynnika k</div>
+                          <table className="w-full text-[11px] border-collapse">
+                            <thead>
+                              <tr className="bg-slate-200 dark:bg-slate-700">
+                                <th className="p-1 font-semibold text-left">Liczba mieszkań</th>
+                                <th className="p-1 font-semibold text-left">k</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <tr><td className="p-1">≤ 5</td><td className="p-1">1.00</td></tr>
+                              <tr className="bg-slate-50 dark:bg-slate-800/40"><td className="p-1">6–10</td><td className="p-1">0.90</td></tr>
+                              <tr><td className="p-1">11–20</td><td className="p-1">0.70</td></tr>
+                              <tr className="bg-slate-50 dark:bg-slate-800/40"><td className="p-1">21–50</td><td className="p-1">0.50</td></tr>
+                              <tr><td className="p-1">51–100</td><td className="p-1">0.35</td></tr>
+                              <tr className="bg-slate-50 dark:bg-slate-800/40"><td className="p-1">&gt; 100</td><td className="p-1">0.25</td></tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      </details>
                     </div>
                   </div>
                 </div>
