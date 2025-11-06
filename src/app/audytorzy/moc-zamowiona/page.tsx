@@ -36,6 +36,25 @@ interface CalcResult {
 }
 
 export default function MocZamowionaPage() {
+// Obliczenie Qpeak wg PN‑EN 806‑3 z LU (uproszczony model FU→Q)
+function qpeakFromLU({
+  umywalki,
+  zlewozmywaki,
+  prysznice,
+  wanny,
+  flats,
+}: { umywalki: number; zlewozmywaki: number; prysznice: number; wanny: number; flats: number }): number {
+  // Przybliżone jednostki obciążenia (LU) na punkt
+  const FU = umywalki * 0.5 + zlewozmywaki * 0.7 + prysznice * 1.0 + wanny * 1.5;
+  if (FU > 0) {
+    // Uproszczony algorytm probabilistyczny: qd ~ 0.5·√(FU-1)
+    const qd_ls = Math.sqrt(Math.max(FU - 1, 0)) * 0.5;
+    return qd_ls;
+  }
+  // Fallback na mieszkania
+  return 0.15 * flats; // l/s
+}
+
   // Stany wejściowe
   const [standard, setStandard] = useState<Standard>("PN_EN_806_3");
   const [showNormInfo, setShowNormInfo] = useState<boolean>(() => {
@@ -161,10 +180,14 @@ export default function MocZamowionaPage() {
         }
       }).catch(()=>toast.error("Błąd API kosztowego"));
     } else if (standard === "symulacja_programowa") {
-      // Symulacja programowa: model instalacji z cyrkulacją
-      const qSym = 0.22 * liczbaMieszkan;
-      qd_ls = qSym;
-      uwagi.push(`Symulacja programowa: model instalacji → qd=${qd_ls.toFixed(3)} l/s`);
+      // Symulacja programowa: pipeline
+      // 1) Struktura budynku → punkty poboru (mamy liczby armatury)
+      // 2) Qpeak z LU (PN‑EN 806‑3)
+      const q_lu = qpeakFromLU({ umywalki, zlewozmywaki, prysznice, wanny, flats: liczbaMieszkan });
+      qd_ls = q_lu;
+      uwagi.push(`Symulacja: Qpeak z LU (PN‑EN 806‑3) → qd=${qd_ls.toFixed(3)} l/s (≈P95%)`);
+      // 3) Bilans energetyczny + 4) Straty cyrkulacji i 5) Bufor
+      // Realizowane niżej we wspólnej części (Ppeak, Pcirc, bufor)
     } else {
       qd_ls = 0.15 * liczbaMieszkan;
       uwagi.push("Metoda nierozpoznana – fallback 0.15 l/s/mieszkanie");
