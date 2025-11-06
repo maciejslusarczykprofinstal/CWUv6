@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { KatexFormula } from "@/components/ui/katex-formula";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
@@ -63,6 +64,16 @@ export default function MocZamowionaPage() {
   const [cyrkulacjaPstaleKW, setCyrkulacjaPstaleKW] = useState<number | null>(3);
   const [rezerwaProc, setRezerwaProc] = useState(10);
   const [result, setResult] = useState<CalcResult | null>(null);
+  // Stan dla mini-kalkulatora kosztowego
+  const [costPowerRate, setCostPowerRate] = useState(150); // PLN/kW/rok
+  const [penaltyRate, setPenaltyRate] = useState(20); // PLN/kW·h
+  const [exceedHours, setExceedHours] = useState(40); // h/rok
+  const [avgExceedKW, setAvgExceedKW] = useState(10); // kW
+  const [candidateFrom, setCandidateFrom] = useState<number | null>(null);
+  const [candidateTo, setCandidateTo] = useState<number | null>(null);
+  const [candidateStep, setCandidateStep] = useState<number | null>(null);
+  const [costRows, setCostRows] = useState<{P:number; costFixed:number; costPenalty:number; costTotal:number}[]>([]);
+  const [optimum, setOptimum] = useState<{Popt:number; costTotal:number} | null>(null);
 
   function calculate() {
     const uwagi: string[] = [];
@@ -114,10 +125,41 @@ export default function MocZamowionaPage() {
       qd_ls = bazaQd * sezon;
       uwagi.push(`Krzywa mocy + sezon: baza ${bazaQd.toFixed(2)} l/s × sezon ${sezon} = ${qd_ls.toFixed(3)} l/s`);
     } else if (standard === "kosztowa") {
-      // Metoda kosztowa: minimalizacja kosztów energii vs inwestycji
-      const qOptimal = 0.16 * liczbaMieszkan; // optymalizacja ekonomiczna
+      const qOptimal = 0.16 * liczbaMieszkan;
       qd_ls = qOptimal;
-      uwagi.push(`Metoda kosztowa: optymalizacja ekonomiczna → qd=${qd_ls.toFixed(3)} l/s`);
+      uwagi.push(`Metoda kosztowa lokalnie: wstępne qd=${qd_ls.toFixed(3)} l/s (przed optymalizacją P)`);
+      // Wywołanie API dla szczegółowej optymalizacji kosztowej mocy
+      void fetch("/api/calc/auditor", {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({
+          flats: liczbaMieszkan,
+          risers: Math.max(1, Math.round(liczbaMieszkan/20)),
+          coldTempC: coldC,
+          hotTempC: hotC,
+          drawPeakLpm: qd_ls * 60,
+          simultProfile: "med",
+          bufferL: buforVlitry,
+          bufferDeltaC: buforTOdtMin,
+          peakDurationSec: 600,
+          method: "kosztowa",
+          costPowerRatePLNkW: costPowerRate,
+          penaltyRatePLNkW: penaltyRate,
+          expectedExceedHours: exceedHours,
+          avgExceedKW: avgExceedKW,
+          candidateFromKW: candidateFrom ?? undefined,
+          candidateToKW: candidateTo ?? undefined,
+          candidateStepKW: candidateStep ?? undefined,
+        })
+      }).then(r=>r.json()).then(json=>{
+        if(json.ok && json.result.costOptimization){
+          setCostRows(json.result.costOptimization.rows);
+          setOptimum(json.result.costOptimization.optimum);
+          toast.success(`Optymalna moc kosztowa: ${json.result.costOptimization.optimum.Popt} kW (koszt roczny ${json.result.costOptimization.optimum.costTotal} PLN)`);
+        } else {
+          toast.error("Brak wyniku optymalizacji kosztowej API");
+        }
+      }).catch(()=>toast.error("Błąd API kosztowego"));
     } else if (standard === "symulacja_programowa") {
       // Symulacja programowa: model instalacji z cyrkulacją
       const qSym = 0.22 * liczbaMieszkan;
@@ -643,6 +685,59 @@ export default function MocZamowionaPage() {
                       <div>
                         <div className="font-semibold text-slate-700 dark:text-slate-200">Uwaga praktyczna</div>
                         <p className="text-xs">Często wynik to przedział (np. 140–150 kW) – wybór zależy od tolerancji ryzyka zarządcy.</p>
+                      </div>
+                      {/* Mini kalkulator kosztowy */}
+                      <div className="mt-4 space-y-3">
+                        <div className="font-semibold text-slate-700 dark:text-slate-200">Mini‑kalkulator kosztowy</div>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-xs">
+                          <label className="flex flex-col gap-1"><span>Stawka mocy (PLN/kW/rok)</span><input type="number" value={costPowerRate} onChange={e=>setCostPowerRate(Number(e.target.value))} className="rounded border px-2 py-1 bg-white/70 dark:bg-slate-900/40" /></label>
+                          <label className="flex flex-col gap-1"><span>Kara (PLN/kW·h)</span><input type="number" value={penaltyRate} onChange={e=>setPenaltyRate(Number(e.target.value))} className="rounded border px-2 py-1 bg-white/70 dark:bg-slate-900/40" /></label>
+                          <label className="flex flex-col gap-1"><span>Godziny przekroczeń / rok</span><input type="number" value={exceedHours} onChange={e=>setExceedHours(Number(e.target.value))} className="rounded border px-2 py-1 bg-white/70 dark:bg-slate-900/40" /></label>
+                          <label className="flex flex-col gap-1"><span>Śr. przekroczenie (kW)</span><input type="number" value={avgExceedKW} onChange={e=>setAvgExceedKW(Number(e.target.value))} className="rounded border px-2 py-1 bg-white/70 dark:bg-slate-900/40" /></label>
+                          <label className="flex flex-col gap-1"><span>Zakres od (kW)</span><input type="number" value={candidateFrom ?? ''} onChange={e=>setCandidateFrom(e.target.value?Number(e.target.value):null)} className="rounded border px-2 py-1 bg-white/70 dark:bg-slate-900/40" /></label>
+                          <label className="flex flex-col gap-1"><span>Zakres do (kW)</span><input type="number" value={candidateTo ?? ''} onChange={e=>setCandidateTo(e.target.value?Number(e.target.value):null)} className="rounded border px-2 py-1 bg-white/70 dark:bg-slate-900/40" /></label>
+                          <label className="flex flex-col gap-1"><span>Krok (kW)</span><input type="number" value={candidateStep ?? ''} onChange={e=>setCandidateStep(e.target.value?Number(e.target.value):null)} className="rounded border px-2 py-1 bg-white/70 dark:bg-slate-900/40" /></label>
+                        </div>
+                        <Button type="button" variant="outline" size="sm" onClick={()=>{ if(standard!=="kosztowa") {toast.error("Aktywuj metodę kosztową"); return;} calculate(); }}>Analizuj koszty</Button>
+                        {optimum && (
+                          <div className="text-xs bg-white/60 dark:bg-slate-900/40 border rounded p-2">
+                            Optimum: <strong>{optimum.Popt} kW</strong>, koszt roczny <strong>{optimum.costTotal} PLN</strong>
+                          </div>
+                        )}
+                        {costRows.length>0 && (
+                          <div className="h-48 w-full">
+                            <ResponsiveContainer width="100%" height="100%">
+                              <LineChart data={costRows} margin={{top:5,right:10,left:0,bottom:5}}>
+                                <XAxis dataKey="P" tick={{fontSize:10}} />
+                                <YAxis tick={{fontSize:10}} />
+                                <Tooltip formatter={(value:number)=>value+" PLN"} labelFormatter={(label)=>`P=${label} kW`} />
+                                <Line type="monotone" dataKey="costTotal" stroke="#d97706" strokeWidth={2} dot={false} />
+                              </LineChart>
+                            </ResponsiveContainer>
+                          </div>
+                        )}
+                        {costRows.length>0 && (
+                          <table className="w-full text-[11px] border mt-2">
+                            <thead className="bg-amber-100 dark:bg-amber-900/40">
+                              <tr>
+                                <th className="p-1 border">P [kW]</th>
+                                <th className="p-1 border">Stałe [PLN]</th>
+                                <th className="p-1 border">Kary [PLN]</th>
+                                <th className="p-1 border">Razem [PLN]</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {costRows.map(r=> (
+                                <tr key={r.P} className={optimum && r.P===optimum.Popt?"bg-amber-200/70 dark:bg-amber-800/40 font-semibold":""}>
+                                  <td className="p-1 border text-right">{r.P}</td>
+                                  <td className="p-1 border text-right">{r.costFixed}</td>
+                                  <td className="p-1 border text-right">{r.costPenalty}</td>
+                                  <td className="p-1 border text-right">{r.costTotal}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        )}
                       </div>
                     </div>
                   </div>
