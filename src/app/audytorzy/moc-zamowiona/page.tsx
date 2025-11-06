@@ -554,13 +554,41 @@ export default function MocZamowionaPage() {
                           Krzywa mocy + sezon
                           {standard === 'krzywa_mocy_sezonowa' && <span className="inline-block px-2 py-0.5 text-[10px] rounded-full bg-primary/15 text-primary">aktywna</span>}
                         </div>
-                        <p className="text-xs italic text-slate-600 dark:text-slate-400">Statystyka sezonowa</p>
+                        <p className="text-xs italic text-slate-600 dark:text-slate-400">Histogram obciążenia – brzmi jak magia Excela, ale działa</p>
                       </div>
                     </div>
-                    <div className="space-y-2">
-                      <div><div className="font-semibold text-slate-700 dark:text-slate-200">Filozofia</div><p className="text-xs">Krzywa mocy (doba/tydzień/rok) z korektą sezonową (zima +20%, lato −10%).</p></div>
-                      <div><div className="font-semibold text-slate-700 dark:text-slate-200">Zastosowanie</div><p className="text-xs">Dostawcy energii, taryfy zmienne, prognozowanie.</p></div>
-                      <div><div className="font-semibold text-slate-700 dark:text-slate-200">Algorytm</div><p className="text-xs">qd = qbaza × sezon_factor; Ppeak = 1.163·qd·ΔT</p></div>
+                    <div className="space-y-3">
+                      <div>
+                        <div className="font-semibold text-slate-700 dark:text-slate-200 mb-2">Podejście statystyczne</div>
+                        <div className="bg-white/60 dark:bg-slate-900/40 p-3 rounded-lg border border-cyan-200 dark:border-cyan-800">
+                          <div className="text-center mb-2">
+                            <KatexFormula formula="P_{zam} = P_{95\%} \text{ (z krzywej obciążenia)}" displayMode={true} />
+                          </div>
+                          <div className="text-[11px] space-y-1 text-slate-700 dark:text-slate-300">
+                            <div><strong>P<sub>95%</sub></strong> – wartość mocy pokrywająca 95% realnych przypadków</div>
+                            <div><strong>Krzywa obciążenia</strong> – histogram pikowego zapotrzebowania w różnych przedziałach czasowych</div>
+                          </div>
+                        </div>
+                      </div>
+                      <div>
+                        <div className="font-semibold text-slate-700 dark:text-slate-200">Proces analizy</div>
+                        <ol className="text-xs space-y-1 list-decimal list-inside">
+                          <li>Sumujesz pikowe zapotrzebowanie wody z różnych przedziałów czasowych</li>
+                          <li>Robisz histogram / krzywą mocy</li>
+                          <li>Zamawiasz moc tak, aby pokrywała np. 95% realnych przypadków</li>
+                        </ol>
+                      </div>
+                      <div>
+                        <div className="font-semibold text-slate-700 dark:text-slate-200">Filozofia</div>
+                        <p className="text-xs">
+                          <strong>Metoda audytorska par excellence</strong> – łączy analizę statystyczną z pragmatyzmem ekonomicznym. 
+                          Brzmi jak magia Excela, ale działa.
+                        </p>
+                      </div>
+                      <div>
+                        <div className="font-semibold text-slate-700 dark:text-slate-200">Zastosowanie</div>
+                        <p className="text-xs">Analiza modernizacji przez firmy audytorskie, optymalizacja kosztów przy zachowaniu komfortu, prognozowanie obciążeń dla dostawców energii, taryfy zmienne.</p>
+                      </div>
                     </div>
                   </div>
 
