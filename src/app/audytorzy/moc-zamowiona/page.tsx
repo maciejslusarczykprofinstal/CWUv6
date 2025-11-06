@@ -29,6 +29,7 @@ interface CalcResult {
 export default function MocZamowionaPage() {
   // Stany wejściowe
   const [standard, setStandard] = useState<Standard>("PN_EN_806_3");
+  const [showNormInfo, setShowNormInfo] = useState(false);
   const [liczbaMieszkan, setLiczbaMieszkan] = useState(80);
   const [umywalki, setUmywalki] = useState(80);
   const [zlewozmywaki, setZlewozmywaki] = useState(80);
@@ -212,6 +213,18 @@ export default function MocZamowionaPage() {
                     PN-92/B-01706
                   </Button>
                 </div>
+                <div className="mt-3">
+                  <Button
+                    type="button"
+                    variant={showNormInfo ? "secondary" : "outline"}
+                    size="sm"
+                    onClick={() => setShowNormInfo(s => !s)}
+                    className="rounded-full"
+                  >
+                    {showNormInfo ? "Ukryj opis norm" : "Pokaż opis algorytmów"}
+                  </Button>
+                </div>
+                {showNormInfo && (
                 <div className="mt-3 space-y-3 text-xs leading-relaxed text-slate-600 dark:text-slate-300">
                   <div className="border rounded-md p-3 bg-white/70 dark:bg-slate-900/50">
                     <div className="font-semibold mb-1 flex items-center gap-2">
@@ -265,6 +278,7 @@ export default function MocZamowionaPage() {
                     </div>
                   </div>
                 </div>
+                )}
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2"><Label>Liczba mieszkań</Label><Input type="number" value={liczbaMieszkan} onChange={e=>setLiczbaMieszkan(+e.target.value)} /></div>
