@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { KatexFormula } from "@/components/ui/katex-formula";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 
@@ -221,12 +222,12 @@ export default function MocZamowionaPage() {
                       <li>Zlicz jednostki wypływu (FU): umywalka 0.5, zlewozmywak 0.7, prysznic 1.0, wanna 1.5.</li>
                       <li>Jeśli FU &gt; 1 oblicz przepływ obliczeniowy qd = 0.5 · √(FU − 1) [l/s].</li>
                       <li>Jeżeli FU ≤ 1 zastosuj fallback: qd = 0.15 · liczba mieszkań.</li>
-                      <li>Moc szczytowa Ppeak = 1.163 · qd · ΔT.</li>
+                      <li>Moc szczytowa <KatexFormula formula="P_{peak}=1.163\, q_d\, \Delta T" /> (1.163 ≈ c·ρ dla wody w kW·s/(l·K)).</li>
                       <li>Dla bufora: qBuf = Vbuf / (tOdbioru·60); qNet = max(qd − qBuf, 0); Pcwu = 1.163 · qNet · ΔT.</li>
                       <li>Dla przepływowego: Pcwu = Ppeak.</li>
                       <li>Cyrkulacja: dane → Pcirc = 1.163 · (Q[m³/h]/3.6) · ΔT; szacunek → stała wartość kW.</li>
-                      <li>Rezerwa: Prez = (Pcwu + Pcirc) · (rezerwa% / 100).</li>
-                      <li>Moc zamówiona Pzam = ceil(Pcwu + Pcirc + Prez).</li>
+                      <li>Rezerwa: <KatexFormula formula="P_{rez}=(P_{cwu}+P_{circ})\cdot r" /> gdzie r = rezerwa/100.</li>
+                      <li>Moc zamówiona: <KatexFormula formula="P_{zam}=\lceil P_{cwu}+P_{circ}+P_{rez} \rceil" />.</li>
                     </ol>
                   </div>
                   <div className="border rounded-md p-3 bg-white/70 dark:bg-slate-900/50">
@@ -237,12 +238,31 @@ export default function MocZamowionaPage() {
                     <ol className="list-decimal pl-4 space-y-1">
                       <li>Oblicz qMax: umywalka 0.1, zlewozmywak 0.15, prysznic 0.2, wanna 0.3 (suma) [l/s].</li>
                       <li>Wyznacz współczynnik jednoczesności k na podstawie liczby mieszkań (przedziały 5/10/20/50/100/&gt;100).</li>
-                      <li>Przepływ obliczeniowy qd = qMax · k.</li>
-                      <li>Ppeak = 1.163 · qd · ΔT (analogicznie).</li>
+                      <li>Przepływ obliczeniowy <KatexFormula formula="q_d = q_{Max} \cdot k" />.</li>
+                      <li>Moc szczytowa <KatexFormula formula="P_{peak}=1.163\, q_d\, \Delta T" /> (jak wyżej).</li>
                       <li>Bufor / przepływowy oraz cyrkulacja jak w PN-EN 806-3.</li>
-                      <li>Rezerwa i Pzam identycznie: Prez = (Pcwu + Pcirc) · proc; Pzam = ceil(Pcwu + Pcirc + Prez).</li>
+                      <li>Rezerwa i Pzam identycznie: <KatexFormula formula="P_{rez}=(P_{cwu}+P_{circ})\cdot r" />; <KatexFormula formula="P_{zam}=\lceil P_{cwu}+P_{circ}+P_{rez} \rceil" />.</li>
                       <li>Notuj k i qMax w uwagach dla audytu.</li>
                     </ol>
+                    <div className="mt-2">
+                      <div className="font-medium mb-1">Tabela współczynnika k</div>
+                      <table className="w-full text-[11px] border-collapse">
+                        <thead>
+                          <tr className="bg-slate-200 dark:bg-slate-700">
+                            <th className="p-1 font-semibold text-left">Liczba mieszkań</th>
+                            <th className="p-1 font-semibold text-left">k</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr><td className="p-1">≤ 5</td><td className="p-1">1.00</td></tr>
+                          <tr className="bg-slate-50 dark:bg-slate-800/40"><td className="p-1">6–10</td><td className="p-1">0.90</td></tr>
+                          <tr><td className="p-1">11–20</td><td className="p-1">0.70</td></tr>
+                          <tr className="bg-slate-50 dark:bg-slate-800/40"><td className="p-1">21–50</td><td className="p-1">0.50</td></tr>
+                          <tr><td className="p-1">51–100</td><td className="p-1">0.35</td></tr>
+                          <tr className="bg-slate-50 dark:bg-slate-800/40"><td className="p-1">&gt; 100</td><td className="p-1">0.25</td></tr>
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
                 </div>
               </div>
