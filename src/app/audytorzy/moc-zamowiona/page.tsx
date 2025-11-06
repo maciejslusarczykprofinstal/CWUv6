@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -29,7 +29,16 @@ interface CalcResult {
 export default function MocZamowionaPage() {
   // Stany wejściowe
   const [standard, setStandard] = useState<Standard>("PN_EN_806_3");
-  const [showNormInfo, setShowNormInfo] = useState(false);
+  const [showNormInfo, setShowNormInfo] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    try {
+      const v = window.localStorage.getItem('moc_norm_info');
+      return v === '1';
+    } catch { return false; }
+  });
+  useEffect(() => {
+    try { window.localStorage.setItem('moc_norm_info', showNormInfo ? '1' : '0'); } catch {}
+  }, [showNormInfo]);
   const [liczbaMieszkan, setLiczbaMieszkan] = useState(80);
   const [umywalki, setUmywalki] = useState(80);
   const [zlewozmywaki, setZlewozmywaki] = useState(80);
@@ -219,8 +228,21 @@ export default function MocZamowionaPage() {
                     variant={showNormInfo ? "secondary" : "outline"}
                     size="sm"
                     onClick={() => setShowNormInfo(s => !s)}
-                    className="rounded-full"
+                    className="rounded-full flex items-center gap-1"
+                    aria-expanded={showNormInfo}
                   >
+                    <svg
+                      className={"h-3.5 w-3.5 transition-transform " + (showNormInfo ? "rotate-180" : "rotate-0")}
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden="true"
+                    >
+                      <path d="M6 9l6 6 6-6" />
+                    </svg>
                     {showNormInfo ? "Ukryj opis norm" : "Pokaż opis algorytmów"}
                   </Button>
                 </div>
