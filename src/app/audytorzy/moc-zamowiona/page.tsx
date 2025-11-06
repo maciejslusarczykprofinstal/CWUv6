@@ -420,13 +420,35 @@ export default function MocZamowionaPage() {
                           Bilans energetyczny CWU
                           {standard === 'bilans_energetyczny' && <span className="inline-block px-2 py-0.5 text-[10px] rounded-full bg-primary/15 text-primary">aktywna</span>}
                         </div>
-                        <p className="text-xs italic text-slate-600 dark:text-slate-400">Dla węzłów cieplnych i rozliczeń energii</p>
+                        <p className="text-xs italic text-slate-600 dark:text-slate-400">Dla węzłów cieplnych – najbardziej konkretna i najbliższa fizyce</p>
                       </div>
                     </div>
-                    <div className="space-y-2">
-                      <div><div className="font-semibold text-slate-700 dark:text-slate-200">Filozofia</div><p className="text-xs">Bilans dziennego zużycia energii → maksymalna godzina szczytowa.</p></div>
-                      <div><div className="font-semibold text-slate-700 dark:text-slate-200">Zastosowanie</div><p className="text-xs">Węzły cieplne, rozliczenia dostawcy energii, projektowanie źródeł ciepła.</p></div>
-                      <div><div className="font-semibold text-slate-700 dark:text-slate-200">Algorytm</div><p className="text-xs">E = m·c·ΔT; dzienny m³ × szczyt% → qd [l/s] → P = 1.163·qd·ΔT</p></div>
+                    <div className="space-y-3">
+                      <div>
+                        <div className="font-semibold text-slate-700 dark:text-slate-200 mb-2">Wzór podstawowy</div>
+                        <div className="bg-white/60 dark:bg-slate-900/40 p-3 rounded-lg border border-green-200 dark:border-green-800">
+                          <div className="text-center mb-2">
+                            <KatexFormula formula="P = \frac{m \cdot c \cdot \Delta T}{t}" displayMode={true} />
+                          </div>
+                          <div className="text-[11px] space-y-1 text-slate-700 dark:text-slate-300">
+                            <div><strong>m</strong> – masa wody [kg/s]</div>
+                            <div><strong>c</strong> – ciepło właściwe (4,186 kJ/kg·K)</div>
+                            <div><strong>ΔT</strong> – różnica temperatur [K]</div>
+                            <div><strong>t</strong> – czas nagrzania (przy CWU zwykle 10 minut)</div>
+                          </div>
+                        </div>
+                      </div>
+                      <div>
+                        <div className="font-semibold text-slate-700 dark:text-slate-200">Zastosowanie</div>
+                        <p className="text-xs">
+                          To ta metoda, którą stosujemy przy <strong>modernizacjach CWU</strong>, <strong>buforach</strong>, <strong>cyrkulacji</strong>, <strong>taryfach mocy zamówionej</strong>. 
+                          Najbardziej precyzyjna do węzłów cieplnych i rozliczeń dostawcy energii.
+                        </p>
+                      </div>
+                      <div>
+                        <div className="font-semibold text-slate-700 dark:text-slate-200">Filozofia</div>
+                        <p className="text-xs">Bezpośrednie przełożenie bilansu energii na moc – fundamentalna zasada termodynamiki. Realistyczne podejście do projektowania źródeł ciepła.</p>
+                      </div>
                     </div>
                   </div>
 
