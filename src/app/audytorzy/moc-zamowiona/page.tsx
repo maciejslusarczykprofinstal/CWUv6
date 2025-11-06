@@ -211,6 +211,40 @@ export default function MocZamowionaPage() {
                     PN-92/B-01706
                   </Button>
                 </div>
+                <div className="mt-3 space-y-3 text-xs leading-relaxed text-slate-600 dark:text-slate-300">
+                  <div className="border rounded-md p-3 bg-white/70 dark:bg-slate-900/50">
+                    <div className="font-semibold mb-1 flex items-center gap-2">
+                      <span>Algorytm PN-EN 806-3</span>
+                      {standard === 'PN_EN_806_3' && <span className="inline-block px-2 py-0.5 text-[10px] rounded-full bg-primary/15 text-primary">aktywny</span>}
+                    </div>
+                    <ol className="list-decimal pl-4 space-y-1">
+                      <li>Zlicz jednostki wypływu (FU): umywalka 0.5, zlewozmywak 0.7, prysznic 1.0, wanna 1.5.</li>
+                      <li>Jeśli FU &gt; 1 oblicz przepływ obliczeniowy qd = 0.5 · √(FU − 1) [l/s].</li>
+                      <li>Jeżeli FU ≤ 1 zastosuj fallback: qd = 0.15 · liczba mieszkań.</li>
+                      <li>Moc szczytowa Ppeak = 1.163 · qd · ΔT.</li>
+                      <li>Dla bufora: qBuf = Vbuf / (tOdbioru·60); qNet = max(qd − qBuf, 0); Pcwu = 1.163 · qNet · ΔT.</li>
+                      <li>Dla przepływowego: Pcwu = Ppeak.</li>
+                      <li>Cyrkulacja: dane → Pcirc = 1.163 · (Q[m³/h]/3.6) · ΔT; szacunek → stała wartość kW.</li>
+                      <li>Rezerwa: Prez = (Pcwu + Pcirc) · (rezerwa% / 100).</li>
+                      <li>Moc zamówiona Pzam = ceil(Pcwu + Pcirc + Prez).</li>
+                    </ol>
+                  </div>
+                  <div className="border rounded-md p-3 bg-white/70 dark:bg-slate-900/50">
+                    <div className="font-semibold mb-1 flex items-center gap-2">
+                      <span>Algorytm PN-92/B-01706</span>
+                      {standard === 'PN_92_B_01706' && <span className="inline-block px-2 py-0.5 text-[10px] rounded-full bg-primary/15 text-primary">aktywny</span>}
+                    </div>
+                    <ol className="list-decimal pl-4 space-y-1">
+                      <li>Oblicz qMax: umywalka 0.1, zlewozmywak 0.15, prysznic 0.2, wanna 0.3 (suma) [l/s].</li>
+                      <li>Wyznacz współczynnik jednoczesności k na podstawie liczby mieszkań (przedziały 5/10/20/50/100/&gt;100).</li>
+                      <li>Przepływ obliczeniowy qd = qMax · k.</li>
+                      <li>Ppeak = 1.163 · qd · ΔT (analogicznie).</li>
+                      <li>Bufor / przepływowy oraz cyrkulacja jak w PN-EN 806-3.</li>
+                      <li>Rezerwa i Pzam identycznie: Prez = (Pcwu + Pcirc) · proc; Pzam = ceil(Pcwu + Pcirc + Prez).</li>
+                      <li>Notuj k i qMax w uwagach dla audytu.</li>
+                    </ol>
+                  </div>
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2"><Label>Liczba mieszkań</Label><Input type="number" value={liczbaMieszkan} onChange={e=>setLiczbaMieszkan(+e.target.value)} /></div>
