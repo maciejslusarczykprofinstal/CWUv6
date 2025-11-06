@@ -756,10 +756,102 @@ export default function MocZamowionaPage() {
                         <p className="text-xs italic text-slate-600 dark:text-slate-400">Model instalacji CWU z cyrkulacją</p>
                       </div>
                     </div>
-                    <div className="space-y-2">
-                      <div><div className="font-semibold text-slate-700 dark:text-slate-200">Filozofia</div><p className="text-xs">Symulacja komputerowa całej instalacji (hydraulika, straty, cyrkulacja, dynamika).</p></div>
-                      <div><div className="font-semibold text-slate-700 dark:text-slate-200">Zastosowanie</div><p className="text-xs">Zaawansowane projekty, certyfikacje, optymalizacja systemów zasobnikowych.</p></div>
-                      <div><div className="font-semibold text-slate-700 dark:text-slate-200">Algorytm</div><p className="text-xs">Model CFD/FEM; qd z symulacji; Ppeak = 1.163·qd·ΔT</p></div>
+                    <div className="space-y-4">
+                      {/* 1. Struktura budynku */}
+                      <div>
+                        <div className="font-semibold text-slate-700 dark:text-slate-200">1) Struktura budynku</div>
+                        <ul className="text-xs list-disc pl-5 space-y-1">
+                          <li>liczba mieszkań</li>
+                          <li>liczba pionów</li>
+                          <li>wyposażenie (prysznic / wanna)</li>
+                          <li>liczba mieszkańców</li>
+                        </ul>
+                        <p className="text-xs mt-1">→ Dzięki temu wiemy, ile <strong>punktów poboru</strong> faktycznie istnieje.</p>
+                      </div>
+
+                      {/* 2. Statystyczny pik rozbioru */}
+                      <div>
+                        <div className="font-semibold text-slate-700 dark:text-slate-200">🔧 2) Statystyczny pik rozbioru (PN‑EN 806‑3)</div>
+                        <p className="text-xs">Każdy punkt poboru ↔ jednostki obciążenia (LU). Z LU wyznaczamy jednostkowy przepływ <strong>Q<sub>peak</sub></strong>.</p>
+                        <p className="text-xs italic">Zamiast „wszyscy odkręcą kran na raz”, mamy: „z prawdopodobieństwem 95% w tym budynku wystąpi przepływ X L/s”.</p>
+                      </div>
+
+                      {/* 3. Bilans energetyczny */}
+                      <div>
+                        <div className="font-semibold text-slate-700 dark:text-slate-200">🔧 3) Bilans energetyczny (realna energia podgrzania)</div>
+                        <div className="bg-white/60 dark:bg-slate-900/40 p-3 rounded-lg border border-violet-200 dark:border-violet-800">
+                          <div className="text-center mb-2">
+                            <KatexFormula formula="P = Q_{peak} \cdot c \cdot (T_{CWU} - T_Z)" displayMode={true} />
+                          </div>
+                          <div className="text-[11px] space-y-1 text-slate-700 dark:text-slate-300">
+                            <div><strong>Q<sub>peak</sub></strong> – strumień przepływu z algorytmu PN‑EN 806‑3</div>
+                            <div><strong>T<sub>CWU</sub></strong> – temperatura zadana (np. 55°C)</div>
+                            <div><strong>T<sub>Z</sub></strong> – temperatura wody zimnej (np. 8–12°C)</div>
+                          </div>
+                        </div>
+                        <p className="text-xs mt-1">Tu w końcu <strong>fizyka</strong> dostaje głos.</p>
+                      </div>
+
+                      {/* 4. Straty na cyrkulacji */}
+                      <div>
+                        <div className="font-semibold text-slate-700 dark:text-slate-200">🔧 4) Straty na cyrkulacji</div>
+                        <p className="text-xs">Straty ciepła zależą od: izolacji rur, temperatury otoczenia (węzeł/piwnica), prędkości przepływu w cyrkulacji, długości instalacji.</p>
+                        <div className="bg-white/60 dark:bg-slate-900/40 p-3 rounded-lg border border-violet-200 dark:border-violet-800">
+                          <div className="text-center mb-2">
+                            <KatexFormula formula="Q_{straty} = U \cdot A \cdot (T_{CWU} - T_{otoczenia})" displayMode={true} />
+                          </div>
+                          <p className="text-[11px] text-slate-700 dark:text-slate-300">Wynik energetyczny dodajesz do mocy z bilansu, aby policzyć wymaganą moc źródła.</p>
+                        </div>
+                      </div>
+
+                      {/* 5. Bufor / zasobnik */}
+                      <div>
+                        <div className="font-semibold text-slate-700 dark:text-slate-200">🔧 5) Bufor / zasobnik (czas nagrzewania)</div>
+                        <p className="text-xs">Jeśli masz bufor (np. 1000 L), nie musisz pokrywać całego piku natychmiast – możesz mieć niższą moc i dłuższy czas nagrzewania.</p>
+                        <div className="bg-white/60 dark:bg-slate-900/40 p-3 rounded-lg border border-violet-200 dark:border-violet-800">
+                          <div className="text-center mb-2">
+                            <KatexFormula formula="P = \dfrac{m \cdot c \cdot \Delta T}{t}" displayMode={true} />
+                          </div>
+                          <p className="text-[11px] text-slate-700 dark:text-slate-300">Czas <strong>t</strong> dobiera projektant (np. 10–15 min nagrzewania między pikami).</p>
+                        </div>
+                      </div>
+
+                      {/* Porównanie metod */}
+                      <div>
+                        <div className="font-semibold text-slate-700 dark:text-slate-200">Dlaczego ta metoda jest lepsza od norm?</div>
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-[11px] border">
+                            <thead className="bg-violet-100 dark:bg-violet-900/30">
+                              <tr>
+                                <th className="p-1 border text-left">Kryterium</th>
+                                <th className="p-1 border text-left">PN‑92/B</th>
+                                <th className="p-1 border text-left">PN‑EN 806‑3</th>
+                                <th className="p-1 border text-left">Metoda programowa</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <tr><td className="p-1 border">Podejście</td><td className="p-1 border">„na wszelki wypadek”</td><td className="p-1 border">probabilistyczne</td><td className="p-1 border">realna symulacja budynku</td></tr>
+                              <tr><td className="p-1 border">Średnice/moce</td><td className="p-1 border">przewymiarowanie</td><td className="p-1 border">umiarkowane</td><td className="p-1 border">optymalizacja pod koszty</td></tr>
+                              <tr><td className="p-1 border">Straty cyrkulacji</td><td className="p-1 border">brak ujęcia</td><td className="p-1 border">częściowo</td><td className="p-1 border">dokładne obliczenia</td></tr>
+                              <tr><td className="p-1 border">Bufor/zasobnik</td><td className="p-1 border">ignorowany</td><td className="p-1 border">ignorowany</td><td className="p-1 border">pełne uwzględnienie</td></tr>
+                              <tr><td className="p-1 border">Efekt finansowy</td><td className="p-1 border">płacisz za moc, której nie używasz</td><td className="p-1 border">mniejsze przewymiarowanie</td><td className="p-1 border">minimalna opłata stała</td></tr>
+                            </tbody>
+                          </table>
+                        </div>
+                        <p className="text-xs mt-1">Twoja metoda = <strong>matematyczny argument</strong> przeciwko zawyżonej mocy zamówionej.</p>
+                      </div>
+
+                      {/* Rezultat końcowy */}
+                      <div>
+                        <div className="font-semibold text-slate-700 dark:text-slate-200">Rezultat końcowy</div>
+                        <div className="bg-white/60 dark:bg-slate-900/40 p-3 rounded-lg border border-violet-200 dark:border-violet-800">
+                          <div className="text-center mb-2">
+                            <KatexFormula formula="P_{zam} = P_{peak} + Q_{straty} + P_{bufor}" displayMode={true} />
+                          </div>
+                          <p className="text-[11px] text-slate-700 dark:text-slate-300">Jeżeli wynik mówi, że zamiast 112 kW wystarczy 72 kW – to nie opinia, tylko <strong>twarde dane</strong>.</p>
+                        </div>
+                        <p className="text-xs mt-1">Im mniejsza moc zamówiona, tym mniejsza opłata stała. „Przepraszam, ale ja tu przyszedłem z Excelem, nie z czarną magią.”</p>
+                      </div>
                     </div>
                   </div>
 
