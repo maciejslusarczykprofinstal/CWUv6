@@ -33,6 +33,12 @@ interface CalcResult {
   Pzam_kW: number;
   qBuf_ls: number;
   uwagi: string[];
+  // Breakdown składników mocy
+  breakdown: {
+    Ppeak: number;
+    Pbufor: number; // redukcja/wkład bufora
+    Qstraty: number; // straty cyrkulacji
+  };
 }
 
 export default function MocZamowionaPage() {
@@ -230,7 +236,15 @@ function qpeakFromLU({
   let Pzam_kW = Pcwu_kW + Pcirc_kW + Prez_kW;
     Pzam_kW = Math.ceil(Pzam_kW);
 
-  setResult({ qd_ls, dT_K, Ppeak_kW, Pnet_kW, Pcwu_kW, Pcirc_kW, Prez_kW, Pzam_kW, qBuf_ls, uwagi });
+    // Breakdown składników
+    const Pbufor_contribution = Ppeak_kW - Pnet_kW; // redukcja dzięki buforowi
+    const breakdown = {
+      Ppeak: Ppeak_kW,
+      Pbufor: Pbufor_contribution,
+      Qstraty: Pcirc_kW,
+    };
+
+  setResult({ qd_ls, dT_K, Ppeak_kW, Pnet_kW, Pcwu_kW, Pcirc_kW, Prez_kW, Pzam_kW, qBuf_ls, uwagi, breakdown });
   }
 
   function exportJSON() {
@@ -944,10 +958,73 @@ function qpeakFromLU({
             </CardHeader>
             <CardContent className="space-y-6">
               {result ? (
-                <div className="space-y-4">
-                  <div className="p-6 rounded-xl bg-gradient-to-br from-blue-600 to-purple-600 text-white text-center text-3xl font-bold">
-                    {result.Pzam_kW.toFixed(0)} kW
+                <div className="space-y-6">
+                  {/* Główna moc zamówiona */}
+                  <div className="p-6 rounded-xl bg-gradient-to-br from-blue-600 to-purple-600 text-white text-center">
+                    <div className="text-sm uppercase tracking-wide opacity-90 mb-1">Moc zamówiona</div>
+                    <div className="text-4xl font-bold">{result.Pzam_kW.toFixed(0)} kW</div>
                   </div>
+
+                  {/* Breakdown składników */}
+                  <div className="space-y-3">
+                    <div className="font-semibold text-sm text-slate-700 dark:text-slate-200">Breakdown mocy</div>
+                    <div className="grid gap-3">
+                      <div className="p-3 rounded-lg border-2 border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-900/20">
+                        <div className="flex justify-between items-center">
+                          <span className="text-xs font-medium text-slate-700 dark:text-slate-300">P<sub>peak</sub> (pik przepływu)</span>
+                          <span className="text-lg font-bold text-blue-700 dark:text-blue-400">{result.breakdown.Ppeak.toFixed(2)} kW</span>
+                        </div>
+                      </div>
+                      <div className="p-3 rounded-lg border-2 border-green-200 dark:border-green-800 bg-green-50/50 dark:bg-green-900/20">
+                        <div className="flex justify-between items-center">
+                          <span className="text-xs font-medium text-slate-700 dark:text-slate-300">P<sub>bufor</sub> (redukcja buforem)</span>
+                          <span className="text-lg font-bold text-green-700 dark:text-green-400">−{result.breakdown.Pbufor.toFixed(2)} kW</span>
+                        </div>
+                      </div>
+                      <div className="p-3 rounded-lg border-2 border-red-200 dark:border-red-800 bg-red-50/50 dark:bg-red-900/20">
+                        <div className="flex justify-between items-center">
+                          <span className="text-xs font-medium text-slate-700 dark:text-slate-300">Q<sub>straty</sub> (cyrkulacja)</span>
+                          <span className="text-lg font-bold text-red-700 dark:text-red-400">+{result.breakdown.Qstraty.toFixed(2)} kW</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-[11px] text-slate-600 dark:text-slate-400 italic border-l-2 border-slate-300 dark:border-slate-700 pl-2">
+                      P<sub>zam</sub> = P<sub>peak</sub> − P<sub>bufor</sub> + Q<sub>straty</sub> + rezerwa ({result.Prez_kW.toFixed(1)} kW)
+                    </div>
+                  </div>
+
+                  {/* Dane wejściowe - zgrupowane kompaktowo */}
+                  <div className="space-y-3">
+                    <div className="font-semibold text-sm text-slate-700 dark:text-slate-200">Parametry wejściowe</div>
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div className="p-2 rounded bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
+                        <div className="text-[10px] uppercase text-slate-500 dark:text-slate-400">Metoda</div>
+                        <div className="font-semibold text-slate-900 dark:text-slate-100">{standard.replace(/_/g, " ")}</div>
+                      </div>
+                      <div className="p-2 rounded bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
+                        <div className="text-[10px] uppercase text-slate-500 dark:text-slate-400">Mieszkania</div>
+                        <div className="font-semibold text-slate-900 dark:text-slate-100">{liczbaMieszkan}</div>
+                      </div>
+                      <div className="p-2 rounded bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
+                        <div className="text-[10px] uppercase text-slate-500 dark:text-slate-400">Armatury</div>
+                        <div className="font-semibold text-slate-900 dark:text-slate-100">{umywalki}u {zlewozmywaki}z {prysznice}p {wanny}w</div>
+                      </div>
+                      <div className="p-2 rounded bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
+                        <div className="text-[10px] uppercase text-slate-500 dark:text-slate-400">ΔT</div>
+                        <div className="font-semibold text-slate-900 dark:text-slate-100">{result.dT_K.toFixed(1)} K ({coldC}→{hotC}°C)</div>
+                      </div>
+                      <div className="p-2 rounded bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
+                        <div className="text-[10px] uppercase text-slate-500 dark:text-slate-400">Tryb</div>
+                        <div className="font-semibold text-slate-900 dark:text-slate-100">{trybPrzygotowania === "bufor" ? `Bufor ${buforVlitry}L` : "Przepływowy"}</div>
+                      </div>
+                      <div className="p-2 rounded bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
+                        <div className="text-[10px] uppercase text-slate-500 dark:text-slate-400">qd</div>
+                        <div className="font-semibold text-slate-900 dark:text-slate-100">{result.qd_ls.toFixed(3)} L/s</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Szczegółowe wyniki */}
                   <div className="grid grid-cols-2 gap-3">
                     <Stat label="Ppeak" value={result.Ppeak_kW} unit="kW" />
                     <Stat label="Pnet" value={result.Pnet_kW} unit="kW" />
@@ -956,6 +1033,8 @@ function qpeakFromLU({
                     <Stat label="Prezerwa" value={result.Prez_kW} unit="kW" />
                     <Stat label="qd" value={result.qd_ls} unit="l/s" />
                   </div>
+
+                  {/* Uwagi */}
                   <div className="space-y-2">
                     <Label>Uwagi</Label>
                     <ul className="text-xs space-y-1 list-disc pl-4">
