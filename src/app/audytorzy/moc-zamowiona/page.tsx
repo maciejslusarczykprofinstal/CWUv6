@@ -506,13 +506,40 @@ export default function MocZamowionaPage() {
                           Peak demand (pomiary)
                           {standard === 'peak_demand_pomiary' && <span className="inline-block px-2 py-0.5 text-[10px] rounded-full bg-primary/15 text-primary">aktywna</span>}
                         </div>
-                        <p className="text-xs italic text-slate-600 dark:text-slate-400">Analiza rzeczywistego zużycia</p>
+                        <p className="text-xs italic text-slate-600 dark:text-slate-400">Najbardziej uczciwa finansowo – oparta na realnym zużyciu</p>
                       </div>
                     </div>
-                    <div className="space-y-2">
-                      <div><div className="font-semibold text-slate-700 dark:text-slate-200">Filozofia</div><p className="text-xs">Dane z liczników/monitoringu → szczyt × współczynnik bezpieczeństwa.</p></div>
-                      <div><div className="font-semibold text-slate-700 dark:text-slate-200">Zastosowanie</div><p className="text-xs">Modernizacja, audyt energetyczny, weryfikacja projektów po uruchomieniu.</p></div>
-                      <div><div className="font-semibold text-slate-700 dark:text-slate-200">Algorytm</div><p className="text-xs">qd = qbaza × peak_factor (np. 1.5); Ppeak = 1.163·qd·ΔT</p></div>
+                    <div className="space-y-3">
+                      <div>
+                        <div className="font-semibold text-slate-700 dark:text-slate-200 mb-2">Metodyka pomiarowa</div>
+                        <div className="bg-white/60 dark:bg-slate-900/40 p-3 rounded-lg border border-red-200 dark:border-red-800">
+                          <div className="text-center mb-2">
+                            <KatexFormula formula="P_{zam} = P_{peak,zmierzone} + \text{margines}" displayMode={true} />
+                          </div>
+                          <div className="text-[11px] space-y-1 text-slate-700 dark:text-slate-300">
+                            <div><strong>P<sub>peak,zmierzone</sub></strong> – największy pik w logach ciepłomierza/sterownika (interwały 1–5 min)</div>
+                            <div><strong>margines</strong> – współczynnik bezpieczeństwa (zazwyczaj 5–15%)</div>
+                          </div>
+                        </div>
+                      </div>
+                      <div>
+                        <div className="font-semibold text-slate-700 dark:text-slate-200">Proces analizy</div>
+                        <ol className="text-xs space-y-1 list-decimal list-inside">
+                          <li>Zbierasz dane z logów ciepłomierza (lub sterownika węzła)</li>
+                          <li>Analizujesz największy pobór mocy w krótkich interwałach (np. 1–5 min)</li>
+                          <li>Moc zamówiona = największy zanotowany pik + margines bezpieczeństwa</li>
+                        </ol>
+                      </div>
+                      <div>
+                        <div className="font-semibold text-slate-700 dark:text-slate-200">Filozofia</div>
+                        <p className="text-xs">
+                          👉 <strong>Najbardziej uczciwa metoda finansowo</strong>, bo opiera się na realnym zużyciu, nie na „gdybaniu norm".
+                        </p>
+                      </div>
+                      <div>
+                        <div className="font-semibold text-slate-700 dark:text-slate-200">Zastosowanie</div>
+                        <p className="text-xs">Modernizacja istniejących węzłów, audyt energetyczny, weryfikacja projektów po uruchomieniu, renegocjacja umów z ciepłownią.</p>
+                      </div>
                     </div>
                   </div>
 
