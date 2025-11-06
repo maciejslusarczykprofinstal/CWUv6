@@ -606,10 +606,44 @@ export default function MocZamowionaPage() {
                         <p className="text-xs italic text-slate-600 dark:text-slate-400">Ekonomiczna optymalizacja mocy zamówionej</p>
                       </div>
                     </div>
-                    <div className="space-y-2">
-                      <div><div className="font-semibold text-slate-700 dark:text-slate-200">Filozofia</div><p className="text-xs">Minimalizacja kosztów całkowitych: opłata za moc zamówioną vs ryzyko braków i kar.</p></div>
-                      <div><div className="font-semibold text-slate-700 dark:text-slate-200">Zastosowanie</div><p className="text-xs">Zarządzanie energią, optymalizacja umów, bilansowanie mocy szczytowej.</p></div>
-                      <div><div className="font-semibold text-slate-700 dark:text-slate-200">Algorytm</div><p className="text-xs">Optymalizacja funkcji kosztu; qd wg punktu równowagi ekonomicznej; Ppeak = 1.163·qd·ΔT</p></div>
+                    <div className="space-y-3">
+                      <div>
+                        <div className="font-semibold text-slate-700 dark:text-slate-200 mb-2">Model ekonomiczny</div>
+                        <div className="bg-white/60 dark:bg-slate-900/40 p-3 rounded-lg border border-amber-200 dark:border-amber-800">
+                          <div className="text-center mb-2">
+                            <KatexFormula formula="P_{opt} = \arg\min_{P} C_{roczne}(P)" displayMode={true} />
+                          </div>
+                          <div className="text-[11px] space-y-1 text-slate-700 dark:text-slate-300">
+                            <div><strong>C<sub>roczne</sub>(P)</strong> = C<sub>stałe</sub>(P) + C<sub>kary</sub>(P)</div>
+                            <div><strong>C<sub>stałe</sub>(P)</strong> – opłata stała za moc zamówioną (rosnąca z P)</div>
+                            <div><strong>C<sub>kary</sub>(P)</strong> – koszt niedowymiarowania (kary / dopłaty przy przekroczeniach)</div>
+                          </div>
+                        </div>
+                      </div>
+                      <div>
+                        <div className="font-semibold text-slate-700 dark:text-slate-200">Proces analizy</div>
+                        <ol className="text-xs space-y-1 list-decimal list-inside">
+                          <li>Definiujesz strukturę opłat stałych dla różnych progów mocy</li>
+                          <li>Szacujesz częstotliwość i wysokość przekroczeń przy niższych mocach</li>
+                          <li>Budujesz tabelę: P vs C<sub>stałe</sub> vs C<sub>kary</sub> vs C<sub>roczne</sub></li>
+                          <li>Wybierasz P z minimalnym C<sub>roczne</sub> (czasem kilka wartości ~ podobnych)</li>
+                        </ol>
+                      </div>
+                      <div>
+                        <div className="font-semibold text-slate-700 dark:text-slate-200">Filozofia</div>
+                        <p className="text-xs">
+                          Tu <strong>nie obliczasz fizycznie</strong> ile powinieneś zamówić – tylko <strong>ile Cię najmniej zaboli finansowo</strong>. 
+                          To <strong>Excel, nie termodynamika</strong>: balans między przewymiarowaniem (droga opłata stała) a niedowymiarowaniem (kary i dyskomfort).
+                        </p>
+                      </div>
+                      <div>
+                        <div className="font-semibold text-slate-700 dark:text-slate-200">Zastosowanie</div>
+                        <p className="text-xs">Renegocjacja umów z dostawcą ciepła, zarządzanie portfelem budynków, strategie kosztowe dla wspólnot i operatorów.</p>
+                      </div>
+                      <div>
+                        <div className="font-semibold text-slate-700 dark:text-slate-200">Uwaga praktyczna</div>
+                        <p className="text-xs">Często wynik to przedział (np. 140–150 kW) – wybór zależy od tolerancji ryzyka zarządcy.</p>
+                      </div>
                     </div>
                   </div>
 
