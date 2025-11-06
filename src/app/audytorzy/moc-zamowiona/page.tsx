@@ -463,13 +463,35 @@ export default function MocZamowionaPage() {
                           Moc / czas rozbioru
                           {standard === 'moc_czas_rozbioru' && <span className="inline-block px-2 py-0.5 text-[10px] rounded-full bg-primary/15 text-primary">aktywna</span>}
                         </div>
-                        <p className="text-xs italic text-slate-600 dark:text-slate-400">Na podstawie temperatur i strumienia wody</p>
+                        <p className="text-xs italic text-slate-600 dark:text-slate-400">Maksymalny jednorazowy rozbiór – niezależnie od norm</p>
                       </div>
                     </div>
-                    <div className="space-y-2">
-                      <div><div className="font-semibold text-slate-700 dark:text-slate-200">Filozofia</div><p className="text-xs">Typowy czas rozbioru × objętość → przepływ obliczeniowy.</p></div>
-                      <div><div className="font-semibold text-slate-700 dark:text-slate-200">Zastosowanie</div><p className="text-xs">Analiza bufora, dobór wymiennika, weryfikacja czasu napełniania wanny.</p></div>
-                      <div><div className="font-semibold text-slate-700 dark:text-slate-200">Algorytm</div><p className="text-xs">qd = V[L] / (t[min] × 60); Ppeak = 1.163·qd·ΔT</p></div>
+                    <div className="space-y-3">
+                      <div>
+                        <div className="font-semibold text-slate-700 dark:text-slate-200 mb-2">Wzór podstawowy</div>
+                        <div className="bg-white/60 dark:bg-slate-900/40 p-3 rounded-lg border border-purple-200 dark:border-purple-800">
+                          <div className="text-center mb-2">
+                            <KatexFormula formula="P = Q_{max} \cdot c \cdot (T_{CWU} - T_Z)" displayMode={true} />
+                          </div>
+                          <div className="text-[11px] space-y-1 text-slate-700 dark:text-slate-300">
+                            <div><strong>Q<sub>max</sub></strong> – maksymalny strumień wody [kg/s lub L/s]</div>
+                            <div><strong>c</strong> – ciepło właściwe (4,186 kJ/kg·K)</div>
+                            <div><strong>T<sub>CWU</sub></strong> – temperatura ciepłej wody [°C]</div>
+                            <div><strong>T<sub>Z</sub></strong> – temperatura zimnej wody [°C]</div>
+                          </div>
+                        </div>
+                      </div>
+                      <div>
+                        <div className="font-semibold text-slate-700 dark:text-slate-200">Filozofia</div>
+                        <p className="text-xs">
+                          Tu obliczasz <strong>maksymalny jednorazowy rozbiór</strong> (np. 10-minutowy peaktime rano). 
+                          Ten sposób <strong>nie zależy od żadnej normy</strong> — bazuje na fizyce i założonym scenariuszu pracy instalacji.
+                        </p>
+                      </div>
+                      <div>
+                        <div className="font-semibold text-slate-700 dark:text-slate-200">Zastosowanie</div>
+                        <p className="text-xs">Analiza bufora, dobór wymiennika, weryfikacja czasu napełniania wanny, scenariusze szczytowego obciążenia.</p>
+                      </div>
                     </div>
                   </div>
 
