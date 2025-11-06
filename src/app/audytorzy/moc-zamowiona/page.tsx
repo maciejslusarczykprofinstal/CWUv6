@@ -157,6 +157,8 @@ export default function MocZamowionaPage() {
                   <Button
                     type="button"
                     variant={standard === "PN_EN_806_3" ? "default" : "outline"}
+                    className={standard === "PN_EN_806_3" ? "underline underline-offset-4 decoration-2 ring-2 ring-primary/70" : "hover:underline hover:underline-offset-4"}
+                    aria-pressed={standard === "PN_EN_806_3"}
                     onClick={() => setStandard("PN_EN_806_3")}
                   >
                     PN-EN 806-3
@@ -164,6 +166,8 @@ export default function MocZamowionaPage() {
                   <Button
                     type="button"
                     variant={standard === "PN_92_B_01706" ? "default" : "outline"}
+                    className={standard === "PN_92_B_01706" ? "underline underline-offset-4 decoration-2 ring-2 ring-primary/70" : "hover:underline hover:underline-offset-4"}
+                    aria-pressed={standard === "PN_92_B_01706"}
                     onClick={() => setStandard("PN_92_B_01706")}
                   >
                     PN-92/B-01706
