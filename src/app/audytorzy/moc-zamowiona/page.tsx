@@ -143,7 +143,7 @@ export default function MocZamowionaPage() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16 space-y-10">
         <header className="space-y-2">
           <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">Moc zamówiona CWU</h1>
-          <p className="text-slate-600 dark:text-slate-400">Kalkulator mocy zamówionej (PN-EN 806-3 / PN-92/B-01706)</p>
+          <p className="text-slate-600 dark:text-slate-400 font-bold">Kalkulator mocy zamówionej (PN-EN 806-3 / PN-92/B-01706)</p>
         </header>
         <div className="grid gap-6 lg:grid-cols-2">
           <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur border-0 shadow-xl">
