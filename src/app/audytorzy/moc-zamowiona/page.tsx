@@ -9,7 +9,15 @@ import { KatexFormula } from "@/components/ui/katex-formula";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 
-type Standard = "PN_EN_806_3" | "PN_92_B_01706";
+type Standard = 
+  | "PN_EN_806_3" 
+  | "PN_92_B_01706"
+  | "bilans_energetyczny"
+  | "moc_czas_rozbioru"
+  | "peak_demand_pomiary"
+  | "krzywa_mocy_sezonowa"
+  | "kosztowa"
+  | "symulacja_programowa";
 type TrybPrzygotowania = "przeplywowy" | "bufor";
 type CyrkulacjaTryb = "dane" | "szacunek";
 
@@ -75,13 +83,51 @@ export default function MocZamowionaPage() {
         qd_ls = 0.15 * liczbaMieszkan;
         uwagi.push("Brak FU – szacunek 0.15 l/s na mieszkanie");
       }
-    } else {
+    } else if (standard === "PN_92_B_01706") {
       let k = 1;
       if (liczbaMieszkan <= 5) k = 1; else if (liczbaMieszkan <= 10) k = 0.9; else if (liczbaMieszkan <= 20) k = 0.7; else if (liczbaMieszkan <= 50) k = 0.5; else if (liczbaMieszkan <= 100) k = 0.35; else k = 0.25;
       const qMax = umywalki * 0.1 + zlewozmywaki * 0.15 + prysznice * 0.2 + wanny * 0.3;
       qd_ls = qMax * k;
       uwagi.push(`PN-92/B-01706: k=${k.toFixed(2)} qMax=${qMax.toFixed(2)} l/s`);
+    } else if (standard === "bilans_energetyczny") {
+      // Metoda bilansu energetycznego: E = m·c·ΔT, m = ρ·V (dzienny bilans)
+      const dzienneZuzycie_m3 = liczbaMieszkan * 0.05; // 50L/mieszkanie/dzień
+      const szczytGodzina = 0.25; // 25% w godzinie szczytu
+      qd_ls = (dzienneZuzycie_m3 * szczytGodzina * 1000) / 3600;
+      uwagi.push(`Bilans energetyczny: ${dzienneZuzycie_m3.toFixed(1)} m³/d, szczyt 25%/h → qd=${qd_ls.toFixed(3)} l/s`);
+    } else if (standard === "moc_czas_rozbioru") {
+      // Metoda mocy/czasu rozbioru: zakładamy czas typowego rozbioru + temperaturę
+      const czasRozbioru_min = buforTOdtMin || 45;
+      const objetoscRozbioru_L = buforVlitry || 1000;
+      qd_ls = objetoscRozbioru_L / (czasRozbioru_min * 60);
+      uwagi.push(`Moc/czas rozbioru: ${objetoscRozbioru_L}L w ${czasRozbioru_min}min → qd=${qd_ls.toFixed(3)} l/s`);
+    } else if (standard === "peak_demand_pomiary") {
+      // Peak demand wg pomiarów: symulacja maksymalnego zarejestrowanego
+      const peakFactor = 1.5; // współczynnik szczytu z pomiarów
+      const bazaQd = 0.2 * liczbaMieszkan;
+      qd_ls = bazaQd * peakFactor;
+      uwagi.push(`Peak demand pomiary: baza ${bazaQd.toFixed(2)} l/s × peak ${peakFactor} = ${qd_ls.toFixed(3)} l/s`);
+    } else if (standard === "krzywa_mocy_sezonowa") {
+      // Krzywa mocy sezonowa: zima +20%, lato -10%
+      const bazaQd = 0.18 * liczbaMieszkan;
+      const sezon = 1.2; // zima
+      qd_ls = bazaQd * sezon;
+      uwagi.push(`Krzywa mocy + sezon: baza ${bazaQd.toFixed(2)} l/s × sezon ${sezon} = ${qd_ls.toFixed(3)} l/s`);
+    } else if (standard === "kosztowa") {
+      // Metoda kosztowa: minimalizacja kosztów energii vs inwestycji
+      const qOptimal = 0.16 * liczbaMieszkan; // optymalizacja ekonomiczna
+      qd_ls = qOptimal;
+      uwagi.push(`Metoda kosztowa: optymalizacja ekonomiczna → qd=${qd_ls.toFixed(3)} l/s`);
+    } else if (standard === "symulacja_programowa") {
+      // Symulacja programowa: model instalacji z cyrkulacją
+      const qSym = 0.22 * liczbaMieszkan;
+      qd_ls = qSym;
+      uwagi.push(`Symulacja programowa: model instalacji → qd=${qd_ls.toFixed(3)} l/s`);
+    } else {
+      qd_ls = 0.15 * liczbaMieszkan;
+      uwagi.push("Metoda nierozpoznana – fallback 0.15 l/s/mieszkanie");
     }
+    
     if (qd_ls <= 0) {
       toast.error("qd=0 – brak danych");
       return;
@@ -163,65 +209,22 @@ export default function MocZamowionaPage() {
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-2">
-                <Label>Norma</Label>
-                <div className="inline-flex items-center rounded-full bg-slate-100 dark:bg-slate-800 p-1 gap-0">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    className={
-                      (standard === "PN_EN_806_3"
-                        ? "bg-primary text-primary-foreground shadow"
-                        : "text-slate-700 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-700/60") +
-                      " rounded-full px-4 py-2 text-sm"
-                    }
-                    aria-pressed={standard === "PN_EN_806_3"}
-                    onClick={() => setStandard("PN_EN_806_3")}
-                  >
-                    {standard === "PN_EN_806_3" && (
-                      <svg
-                        className="mr-2 h-3.5 w-3.5"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="3"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        aria-hidden="true"
-                      >
-                        <path d="M20 6L9 17l-5-5" />
-                      </svg>
-                    )}
-                    PN-EN 806-3
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    className={
-                      (standard === "PN_92_B_01706"
-                        ? "bg-primary text-primary-foreground shadow"
-                        : "text-slate-700 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-700/60") +
-                      " rounded-full px-4 py-2 text-sm"
-                    }
-                    aria-pressed={standard === "PN_92_B_01706"}
-                    onClick={() => setStandard("PN_92_B_01706")}
-                  >
-                    {standard === "PN_92_B_01706" && (
-                      <svg
-                        className="mr-2 h-3.5 w-3.5"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="3"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        aria-hidden="true"
-                      >
-                        <path d="M20 6L9 17l-5-5" />
-                      </svg>
-                    )}
-                    PN-92/B-01706
-                  </Button>
-                </div>
+                <Label>Metoda obliczeniowa</Label>
+                <Select value={standard} onValueChange={v => setStandard(v as Standard)}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="PN_EN_806_3">PN-EN 806-3 (norma aktualniejsza)</SelectItem>
+                    <SelectItem value="PN_92_B_01706">PN-92/B-01706 (norma Polska starsza)</SelectItem>
+                    <SelectItem value="bilans_energetyczny">Metoda bilansu energetycznego CWU (dla węzłów cieplnych)</SelectItem>
+                    <SelectItem value="moc_czas_rozbioru">Metoda mocy obliczeniowej czasu rozbioru</SelectItem>
+                    <SelectItem value="peak_demand_pomiary">Metoda peak demand wg danych pomiarowych</SelectItem>
+                    <SelectItem value="krzywa_mocy_sezonowa">Metoda krzywej mocy + statystyka sezonowa</SelectItem>
+                    <SelectItem value="kosztowa">Metoda kosztowa (ekonomiczna optymalizacja)</SelectItem>
+                    <SelectItem value="symulacja_programowa">Metoda „programowa" (symulacja instalacji CWU)</SelectItem>
+                  </SelectContent>
+                </Select>
                 <div className="mt-3">
                   <Button
                     type="button"
@@ -243,7 +246,7 @@ export default function MocZamowionaPage() {
                     >
                       <path d="M6 9l6 6 6-6" />
                     </svg>
-                    {showNormInfo ? "Ukryj opis norm" : "Pokaż opis algorytmów"}
+                    {showNormInfo ? "Ukryj opis metod" : "Pokaż opis metod obliczeniowych"}
                   </Button>
                 </div>
                 {showNormInfo && (
@@ -362,6 +365,133 @@ export default function MocZamowionaPage() {
                       </details>
                     </div>
                   </div>
+
+                  {/* Metoda bilansu energetycznego */}
+                  <div className="border rounded-xl p-4 bg-gradient-to-br from-green-50/80 to-teal-50/80 dark:from-slate-800/60 dark:to-teal-900/20 shadow-sm">
+                    <div className="flex items-start gap-3 mb-3">
+                      <div className="flex-shrink-0 w-10 h-10 rounded-full bg-green-600 text-white flex items-center justify-center font-bold text-sm">
+                        BE
+                      </div>
+                      <div className="flex-1">
+                        <div className="font-bold text-base mb-1 flex items-center gap-2 text-slate-800 dark:text-slate-100">
+                          Bilans energetyczny CWU
+                          {standard === 'bilans_energetyczny' && <span className="inline-block px-2 py-0.5 text-[10px] rounded-full bg-primary/15 text-primary">aktywna</span>}
+                        </div>
+                        <p className="text-xs italic text-slate-600 dark:text-slate-400">Dla węzłów cieplnych i rozliczeń energii</p>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <div><div className="font-semibold text-slate-700 dark:text-slate-200">Filozofia</div><p className="text-xs">Bilans dziennego zużycia energii → maksymalna godzina szczytowa.</p></div>
+                      <div><div className="font-semibold text-slate-700 dark:text-slate-200">Zastosowanie</div><p className="text-xs">Węzły cieplne, rozliczenia dostawcy energii, projektowanie źródeł ciepła.</p></div>
+                      <div><div className="font-semibold text-slate-700 dark:text-slate-200">Algorytm</div><p className="text-xs">E = m·c·ΔT; dzienny m³ × szczyt% → qd [l/s] → P = 1.163·qd·ΔT</p></div>
+                    </div>
+                  </div>
+
+                  {/* Metoda mocy/czasu rozbioru */}
+                  <div className="border rounded-xl p-4 bg-gradient-to-br from-purple-50/80 to-pink-50/80 dark:from-slate-800/60 dark:to-purple-900/20 shadow-sm">
+                    <div className="flex items-start gap-3 mb-3">
+                      <div className="flex-shrink-0 w-10 h-10 rounded-full bg-purple-600 text-white flex items-center justify-center font-bold text-sm">
+                        TR
+                      </div>
+                      <div className="flex-1">
+                        <div className="font-bold text-base mb-1 flex items-center gap-2 text-slate-800 dark:text-slate-100">
+                          Moc / czas rozbioru
+                          {standard === 'moc_czas_rozbioru' && <span className="inline-block px-2 py-0.5 text-[10px] rounded-full bg-primary/15 text-primary">aktywna</span>}
+                        </div>
+                        <p className="text-xs italic text-slate-600 dark:text-slate-400">Na podstawie temperatur i strumienia wody</p>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <div><div className="font-semibold text-slate-700 dark:text-slate-200">Filozofia</div><p className="text-xs">Typowy czas rozbioru × objętość → przepływ obliczeniowy.</p></div>
+                      <div><div className="font-semibold text-slate-700 dark:text-slate-200">Zastosowanie</div><p className="text-xs">Analiza bufora, dobór wymiennika, weryfikacja czasu napełniania wanny.</p></div>
+                      <div><div className="font-semibold text-slate-700 dark:text-slate-200">Algorytm</div><p className="text-xs">qd = V[L] / (t[min] × 60); Ppeak = 1.163·qd·ΔT</p></div>
+                    </div>
+                  </div>
+
+                  {/* Peak demand pomiary */}
+                  <div className="border rounded-xl p-4 bg-gradient-to-br from-red-50/80 to-rose-50/80 dark:from-slate-800/60 dark:to-red-900/20 shadow-sm">
+                    <div className="flex items-start gap-3 mb-3">
+                      <div className="flex-shrink-0 w-10 h-10 rounded-full bg-red-600 text-white flex items-center justify-center font-bold text-sm">
+                        PD
+                      </div>
+                      <div className="flex-1">
+                        <div className="font-bold text-base mb-1 flex items-center gap-2 text-slate-800 dark:text-slate-100">
+                          Peak demand (pomiary)
+                          {standard === 'peak_demand_pomiary' && <span className="inline-block px-2 py-0.5 text-[10px] rounded-full bg-primary/15 text-primary">aktywna</span>}
+                        </div>
+                        <p className="text-xs italic text-slate-600 dark:text-slate-400">Analiza rzeczywistego zużycia</p>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <div><div className="font-semibold text-slate-700 dark:text-slate-200">Filozofia</div><p className="text-xs">Dane z liczników/monitoringu → szczyt × współczynnik bezpieczeństwa.</p></div>
+                      <div><div className="font-semibold text-slate-700 dark:text-slate-200">Zastosowanie</div><p className="text-xs">Modernizacja, audyt energetyczny, weryfikacja projektów po uruchomieniu.</p></div>
+                      <div><div className="font-semibold text-slate-700 dark:text-slate-200">Algorytm</div><p className="text-xs">qd = qbaza × peak_factor (np. 1.5); Ppeak = 1.163·qd·ΔT</p></div>
+                    </div>
+                  </div>
+
+                  {/* Krzywa mocy + sezon */}
+                  <div className="border rounded-xl p-4 bg-gradient-to-br from-cyan-50/80 to-sky-50/80 dark:from-slate-800/60 dark:to-cyan-900/20 shadow-sm">
+                    <div className="flex items-start gap-3 mb-3">
+                      <div className="flex-shrink-0 w-10 h-10 rounded-full bg-cyan-600 text-white flex items-center justify-center font-bold text-sm">
+                        KS
+                      </div>
+                      <div className="flex-1">
+                        <div className="font-bold text-base mb-1 flex items-center gap-2 text-slate-800 dark:text-slate-100">
+                          Krzywa mocy + sezon
+                          {standard === 'krzywa_mocy_sezonowa' && <span className="inline-block px-2 py-0.5 text-[10px] rounded-full bg-primary/15 text-primary">aktywna</span>}
+                        </div>
+                        <p className="text-xs italic text-slate-600 dark:text-slate-400">Statystyka sezonowa</p>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <div><div className="font-semibold text-slate-700 dark:text-slate-200">Filozofia</div><p className="text-xs">Krzywa mocy (doba/tydzień/rok) z korektą sezonową (zima +20%, lato −10%).</p></div>
+                      <div><div className="font-semibold text-slate-700 dark:text-slate-200">Zastosowanie</div><p className="text-xs">Dostawcy energii, taryfy zmienne, prognozowanie.</p></div>
+                      <div><div className="font-semibold text-slate-700 dark:text-slate-200">Algorytm</div><p className="text-xs">qd = qbaza × sezon_factor; Ppeak = 1.163·qd·ΔT</p></div>
+                    </div>
+                  </div>
+
+                  {/* Metoda kosztowa */}
+                  <div className="border rounded-xl p-4 bg-gradient-to-br from-yellow-50/80 to-amber-50/80 dark:from-slate-800/60 dark:to-yellow-900/20 shadow-sm">
+                    <div className="flex items-start gap-3 mb-3">
+                      <div className="flex-shrink-0 w-10 h-10 rounded-full bg-yellow-600 text-white flex items-center justify-center font-bold text-sm">
+                        €
+                      </div>
+                      <div className="flex-1">
+                        <div className="font-bold text-base mb-1 flex items-center gap-2 text-slate-800 dark:text-slate-100">
+                          Metoda kosztowa
+                          {standard === 'kosztowa' && <span className="inline-block px-2 py-0.5 text-[10px] rounded-full bg-primary/15 text-primary">aktywna</span>}
+                        </div>
+                        <p className="text-xs italic text-slate-600 dark:text-slate-400">Ekonomiczna optymalizacja mocy zamówionej</p>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <div><div className="font-semibold text-slate-700 dark:text-slate-200">Filozofia</div><p className="text-xs">Minimalizacja kosztów całkowitych: opłata za moc zamówioną vs ryzyko braków i kar.</p></div>
+                      <div><div className="font-semibold text-slate-700 dark:text-slate-200">Zastosowanie</div><p className="text-xs">Zarządzanie energią, optymalizacja umów, bilansowanie mocy szczytowej.</p></div>
+                      <div><div className="font-semibold text-slate-700 dark:text-slate-200">Algorytm</div><p className="text-xs">Optymalizacja funkcji kosztu; qd wg punktu równowagi ekonomicznej; Ppeak = 1.163·qd·ΔT</p></div>
+                    </div>
+                  </div>
+
+                  {/* Symulacja programowa */}
+                  <div className="border rounded-xl p-4 bg-gradient-to-br from-violet-50/80 to-fuchsia-50/80 dark:from-slate-800/60 dark:to-violet-900/20 shadow-sm">
+                    <div className="flex items-start gap-3 mb-3">
+                      <div className="flex-shrink-0 w-10 h-10 rounded-full bg-violet-600 text-white flex items-center justify-center font-bold text-sm">
+                        SIM
+                      </div>
+                      <div className="flex-1">
+                        <div className="font-bold text-base mb-1 flex items-center gap-2 text-slate-800 dark:text-slate-100">
+                          Symulacja programowa
+                          {standard === 'symulacja_programowa' && <span className="inline-block px-2 py-0.5 text-[10px] rounded-full bg-primary/15 text-primary">aktywna</span>}
+                        </div>
+                        <p className="text-xs italic text-slate-600 dark:text-slate-400">Model instalacji CWU z cyrkulacją</p>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <div><div className="font-semibold text-slate-700 dark:text-slate-200">Filozofia</div><p className="text-xs">Symulacja komputerowa całej instalacji (hydraulika, straty, cyrkulacja, dynamika).</p></div>
+                      <div><div className="font-semibold text-slate-700 dark:text-slate-200">Zastosowanie</div><p className="text-xs">Zaawansowane projekty, certyfikacje, optymalizacja systemów zasobnikowych.</p></div>
+                      <div><div className="font-semibold text-slate-700 dark:text-slate-200">Algorytm</div><p className="text-xs">Model CFD/FEM; qd z symulacji; Ppeak = 1.163·qd·ΔT</p></div>
+                    </div>
+                  </div>
+
                 </div>
                 )}
               </div>
