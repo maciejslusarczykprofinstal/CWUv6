@@ -208,23 +208,66 @@ export default function MocZamowionaPage() {
               <CardTitle>Dane wejściowe</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="space-y-2">
-                <Label>Metoda obliczeniowa</Label>
-                <Select value={standard} onValueChange={v => setStandard(v as Standard)}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="PN_EN_806_3">PN-EN 806-3 (norma aktualniejsza)</SelectItem>
-                    <SelectItem value="PN_92_B_01706">PN-92/B-01706 (norma Polska starsza)</SelectItem>
-                    <SelectItem value="bilans_energetyczny">Metoda bilansu energetycznego CWU (dla węzłów cieplnych)</SelectItem>
-                    <SelectItem value="moc_czas_rozbioru">Metoda mocy obliczeniowej czasu rozbioru</SelectItem>
-                    <SelectItem value="peak_demand_pomiary">Metoda peak demand wg danych pomiarowych</SelectItem>
-                    <SelectItem value="krzywa_mocy_sezonowa">Metoda krzywej mocy + statystyka sezonowa</SelectItem>
-                    <SelectItem value="kosztowa">Metoda kosztowa (ekonomiczna optymalizacja)</SelectItem>
-                    <SelectItem value="symulacja_programowa">Metoda „programowa" (symulacja instalacji CWU)</SelectItem>
-                  </SelectContent>
-                </Select>
+              <div className="space-y-3">
+                <Label className="text-base">Metoda obliczeniowa</Label>
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    { id: "PN_EN_806_3", icon: "EN", label: "PN-EN 806-3", subtitle: "Norma aktualniejsza", color: "blue", toast: "PN-EN 806-3" },
+                    { id: "PN_92_B_01706", icon: "PL", label: "PN-92/B-01706", subtitle: "Norma Polska", color: "amber", toast: "PN-92/B-01706" },
+                    { id: "bilans_energetyczny", icon: "BE", label: "Bilans energetyczny", subtitle: "Węzły cieplne", color: "green", toast: "Bilans energetyczny CWU" },
+                    { id: "moc_czas_rozbioru", icon: "TR", label: "Moc/czas rozbioru", subtitle: "Temperatura + strumień", color: "purple", toast: "Moc/czas rozbioru" },
+                    { id: "peak_demand_pomiary", icon: "PD", label: "Peak demand", subtitle: "Dane pomiarowe", color: "red", toast: "Peak demand (pomiary)" },
+                    { id: "krzywa_mocy_sezonowa", icon: "KS", label: "Krzywa mocy", subtitle: "Statystyka sezonowa", color: "cyan", toast: "Krzywa mocy + sezon" },
+                    { id: "kosztowa", icon: "€", label: "Kosztowa", subtitle: "Optymalizacja ekonomiczna", color: "yellow", toast: "Kosztowa (optymalizacja)" },
+                    { id: "symulacja_programowa", icon: "SIM", label: "Symulacja", subtitle: "Model CFD/FEM", color: "violet", toast: "Symulacja programowa" },
+                  ].map((method) => {
+                    const isSelected = standard === method.id;
+                    const colorMap: Record<string, { border: string; bg: string; ring: string; iconBg: string; checkColor: string; hoverBorder: string }> = {
+                      blue: { border: "border-blue-500", bg: "from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30", ring: "ring-blue-500/50", iconBg: "bg-blue-600", checkColor: "text-blue-600", hoverBorder: "hover:border-blue-300" },
+                      amber: { border: "border-amber-500", bg: "from-amber-50 to-orange-50 dark:from-amber-900/30 dark:to-orange-900/30", ring: "ring-amber-500/50", iconBg: "bg-amber-600", checkColor: "text-amber-600", hoverBorder: "hover:border-amber-300" },
+                      green: { border: "border-green-500", bg: "from-green-50 to-teal-50 dark:from-green-900/30 dark:to-teal-900/30", ring: "ring-green-500/50", iconBg: "bg-green-600", checkColor: "text-green-600", hoverBorder: "hover:border-green-300" },
+                      purple: { border: "border-purple-500", bg: "from-purple-50 to-pink-50 dark:from-purple-900/30 dark:to-pink-900/30", ring: "ring-purple-500/50", iconBg: "bg-purple-600", checkColor: "text-purple-600", hoverBorder: "hover:border-purple-300" },
+                      red: { border: "border-red-500", bg: "from-red-50 to-rose-50 dark:from-red-900/30 dark:to-rose-900/30", ring: "ring-red-500/50", iconBg: "bg-red-600", checkColor: "text-red-600", hoverBorder: "hover:border-red-300" },
+                      cyan: { border: "border-cyan-500", bg: "from-cyan-50 to-sky-50 dark:from-cyan-900/30 dark:to-sky-900/30", ring: "ring-cyan-500/50", iconBg: "bg-cyan-600", checkColor: "text-cyan-600", hoverBorder: "hover:border-cyan-300" },
+                      yellow: { border: "border-yellow-500", bg: "from-yellow-50 to-amber-50 dark:from-yellow-900/30 dark:to-amber-900/30", ring: "ring-yellow-500/50", iconBg: "bg-yellow-600", checkColor: "text-yellow-600", hoverBorder: "hover:border-yellow-300" },
+                      violet: { border: "border-violet-500", bg: "from-violet-50 to-fuchsia-50 dark:from-violet-900/30 dark:to-fuchsia-900/30", ring: "ring-violet-500/50", iconBg: "bg-violet-600", checkColor: "text-violet-600", hoverBorder: "hover:border-violet-300" },
+                    };
+                    const colors = colorMap[method.color];
+                    return (
+                      <button
+                        key={method.id}
+                        type="button"
+                        onClick={() => {
+                          setStandard(method.id as Standard);
+                          toast.success(`Wybrano metodę: ${method.toast}`);
+                        }}
+                        className={
+                          "relative p-4 rounded-xl border-2 transition-all text-left " +
+                          (isSelected
+                            ? `${colors.border} bg-gradient-to-br ${colors.bg} shadow-lg ring-2 ${colors.ring}`
+                            : `border-slate-200 dark:border-slate-700 ${colors.hoverBorder} hover:shadow-md bg-white dark:bg-slate-800/50`)
+                        }
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className={`flex-shrink-0 w-10 h-10 rounded-full ${colors.iconBg} text-white flex items-center justify-center font-bold text-sm`}>
+                            {method.icon}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-semibold text-sm text-slate-900 dark:text-slate-100">{method.label}</div>
+                            <div className="text-[10px] text-slate-600 dark:text-slate-400 truncate">{method.subtitle}</div>
+                          </div>
+                        </div>
+                        {isSelected && (
+                          <div className="absolute top-2 right-2">
+                            <svg className={`w-5 h-5 ${colors.checkColor}`} viewBox="0 0 24 24" fill="currentColor">
+                              <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
+                            </svg>
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
                 <div className="mt-3">
                   <Button
                     type="button"
