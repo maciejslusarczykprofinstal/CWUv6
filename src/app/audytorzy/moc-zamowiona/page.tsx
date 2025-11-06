@@ -15,7 +15,6 @@ import { KatexFormula } from "@/components/ui/katex-formula";
 
 const FormSchema = z.object({
   flats: z.coerce.number().int().positive(),
-  risers: z.coerce.number().int().positive(),
   coldTempC: z.coerce.number(),
   hotTempC: z.coerce.number(),
   drawPeakLpm: z.coerce.number().positive(),
@@ -55,7 +54,6 @@ export default function MocZamowionaPage() {
   const form = useForm<FormValues>({
     defaultValues: {
       flats: 120,
-      risers: 24,
       coldTempC: 6,
       hotTempC: 55,
       drawPeakLpm: 200,
@@ -170,13 +168,6 @@ export default function MocZamowionaPage() {
                     error={form.formState.errors.flats?.message}
                   >
                     <Input type="number" step="1" {...form.register("flats", { valueAsNumber: true })} />
-                  </Field>
-                  <Field 
-                    label="Liczba pionów" 
-                    hint="Zwykle 10–50 pionów CWU"
-                    error={form.formState.errors.risers?.message}
-                  >
-                    <Input type="number" step="1" {...form.register("risers", { valueAsNumber: true })} />
                   </Field>
                   <Field 
                     label="T. zimnej [°C]" 
@@ -312,7 +303,7 @@ export default function MocZamowionaPage() {
                   <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-slate-600 dark:text-slate-400">
                     <div>Mieszkania: {entry.inputs.flats}</div>
                     <div>Moc: {entry.result.PkW.toFixed(1)} kW</div>
-                    <div>Piony: {entry.inputs.risers}</div>
+                    <div>Jednoczesność: {(entry.result.jednocz * 100).toFixed(0)}%</div>
                     <div>Po buforze: {entry.result.PnetkW.toFixed(1)} kW</div>
                   </div>
                 </button>
