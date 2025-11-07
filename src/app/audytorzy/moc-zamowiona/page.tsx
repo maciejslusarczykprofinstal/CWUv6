@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -63,16 +63,6 @@ function qpeakFromLU({
 
   // Stany wejściowe
   const [standard, setStandard] = useState<Standard>("PN_EN_806_3");
-  const [showNormInfo, setShowNormInfo] = useState<boolean>(() => {
-    if (typeof window === 'undefined') return false;
-    try {
-      const v = window.localStorage.getItem('moc_norm_info');
-      return v === '1';
-    } catch { return false; }
-  });
-  useEffect(() => {
-    try { window.localStorage.setItem('moc_norm_info', showNormInfo ? '1' : '0'); } catch {}
-  }, [showNormInfo]);
   const [liczbaMieszkan, setLiczbaMieszkan] = useState(80);
   const [umywalki, setUmywalki] = useState(80);
   const [zlewozmywaki, setZlewozmywaki] = useState(80);
@@ -347,31 +337,7 @@ function qpeakFromLU({
                     );
                   })}
                 </div>
-                <div className="mt-3">
-                  <Button
-                    type="button"
-                    variant={showNormInfo ? "secondary" : "outline"}
-                    size="sm"
-                    onClick={() => setShowNormInfo(s => !s)}
-                    className="rounded-full flex items-center gap-1"
-                    aria-expanded={showNormInfo}
-                  >
-                    <svg
-                      className={"h-3.5 w-3.5 transition-transform " + (showNormInfo ? "rotate-180" : "rotate-0")}
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      aria-hidden="true"
-                    >
-                      <path d="M6 9l6 6 6-6" />
-                    </svg>
-                    {showNormInfo ? "Ukryj opis metod" : "Pokaż opis metod obliczeniowych"}
-                  </Button>
-                </div>
-                {showNormInfo && (
+              </div>
                 <div className="mt-3 space-y-4 text-xs leading-relaxed text-slate-600 dark:text-slate-300">
                   {/* PN-EN 806-3 */}
                   <div className="border rounded-xl p-4 bg-gradient-to-br from-blue-50/80 to-indigo-50/80 dark:from-slate-800/60 dark:to-indigo-900/20 shadow-sm">
@@ -891,9 +857,6 @@ function qpeakFromLU({
                       </div>
                     </div>
                   </div>
-
-                </div>
-                )}
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2"><Label>Liczba mieszkań</Label><Input type="number" value={liczbaMieszkan} onChange={e=>setLiczbaMieszkan(+e.target.value)} /></div>
@@ -952,6 +915,351 @@ function qpeakFromLU({
               </div>
             </CardContent>
           </Card>
+
+          {/* Opis wybranej metody */}
+          <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur border-0 shadow-xl">
+            <CardHeader>
+              <CardTitle>Metodyka obliczeń</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {standard === 'PN_EN_806_3' && (
+                <div className="text-xs leading-relaxed text-slate-600 dark:text-slate-300">
+                  <div className="border rounded-xl p-4 bg-gradient-to-br from-blue-50/80 to-indigo-50/80 dark:from-slate-800/60 dark:to-indigo-900/20 shadow-sm">
+                    <div className="flex items-start gap-3 mb-3">
+                      <div className="flex-shrink-0 w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-sm">
+                        EN
+                      </div>
+                      <div className="flex-1">
+                        <div className="font-bold text-base mb-1 flex items-center gap-2 text-slate-800 dark:text-slate-100">
+                          PN-EN 806-3
+                          <span className="text-[10px] font-normal px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300">Norma aktualniejsza</span>
+                        </div>
+                        <p className="text-xs italic text-slate-600 dark:text-slate-400">Podejście probabilistyczne – nowoczesne, realistyczne</p>
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      <div>
+                        <div className="font-semibold text-slate-700 dark:text-slate-200">Filozofia</div>
+                        <p className="text-xs">
+                          Zamiast „wszyscy odkręcą kran na raz" norma zakłada <strong>prawdopodobieństwo jednoczesnego użycia</strong>. 
+                          Im więcej mieszkań, tym mniejsza szansa, że wszyscy potrzebują wody w tym samym momencie.
+                        </p>
+                      </div>
+                      <div>
+                        <div className="font-semibold text-slate-700 dark:text-slate-200">Zastosowanie</div>
+                        <p className="text-xs">Doskonała do <strong>nowych budynków wielorodzinnych</strong>, hoteli, obiektów użyteczności publicznej. Mniej konserwatywna niż PN-92, ale wciąż bezpieczna.</p>
+                      </div>
+                      <div>
+                        <div className="font-semibold text-slate-700 dark:text-slate-200">Algorytm (skrót)</div>
+                        <details className="text-xs">
+                          <summary className="cursor-pointer font-medium hover:text-blue-600">Pokaż szczegóły obliczeń</summary>
+                          <ol className="list-decimal pl-5 mt-2 space-y-1">
+                            <li>Wyznaczamy <strong>jednostki obciążenia (FU)</strong> dla każdego punktu czerpania wody (umywalka, prysznic, itd.).</li>
+                            <li>Sumujemy FU: Σ FU.</li>
+                            <li>Obliczamy przepływ obliczeniowy:
+                              <div className="bg-white/70 dark:bg-slate-900/50 p-2 rounded my-1 border border-blue-200 dark:border-blue-800">
+                                <KatexFormula formula="q_d = k \cdot \sqrt{\Sigma FU}" />
+                              </div>
+                              gdzie <em>k</em> to współczynnik (zazwyczaj 0.5).
+                            </li>
+                            <li>Przeliczamy na moc:
+                              <div className="bg-white/70 dark:bg-slate-900/50 p-2 rounded my-1 border border-blue-200 dark:border-blue-800">
+                                <KatexFormula formula="P = 1.163 \cdot q_d \cdot \Delta T" />
+                              </div>
+                              gdzie ΔT to różnica temperatur (°C).
+                            </li>
+                          </ol>
+                        </details>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {standard === 'PN_92_B_01706' && (
+                <div className="text-xs leading-relaxed text-slate-600 dark:text-slate-300">
+                  <div className="border rounded-xl p-4 bg-gradient-to-br from-amber-50/80 to-orange-50/80 dark:from-slate-800/60 dark:to-amber-900/20 shadow-sm">
+                    <div className="flex items-start gap-3 mb-3">
+                      <div className="flex-shrink-0 w-10 h-10 rounded-full bg-amber-600 text-white flex items-center justify-center font-bold text-sm">
+                        PL
+                      </div>
+                      <div className="flex-1">
+                        <div className="font-bold text-base mb-1 flex items-center gap-2 text-slate-800 dark:text-slate-100">
+                          PN-92/B-01706
+                          <span className="text-[10px] font-normal px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300">Norma Polska</span>
+                        </div>
+                        <p className="text-xs italic text-slate-600 dark:text-slate-400">Konserwatywna – przewymiarowanie, ale pewniak</p>
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      <div>
+                        <div className="font-semibold text-slate-700 dark:text-slate-200">Filozofia</div>
+                        <p className="text-xs">
+                          Norma z czasów, gdy węzły CWU były <strong>„na wszelki wypadek"</strong> i nikt nie optymalizował. 
+                          To pewny sposób, by <strong>nigdy nie zabrakło</strong> mocy, ale płacisz za to wyższą opłatę stałą.
+                        </p>
+                      </div>
+                      <div>
+                        <div className="font-semibold text-slate-700 dark:text-slate-200">Zastosowanie</div>
+                        <p className="text-xs">Rekomendowana przy <strong>starych instalacjach</strong>, gdzie każda modernizacja jest ryzykiem, albo gdy inwestor wymaga „absolutnej pewności".</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {standard === 'bilans_energetyczny' && (
+                <div className="text-xs leading-relaxed text-slate-600 dark:text-slate-300">
+                  <div className="border rounded-xl p-4 bg-gradient-to-br from-green-50/80 to-teal-50/80 dark:from-slate-800/60 dark:to-green-900/20 shadow-sm">
+                    <div className="flex items-start gap-3 mb-3">
+                      <div className="flex-shrink-0 w-10 h-10 rounded-full bg-green-600 text-white flex items-center justify-center font-bold text-sm">
+                        BE
+                      </div>
+                      <div className="flex-1">
+                        <div className="font-bold text-base mb-1 text-slate-800 dark:text-slate-100">
+                          Bilans energetyczny
+                        </div>
+                        <p className="text-xs italic text-slate-600 dark:text-slate-400">Dla węzłów cieplnych – najbardziej konkretna i najbliższa fizyce</p>
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      <div>
+                        <div className="font-semibold text-slate-700 dark:text-slate-200 mb-2">Wzór podstawowy</div>
+                        <div className="bg-white/60 dark:bg-slate-900/40 p-3 rounded-lg border border-green-200 dark:border-green-800">
+                          <div className="text-center mb-2">
+                            <KatexFormula formula="P = \dfrac{m \cdot c \cdot \Delta T}{t}" displayMode={true} />
+                          </div>
+                          <div className="text-[11px] space-y-1 text-slate-700 dark:text-slate-300">
+                            <div><strong>m</strong> – masa wody podgrzewanej [kg]</div>
+                            <div><strong>c</strong> – ciepło właściwe (4,186 kJ/kg·K)</div>
+                            <div><strong>ΔT</strong> – przyrost temperatury [K]</div>
+                            <div><strong>t</strong> – czas [s]</div>
+                          </div>
+                        </div>
+                      </div>
+                      <div>
+                        <div className="font-semibold text-slate-700 dark:text-slate-200">Filozofia</div>
+                        <p className="text-xs">
+                          Nie gdybasz „na oko". Liczysz <strong>realną energię</strong> potrzebną do podgrzania faktycznie zużywanej wody. 
+                          To najbardziej konkretna metoda – <strong>termodynamika, nie normy</strong>.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {standard === 'moc_czas_rozbioru' && (
+                <div className="text-xs leading-relaxed text-slate-600 dark:text-slate-300">
+                  <div className="border rounded-xl p-4 bg-gradient-to-br from-purple-50/80 to-pink-50/80 dark:from-slate-800/60 dark:to-purple-900/20 shadow-sm">
+                    <div className="flex items-start gap-3 mb-3">
+                      <div className="flex-shrink-0 w-10 h-10 rounded-full bg-purple-600 text-white flex items-center justify-center font-bold text-sm">
+                        TR
+                      </div>
+                      <div className="flex-1">
+                        <div className="font-bold text-base mb-1 text-slate-800 dark:text-slate-100">
+                          Moc / czas rozbioru
+                        </div>
+                        <p className="text-xs italic text-slate-600 dark:text-slate-400">Maksymalny jednorazowy rozbiór – niezależnie od norm</p>
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      <div>
+                        <div className="font-semibold text-slate-700 dark:text-slate-200 mb-2">Wzór podstawowy</div>
+                        <div className="bg-white/60 dark:bg-slate-900/40 p-3 rounded-lg border border-purple-200 dark:border-purple-800">
+                          <div className="text-center mb-2">
+                            <KatexFormula formula="P = Q_{max} \cdot c \cdot (T_{CWU} - T_Z)" displayMode={true} />
+                          </div>
+                          <div className="text-[11px] space-y-1 text-slate-700 dark:text-slate-300">
+                            <div><strong>Q<sub>max</sub></strong> – maksymalny strumień wody [kg/s lub L/s]</div>
+                            <div><strong>c</strong> – ciepło właściwe (4,186 kJ/kg·K)</div>
+                            <div><strong>T<sub>CWU</sub></strong> – temperatura ciepłej wody [°C]</div>
+                            <div><strong>T<sub>Z</sub></strong> – temperatura zimnej wody [°C]</div>
+                          </div>
+                        </div>
+                      </div>
+                      <div>
+                        <div className="font-semibold text-slate-700 dark:text-slate-200">Filozofia</div>
+                        <p className="text-xs">
+                          Tu obliczasz <strong>maksymalny jednorazowy rozbiór</strong> (np. 10-minutowy peaktime rano). 
+                          Ten sposób <strong>nie zależy od żadnej normy</strong> — bazuje na fizyce i założonym scenariuszu pracy instalacji.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {standard === 'peak_demand_pomiary' && (
+                <div className="text-xs leading-relaxed text-slate-600 dark:text-slate-300">
+                  <div className="border rounded-xl p-4 bg-gradient-to-br from-red-50/80 to-rose-50/80 dark:from-slate-800/60 dark:to-red-900/20 shadow-sm">
+                    <div className="flex items-start gap-3 mb-3">
+                      <div className="flex-shrink-0 w-10 h-10 rounded-full bg-red-600 text-white flex items-center justify-center font-bold text-sm">
+                        PD
+                      </div>
+                      <div className="flex-1">
+                        <div className="font-bold text-base mb-1 text-slate-800 dark:text-slate-100">
+                          Peak demand (pomiary)
+                        </div>
+                        <p className="text-xs italic text-slate-600 dark:text-slate-400">Najbardziej uczciwa finansowo – oparta na realnym zużyciu</p>
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      <div>
+                        <div className="font-semibold text-slate-700 dark:text-slate-200 mb-2">Metodyka pomiarowa</div>
+                        <div className="bg-white/60 dark:bg-slate-900/40 p-3 rounded-lg border border-red-200 dark:border-red-800">
+                          <div className="text-center mb-2">
+                            <KatexFormula formula="P_{zam} = P_{peak,zmierzone} + \text{margines}" displayMode={true} />
+                          </div>
+                          <div className="text-[11px] space-y-1 text-slate-700 dark:text-slate-300">
+                            <div><strong>P<sub>peak,zmierzone</sub></strong> – największy pik w logach ciepłomierza/sterownika (interwały 1–5 min)</div>
+                            <div><strong>margines</strong> – współczynnik bezpieczeństwa (zazwyczaj 5–15%)</div>
+                          </div>
+                        </div>
+                      </div>
+                      <div>
+                        <div className="font-semibold text-slate-700 dark:text-slate-200">Filozofia</div>
+                        <p className="text-xs">
+                          👉 <strong>Najbardziej uczciwa metoda finansowo</strong>, bo opiera się na realnym zużyciu, nie na „gdybaniu norm".
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {standard === 'krzywa_mocy_sezonowa' && (
+                <div className="text-xs leading-relaxed text-slate-600 dark:text-slate-300">
+                  <div className="border rounded-xl p-4 bg-gradient-to-br from-cyan-50/80 to-sky-50/80 dark:from-slate-800/60 dark:to-cyan-900/20 shadow-sm">
+                    <div className="flex items-start gap-3 mb-3">
+                      <div className="flex-shrink-0 w-10 h-10 rounded-full bg-cyan-600 text-white flex items-center justify-center font-bold text-sm">
+                        KS
+                      </div>
+                      <div className="flex-1">
+                        <div className="font-bold text-base mb-1 text-slate-800 dark:text-slate-100">
+                          Krzywa mocy + sezon
+                        </div>
+                        <p className="text-xs italic text-slate-600 dark:text-slate-400">Histogram obciążenia – brzmi jak magia Excela, ale działa</p>
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      <div>
+                        <div className="font-semibold text-slate-700 dark:text-slate-200 mb-2">Podejście statystyczne</div>
+                        <div className="bg-white/60 dark:bg-slate-900/40 p-3 rounded-lg border border-cyan-200 dark:border-cyan-800">
+                          <div className="text-center mb-2">
+                            <KatexFormula formula="P_{zam} = P_{95\%} \text{ (z krzywej obciążenia)}" displayMode={true} />
+                          </div>
+                          <div className="text-[11px] space-y-1 text-slate-700 dark:text-slate-300">
+                            <div><strong>P<sub>95%</sub></strong> – wartość mocy pokrywająca 95% realnych przypadków</div>
+                            <div><strong>Krzywa obciążenia</strong> – histogram pikowego zapotrzebowania w różnych przedziałach czasowych</div>
+                          </div>
+                        </div>
+                      </div>
+                      <div>
+                        <div className="font-semibold text-slate-700 dark:text-slate-200">Filozofia</div>
+                        <p className="text-xs">
+                          <strong>Metoda audytorska par excellence</strong> – łączy analizę statystyczną z pragmatyzmem ekonomicznym. 
+                          Brzmi jak magia Excela, ale działa.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {standard === 'kosztowa' && (
+                <div className="text-xs leading-relaxed text-slate-600 dark:text-slate-300">
+                  <div className="border rounded-xl p-4 bg-gradient-to-br from-yellow-50/80 to-amber-50/80 dark:from-slate-800/60 dark:to-yellow-900/20 shadow-sm">
+                    <div className="flex items-start gap-3 mb-3">
+                      <div className="flex-shrink-0 w-10 h-10 rounded-full bg-yellow-600 text-white flex items-center justify-center font-bold text-sm">
+                        €
+                      </div>
+                      <div className="flex-1">
+                        <div className="font-bold text-base mb-1 text-slate-800 dark:text-slate-100">
+                          Metoda kosztowa
+                        </div>
+                        <p className="text-xs italic text-slate-600 dark:text-slate-400">Ekonomiczna optymalizacja mocy zamówionej</p>
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      <div>
+                        <div className="font-semibold text-slate-700 dark:text-slate-200 mb-2">Model ekonomiczny</div>
+                        <div className="bg-white/60 dark:bg-slate-900/40 p-3 rounded-lg border border-amber-200 dark:border-amber-800">
+                          <div className="text-center mb-2">
+                            <KatexFormula formula="P_{opt} = \arg\min_{P} C_{roczne}(P)" displayMode={true} />
+                          </div>
+                          <div className="text-[11px] space-y-1 text-slate-700 dark:text-slate-300">
+                            <div><strong>C<sub>roczne</sub>(P)</strong> = C<sub>stałe</sub>(P) + C<sub>kary</sub>(P)</div>
+                            <div><strong>C<sub>stałe</sub>(P)</strong> – opłata stała za moc zamówioną (rosnąca z P)</div>
+                            <div><strong>C<sub>kary</sub>(P)</strong> – koszt niedowymiarowania (kary / dopłaty przy przekroczeniach)</div>
+                          </div>
+                        </div>
+                      </div>
+                      <div>
+                        <div className="font-semibold text-slate-700 dark:text-slate-200">Filozofia</div>
+                        <p className="text-xs">
+                          Tu <strong>nie obliczasz fizycznie</strong> ile powinieneś zamówić – tylko <strong>ile Cię najmniej zaboli finansowo</strong>. 
+                          To <strong>Excel, nie termodynamika</strong>: balans między przewymiarowaniem a niedowymiarowaniem.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {standard === 'symulacja_programowa' && (
+                <div className="text-xs leading-relaxed text-slate-600 dark:text-slate-300">
+                  <div className="border rounded-xl p-4 bg-gradient-to-br from-violet-50/80 to-fuchsia-50/80 dark:from-slate-800/60 dark:to-violet-900/20 shadow-sm">
+                    <div className="flex items-start gap-3 mb-3">
+                      <div className="flex-shrink-0 w-10 h-10 rounded-full bg-violet-600 text-white flex items-center justify-center font-bold text-sm">
+                        SIM
+                      </div>
+                      <div className="flex-1">
+                        <div className="font-bold text-base mb-1 text-slate-800 dark:text-slate-100">
+                          Symulacja programowa
+                        </div>
+                        <p className="text-xs italic text-slate-600 dark:text-slate-400">Model instalacji CWU z cyrkulacją</p>
+                      </div>
+                    </div>
+                    <div className="space-y-4">
+                      <div>
+                        <div className="font-semibold text-slate-700 dark:text-slate-200">1) Struktura budynku</div>
+                        <ul className="text-xs list-disc pl-5 space-y-1">
+                          <li>liczba mieszkań</li>
+                          <li>liczba pionów</li>
+                          <li>wyposażenie (prysznic / wanna)</li>
+                          <li>liczba mieszkańców</li>
+                        </ul>
+                        <p className="text-xs mt-1">→ Dzięki temu wiemy, ile <strong>punktów poboru</strong> faktycznie istnieje.</p>
+                      </div>
+                      <div>
+                        <div className="font-semibold text-slate-700 dark:text-slate-200">🔧 2) Statystyczny pik rozbioru (PN‑EN 806‑3)</div>
+                        <p className="text-xs">Każdy punkt poboru ↔ jednostki obciążenia (LU). Z LU wyznaczamy jednostkowy przepływ <strong>Q<sub>peak</sub></strong>.</p>
+                      </div>
+                      <div>
+                        <div className="font-semibold text-slate-700 dark:text-slate-200">🔧 3) Bilans energetyczny</div>
+                        <div className="bg-white/60 dark:bg-slate-900/40 p-3 rounded-lg border border-violet-200 dark:border-violet-800">
+                          <div className="text-center mb-2">
+                            <KatexFormula formula="P = Q_{peak} \cdot c \cdot (T_{CWU} - T_Z)" displayMode={true} />
+                          </div>
+                        </div>
+                      </div>
+                      <div>
+                        <div className="font-semibold text-slate-700 dark:text-slate-200">Rezultat końcowy</div>
+                        <div className="bg-white/60 dark:bg-slate-900/40 p-3 rounded-lg border border-violet-200 dark:border-violet-800">
+                          <div className="text-center mb-2">
+                            <KatexFormula formula="P_{zam} = P_{peak} + Q_{straty} + P_{bufor}" displayMode={true} />
+                          </div>
+                        </div>
+                        <p className="text-xs mt-1">Im mniejsza moc zamówiona, tym mniejsza opłata stała.</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
           <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur border-0 shadow-xl">
             <CardHeader>
               <CardTitle>Wyniki</CardTitle>
