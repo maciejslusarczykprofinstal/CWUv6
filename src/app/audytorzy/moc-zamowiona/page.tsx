@@ -1785,6 +1785,163 @@ function qpeakFromLU({
                         </p>
                       </div>
 
+                      {/* Schemat algorytmu */}
+                      <div>
+                        <div className="font-semibold text-slate-700 dark:text-slate-200 mb-3">📊 Algorytm obliczeń krok po kroku</div>
+                        <div className="space-y-2">
+                          {/* START */}
+                          <div className="flex items-center gap-2">
+                            <div className="flex-shrink-0 w-16 h-8 rounded-full bg-gradient-to-r from-violet-600 to-purple-600 text-white flex items-center justify-center text-[10px] font-bold">
+                              START
+                            </div>
+                          </div>
+                          <div className="flex justify-center">
+                            <div className="w-0.5 h-4 bg-gradient-to-b from-violet-400 to-blue-400"></div>
+                          </div>
+
+                          {/* KROK 1 */}
+                          <div className="bg-blue-50/80 dark:bg-blue-900/20 rounded-lg p-3 border-l-4 border-blue-500">
+                            <div className="flex items-start gap-2">
+                              <div className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center text-[10px] font-bold">1</div>
+                              <div className="flex-1">
+                                <div className="font-bold text-xs text-slate-800 dark:text-slate-100 mb-1">WPROWADŹ DANE BUDYNKU</div>
+                                <ul className="text-[10px] text-slate-600 dark:text-slate-400 space-y-0.5">
+                                  <li>• liczba mieszkań, pionów</li>
+                                  <li>• osoby/mieszkanie, wyposażenie (natrysk/wanna)</li>
+                                  <li>• temperatury: T<sub>z</sub>, T<sub>cw</sub>, T<sub>ret</sub></li>
+                                  <li>• dane instalacji: długości, średnice, izolacja, materiał</li>
+                                </ul>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex justify-center">
+                            <div className="w-0.5 h-4 bg-gradient-to-b from-blue-400 to-cyan-400"></div>
+                          </div>
+
+                          {/* KROK 2 */}
+                          <div className="bg-cyan-50/80 dark:bg-cyan-900/20 rounded-lg p-3 border-l-4 border-cyan-500">
+                            <div className="flex items-start gap-2">
+                              <div className="flex-shrink-0 w-6 h-6 rounded-full bg-cyan-500 text-white flex items-center justify-center text-[10px] font-bold">2</div>
+                              <div className="flex-1">
+                                <div className="font-bold text-xs text-slate-800 dark:text-slate-100 mb-1">WYZNACZ Q<sub>peak</sub> wg PN-EN 806-3</div>
+                                <ul className="text-[10px] text-slate-600 dark:text-slate-400 space-y-0.5">
+                                  <li>• przypisz jednostki obciążenia LU do punktów poboru</li>
+                                  <li>• oblicz sumaryczne LU</li>
+                                  <li>• przelicz LU → Q<sub>peak</sub> [L/s] za pomocą wzoru PN-EN</li>
+                                </ul>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex justify-center">
+                            <div className="w-0.5 h-4 bg-gradient-to-b from-cyan-400 to-green-400"></div>
+                          </div>
+
+                          {/* KROK 3 */}
+                          <div className="bg-green-50/80 dark:bg-green-900/20 rounded-lg p-3 border-l-4 border-green-500">
+                            <div className="flex items-start gap-2">
+                              <div className="flex-shrink-0 w-6 h-6 rounded-full bg-green-500 text-white flex items-center justify-center text-[10px] font-bold">3</div>
+                              <div className="flex-1">
+                                <div className="font-bold text-xs text-slate-800 dark:text-slate-100 mb-1">OBLICZ MOC DO PODGRZANIA (P<sub>1</sub>)</div>
+                                <div className="bg-white/60 dark:bg-slate-900/40 p-2 rounded border border-green-200 dark:border-green-800 mt-1">
+                                  <div className="text-center text-[11px]">
+                                    P<sub>1</sub> = Q<sub>peak</sub> · c · (T<sub>cw</sub> − T<sub>z</sub>)
+                                  </div>
+                                  <p className="text-[9px] text-center text-slate-600 dark:text-slate-400 mt-1">
+                                    gdzie c = 4,186 kJ/kg·K
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex justify-center">
+                            <div className="w-0.5 h-4 bg-gradient-to-b from-green-400 to-amber-400"></div>
+                          </div>
+
+                          {/* KROK 4 */}
+                          <div className="bg-amber-50/80 dark:bg-amber-900/20 rounded-lg p-3 border-l-4 border-amber-500">
+                            <div className="flex items-start gap-2">
+                              <div className="flex-shrink-0 w-6 h-6 rounded-full bg-amber-500 text-white flex items-center justify-center text-[10px] font-bold">4</div>
+                              <div className="flex-1">
+                                <div className="font-bold text-xs text-slate-800 dark:text-slate-100 mb-1">OBLICZ STRATY CYRKULACJI (P<sub>2</sub>)</div>
+                                <ul className="text-[10px] text-slate-600 dark:text-slate-400 space-y-0.5 mb-1">
+                                  <li>• dla każdej sekcji: Q<sub>straty</sub> = U · A · (T<sub>cw</sub> − T<sub>otoczenia</sub>)</li>
+                                  <li>• gdzie A = π · d · L</li>
+                                  <li>• sumuj straty wszystkich odcinków: P<sub>2</sub> = Σ Q<sub>straty</sub></li>
+                                </ul>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex justify-center">
+                            <div className="w-0.5 h-4 bg-gradient-to-b from-amber-400 to-orange-400"></div>
+                          </div>
+
+                          {/* KROK 5 */}
+                          <div className="bg-orange-50/80 dark:bg-orange-900/20 rounded-lg p-3 border-l-4 border-orange-500">
+                            <div className="flex items-start gap-2">
+                              <div className="flex-shrink-0 w-6 h-6 rounded-full bg-orange-500 text-white flex items-center justify-center text-[10px] font-bold">5</div>
+                              <div className="flex-1">
+                                <div className="font-bold text-xs text-slate-800 dark:text-slate-100 mb-1">SPRAWDŹ BUFOR / ZASOBNIK</div>
+                                <div className="bg-white/60 dark:bg-slate-900/40 p-2 rounded border border-orange-200 dark:border-orange-800 mt-1">
+                                  <p className="text-[10px] text-slate-600 dark:text-slate-400">
+                                    <strong>jeżeli bufor istnieje:</strong><br />
+                                    P<sub>bufor</sub> = (m · c · ΔT) / t
+                                  </p>
+                                  <p className="text-[10px] text-slate-600 dark:text-slate-400 mt-1">
+                                    <strong>jeżeli nie:</strong> P<sub>bufor</sub> = 0
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex justify-center">
+                            <div className="w-0.5 h-4 bg-gradient-to-b from-orange-400 to-red-400"></div>
+                          </div>
+
+                          {/* KROK 6 */}
+                          <div className="bg-red-50/80 dark:bg-red-900/20 rounded-lg p-3 border-l-4 border-red-500">
+                            <div className="flex items-start gap-2">
+                              <div className="flex-shrink-0 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center text-[10px] font-bold">6</div>
+                              <div className="flex-1">
+                                <div className="font-bold text-xs text-slate-800 dark:text-slate-100 mb-1">WYZNACZ MOC ZAMÓWIONĄ</div>
+                                <div className="bg-white/60 dark:bg-slate-900/40 p-2 rounded border border-red-200 dark:border-red-800 mt-1">
+                                  <div className="text-center text-sm font-bold text-slate-800 dark:text-slate-100">
+                                    P<sub>zamówiona</sub> = P<sub>1</sub> + P<sub>2</sub> − P<sub>bufor</sub>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex justify-center">
+                            <div className="w-0.5 h-4 bg-gradient-to-b from-red-400 to-purple-400"></div>
+                          </div>
+
+                          {/* WYNIK */}
+                          <div className="bg-gradient-to-br from-purple-100 to-violet-100 dark:from-purple-900/30 dark:to-violet-900/30 rounded-lg p-3 border-2 border-purple-400 dark:border-purple-600">
+                            <div className="flex items-start gap-2">
+                              <div className="flex-shrink-0 w-6 h-6 rounded-full bg-purple-600 text-white flex items-center justify-center text-[10px] font-bold">✓</div>
+                              <div className="flex-1">
+                                <div className="font-bold text-xs text-slate-800 dark:text-slate-100 mb-1">WYNIK + INTERPRETACJA</div>
+                                <ul className="text-[10px] text-slate-600 dark:text-slate-400 space-y-0.5">
+                                  <li>• moc zamówiona [kW]</li>
+                                  <li>• uzasadnienie techniczne (pik + straty + bufor)</li>
+                                  <li>• analiza kosztowa (opłata stała vs. rzeczywiste zużycie)</li>
+                                </ul>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex justify-center">
+                            <div className="w-0.5 h-4 bg-gradient-to-b from-purple-400 to-violet-600"></div>
+                          </div>
+
+                          {/* STOP */}
+                          <div className="flex items-center justify-center gap-2">
+                            <div className="w-16 h-8 rounded-full bg-gradient-to-r from-purple-600 to-violet-600 text-white flex items-center justify-center text-[10px] font-bold">
+                              STOP
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
                       {/* Co uwzględnia */}
                       <div>
                         <div className="font-semibold text-slate-700 dark:text-slate-200 mb-2">Co uwzględnia metoda programowa</div>
