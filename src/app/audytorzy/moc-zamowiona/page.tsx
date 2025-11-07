@@ -1099,6 +1099,1069 @@ function qpeakFromLU({
             </CardContent>
           </Card>
 
+          {/* Opis wybranej metody */}
+          <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur border-0 shadow-xl">
+            <CardHeader>
+              <CardTitle>Metodyka obliczeń</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {standard === 'PN_EN_806_3' && (
+                <div className="text-xs leading-relaxed text-slate-600 dark:text-slate-300">
+                  <div className="border rounded-xl p-4 bg-gradient-to-br from-blue-50/80 to-indigo-50/80 dark:from-slate-800/60 dark:to-indigo-900/20 shadow-sm">
+                    <div className="flex items-start gap-3 mb-3">
+                      <div className="flex-shrink-0 w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-sm">
+                        EN
+                      </div>
+                      <div className="flex-1">
+                        <div className="font-bold text-base mb-1 flex items-center gap-2 text-slate-800 dark:text-slate-100">
+                          PN-EN 806-3
+                          <span className="text-[10px] font-normal px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300">Norma aktualniejsza</span>
+                        </div>
+                        <p className="text-xs italic text-slate-600 dark:text-slate-400">Podejście probabilistyczne – nowoczesne, realistyczne</p>
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      <div>
+                        <div className="font-semibold text-slate-700 dark:text-slate-200">Filozofia</div>
+                        <p className="text-xs">
+                          Zamiast „wszyscy odkręcą kran na raz" norma zakłada <strong>prawdopodobieństwo jednoczesnego użycia</strong>. 
+                          Im więcej mieszkań, tym mniejsza szansa, że wszyscy potrzebują wody w tym samym momencie.
+                        </p>
+                      </div>
+                      <div>
+                        <div className="font-semibold text-slate-700 dark:text-slate-200">Zastosowanie</div>
+                        <p className="text-xs">Doskonała do <strong>nowych budynków wielorodzinnych</strong>, hoteli, obiektów użyteczności publicznej. Mniej konserwatywna niż PN-92, ale wciąż bezpieczna.</p>
+                      </div>
+                      <div>
+                        <div className="font-semibold text-slate-700 dark:text-slate-200">Algorytm (skrót)</div>
+                        <details className="text-xs">
+                          <summary className="cursor-pointer font-medium hover:text-blue-600">Pokaż szczegóły obliczeń</summary>
+                          <ol className="list-decimal pl-5 mt-2 space-y-1">
+                            <li>Wyznaczamy <strong>jednostki obciążenia (FU)</strong> dla każdego punktu czerpania wody (umywalka, prysznic, itd.).</li>
+                            <li>Sumujemy FU: Σ FU.</li>
+                            <li>Obliczamy przepływ obliczeniowy:
+                              <div className="bg-white/70 dark:bg-slate-900/50 p-2 rounded my-1 border border-blue-200 dark:border-blue-800">
+                                <KatexFormula formula="q_d = k \cdot \sqrt{\Sigma FU}" />
+                              </div>
+                              gdzie <em>k</em> to współczynnik (zazwyczaj 0.5).
+                            </li>
+                            <li>Przeliczamy na moc:
+                              <div className="bg-white/70 dark:bg-slate-900/50 p-2 rounded my-1 border border-blue-200 dark:border-blue-800">
+                                <KatexFormula formula="P = 1.163 \cdot q_d \cdot \Delta T" />
+                              </div>
+                              gdzie ΔT to różnica temperatur (°C).
+                            </li>
+                          </ol>
+                        </details>
+                      </div>
+
+                      {/* Mini-kalkulator interaktywny */}
+                      <div className="mt-4 space-y-3 border-t pt-3">
+                        <div className="font-semibold text-slate-700 dark:text-slate-200">🔧 Mini-kalkulator PN-EN 806-3</div>
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                          <label className="flex flex-col gap-1">
+                            <span>Umywalki (0.5 LU)</span>
+                            <Input type="number" value={miniEN_umywalki} onChange={e=>setMiniEN_umywalki(+e.target.value)} className="h-8 text-xs" />
+                          </label>
+                          <label className="flex flex-col gap-1">
+                            <span>Zlewozmywaki (0.7 LU)</span>
+                            <Input type="number" value={miniEN_zlewozmywaki} onChange={e=>setMiniEN_zlewozmywaki(+e.target.value)} className="h-8 text-xs" />
+                          </label>
+                          <label className="flex flex-col gap-1">
+                            <span>Prysznice (1.0 LU)</span>
+                            <Input type="number" value={miniEN_prysznice} onChange={e=>setMiniEN_prysznice(+e.target.value)} className="h-8 text-xs" />
+                          </label>
+                          <label className="flex flex-col gap-1">
+                            <span>Wanny (1.5 LU)</span>
+                            <Input type="number" value={miniEN_wanny} onChange={e=>setMiniEN_wanny(+e.target.value)} className="h-8 text-xs" />
+                          </label>
+                          <label className="flex flex-col gap-1">
+                            <span>ΔT [K]</span>
+                            <Input type="number" value={miniEN_dT} onChange={e=>setMiniEN_dT(+e.target.value)} className="h-8 text-xs" />
+                          </label>
+                        </div>
+                        <Button onClick={calculateMiniEN} size="sm" variant="outline" className="w-full text-xs">
+                          Oblicz →
+                        </Button>
+                        {miniEN_result && (
+                          <div className="bg-white/70 dark:bg-slate-900/50 p-3 rounded-lg border border-blue-200 dark:border-blue-800 space-y-2">
+                            <div className="grid grid-cols-3 gap-2 text-xs">
+                              <div>
+                                <div className="text-[10px] opacity-70">Σ FU</div>
+                                <div className="font-bold text-blue-700 dark:text-blue-400">{miniEN_result.FU.toFixed(1)}</div>
+                              </div>
+                              <div>
+                                <div className="text-[10px] opacity-70">q<sub>d</sub> [L/s]</div>
+                                <div className="font-bold text-blue-700 dark:text-blue-400">{miniEN_result.qd.toFixed(2)}</div>
+                              </div>
+                              <div>
+                                <div className="text-[10px] opacity-70">P [kW]</div>
+                                <div className="font-bold text-blue-700 dark:text-blue-400">{miniEN_result.P.toFixed(1)}</div>
+                              </div>
+                            </div>
+                            <div className="text-[10px] italic text-slate-600 dark:text-slate-400">
+                              Wzór: q<sub>d</sub> = 0.5·√(FU−1), potem P = 1.163·q<sub>d</sub>·ΔT
+                            </div>
+                            {miniEN_chartData.length > 0 && (
+                              <div className="h-40 w-full mt-2">
+                                <ResponsiveContainer width="100%" height="100%">
+                                  <LineChart data={miniEN_chartData} margin={{top:5,right:10,left:0,bottom:5}}>
+                                    <XAxis dataKey="FU" tick={{fontSize:9}} label={{value: 'FU', position: 'insideBottom', offset: -5, fontSize: 10}} />
+                                    <YAxis tick={{fontSize:9}} label={{value: 'qd [L/s]', angle: -90, position: 'insideLeft', fontSize: 10}} />
+                                    <Tooltip formatter={(value:number)=>value.toFixed(2)+" L/s"} labelFormatter={(label)=>`FU=${label}`} contentStyle={{fontSize: 11}} />
+                                    <Line type="monotone" dataKey="qd" stroke="#2563eb" strokeWidth={2} dot={false} />
+                                  </LineChart>
+                                </ResponsiveContainer>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {standard === 'PN_92_B_01706' && (
+                <div className="text-xs leading-relaxed text-slate-600 dark:text-slate-300">
+                  <div className="border rounded-xl p-4 bg-gradient-to-br from-amber-50/80 to-orange-50/80 dark:from-slate-800/60 dark:to-amber-900/20 shadow-sm">
+                    <div className="flex items-start gap-3 mb-3">
+                      <div className="flex-shrink-0 w-10 h-10 rounded-full bg-amber-600 text-white flex items-center justify-center font-bold text-sm">
+                        PL
+                      </div>
+                      <div className="flex-1">
+                        <div className="font-bold text-base mb-1 flex items-center gap-2 text-slate-800 dark:text-slate-100">
+                          PN-92/B-01706
+                          <span className="text-[10px] font-normal px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300">Norma Polska</span>
+                        </div>
+                        <p className="text-xs italic text-slate-600 dark:text-slate-400">Konserwatywna – przewymiarowanie, ale pewniak</p>
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      <div>
+                        <div className="font-semibold text-slate-700 dark:text-slate-200">Filozofia</div>
+                        <p className="text-xs">
+                          Norma z czasów, gdy węzły CWU były <strong>„na wszelki wypadek"</strong> i nikt nie optymalizował. 
+                          To pewny sposób, by <strong>nigdy nie zabrakło</strong> mocy, ale płacisz za to wyższą opłatę stałą.
+                        </p>
+                      </div>
+                      <div>
+                        <div className="font-semibold text-slate-700 dark:text-slate-200">Zastosowanie</div>
+                        <p className="text-xs">Rekomendowana przy <strong>starych instalacjach</strong>, gdzie każda modernizacja jest ryzykiem, albo gdy inwestor wymaga „absolutnej pewności".</p>
+                      </div>
+
+                      {/* Mini-kalkulator PN-92/B */}
+                      <div className="mt-4 space-y-3 border-t pt-3">
+                        <div className="font-semibold text-slate-700 dark:text-slate-200">🔧 Mini-kalkulator PN-92/B</div>
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                          <label className="flex flex-col gap-1">
+                            <span>Liczba mieszkań</span>
+                            <Input type="number" value={miniPN92_liczbaMieszkan} onChange={e=>setMiniPN92_liczbaMieszkan(+e.target.value)} className="h-8 text-xs" />
+                          </label>
+                          <label className="flex flex-col gap-1">
+                            <span>Q<sub>max</sub> [L/s]</span>
+                            <Input type="number" step="0.1" value={miniPN92_qmax} onChange={e=>setMiniPN92_qmax(+e.target.value)} className="h-8 text-xs" />
+                          </label>
+                          <label className="flex flex-col gap-1">
+                            <span>ΔT [K]</span>
+                            <Input type="number" value={miniPN92_dT} onChange={e=>setMiniPN92_dT(+e.target.value)} className="h-8 text-xs" />
+                          </label>
+                        </div>
+                        <Button onClick={calculateMiniPN92} size="sm" variant="outline" className="w-full text-xs">
+                          Oblicz →
+                        </Button>
+                        {miniPN92_result && (
+                          <div className="bg-white/70 dark:bg-slate-900/50 p-3 rounded-lg border border-amber-200 dark:border-amber-800 space-y-2">
+                            <div className="grid grid-cols-3 gap-2 text-xs">
+                              <div>
+                                <div className="text-[10px] opacity-70">Wsp. k</div>
+                                <div className="font-bold text-amber-700 dark:text-amber-400">{miniPN92_result.k.toFixed(2)}</div>
+                              </div>
+                              <div>
+                                <div className="text-[10px] opacity-70">q<sub>d</sub> [L/s]</div>
+                                <div className="font-bold text-amber-700 dark:text-amber-400">{miniPN92_result.qd.toFixed(2)}</div>
+                              </div>
+                              <div>
+                                <div className="text-[10px] opacity-70">P [kW]</div>
+                                <div className="font-bold text-amber-700 dark:text-amber-400">{miniPN92_result.P.toFixed(1)}</div>
+                              </div>
+                            </div>
+                            <div className="text-[10px] italic text-slate-600 dark:text-slate-400">
+                              Wzór: q<sub>d</sub> = Q<sub>max</sub>·k, gdzie k z tabeli PN-92/B
+                            </div>
+                            {miniPN92_chartData.length > 0 && (
+                              <div className="h-40 w-full mt-2">
+                                <ResponsiveContainer width="100%" height="100%">
+                                  <LineChart data={miniPN92_chartData} margin={{top:5,right:10,left:0,bottom:5}}>
+                                    <XAxis dataKey="flats" tick={{fontSize:9}} label={{value: 'Liczba mieszkań', position: 'insideBottom', offset: -5, fontSize: 10}} />
+                                    <YAxis tick={{fontSize:9}} label={{value: 'k', angle: -90, position: 'insideLeft', fontSize: 10}} domain={[0, 1]} />
+                                    <Tooltip formatter={(value:number)=>value.toFixed(2)} labelFormatter={(label)=>`${label} mieszkań`} contentStyle={{fontSize: 11}} />
+                                    <Line type="stepAfter" dataKey="k" stroke="#d97706" strokeWidth={2} dot={false} />
+                                  </LineChart>
+                                </ResponsiveContainer>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {standard === 'bilans_energetyczny' && (
+                <div className="text-xs leading-relaxed text-slate-600 dark:text-slate-300">
+                  <div className="border rounded-xl p-4 bg-gradient-to-br from-green-50/80 to-teal-50/80 dark:from-slate-800/60 dark:to-green-900/20 shadow-sm">
+                    <div className="flex items-start gap-3 mb-3">
+                      <div className="flex-shrink-0 w-10 h-10 rounded-full bg-green-600 text-white flex items-center justify-center font-bold text-sm">
+                        BE
+                      </div>
+                      <div className="flex-1">
+                        <div className="font-bold text-base mb-1 text-slate-800 dark:text-slate-100">
+                          Bilans energetyczny
+                        </div>
+                        <p className="text-xs italic text-slate-600 dark:text-slate-400">Dla węzłów cieplnych – najbardziej konkretna i najbliższa fizyce</p>
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      <div>
+                        <div className="font-semibold text-slate-700 dark:text-slate-200 mb-2">Wzór podstawowy</div>
+                        <div className="bg-white/60 dark:bg-slate-900/40 p-3 rounded-lg border border-green-200 dark:border-green-800">
+                          <div className="text-center mb-2">
+                            <KatexFormula formula="P = \dfrac{m \cdot c \cdot \Delta T}{t}" displayMode={true} />
+                          </div>
+                          <div className="text-[11px] space-y-1 text-slate-700 dark:text-slate-300">
+                            <div><strong>m</strong> – masa wody podgrzewanej [kg]</div>
+                            <div><strong>c</strong> – ciepło właściwe (4,186 kJ/kg·K)</div>
+                            <div><strong>ΔT</strong> – przyrost temperatury [K]</div>
+                            <div><strong>t</strong> – czas [s]</div>
+                          </div>
+                        </div>
+                      </div>
+                      <div>
+                        <div className="font-semibold text-slate-700 dark:text-slate-200">Filozofia</div>
+                        <p className="text-xs">
+                          Nie gdybasz „na oko". Liczysz <strong>realną energię</strong> potrzebną do podgrzania faktycznie zużywanej wody. 
+                          To najbardziej konkretna metoda – <strong>termodynamika, nie normy</strong>.
+                        </p>
+                      </div>
+
+                      {/* Mini-kalkulator bilans energetyczny */}
+                      <div className="mt-4 space-y-3 border-t pt-3">
+                        <div className="font-semibold text-slate-700 dark:text-slate-200">🔧 Mini-kalkulator bilansu energetycznego</div>
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                          <label className="flex flex-col gap-1">
+                            <span>Masa wody [kg]</span>
+                            <Input type="number" value={miniBE_masaKg} onChange={e=>setMiniBE_masaKg(+e.target.value)} className="h-8 text-xs" />
+                          </label>
+                          <label className="flex flex-col gap-1">
+                            <span>ΔT [K]</span>
+                            <Input type="number" value={miniBE_dT} onChange={e=>setMiniBE_dT(+e.target.value)} className="h-8 text-xs" />
+                          </label>
+                          <label className="flex flex-col gap-1 col-span-2">
+                            <span>Czas nagrzewania [min]</span>
+                            <Input type="number" value={miniBE_czasMin} onChange={e=>setMiniBE_czasMin(+e.target.value)} className="h-8 text-xs" />
+                          </label>
+                        </div>
+                        <Button onClick={calculateMiniBE} size="sm" variant="outline" className="w-full text-xs">
+                          Oblicz →
+                        </Button>
+                        {miniBE_result && (
+                          <div className="bg-white/70 dark:bg-slate-900/50 p-3 rounded-lg border border-green-200 dark:border-green-800 space-y-2">
+                            <div className="text-center">
+                              <div className="text-[10px] opacity-70">Moc potrzebna</div>
+                              <div className="text-2xl font-bold text-green-700 dark:text-green-400">{miniBE_result.P.toFixed(1)} kW</div>
+                            </div>
+                            <div className="text-[10px] italic text-slate-600 dark:text-slate-400 text-center">
+                              P = (m·c·ΔT) / t = ({miniBE_masaKg}·4.186·{miniBE_dT}) / ({miniBE_czasMin}×60)
+                            </div>
+                            {miniBE_chartData.length > 0 && (
+                              <div className="h-40 w-full mt-2">
+                                <ResponsiveContainer width="100%" height="100%">
+                                  <LineChart data={miniBE_chartData} margin={{top:5,right:10,left:0,bottom:5}}>
+                                    <XAxis dataKey="t" tick={{fontSize:9}} label={{value: 'Czas [min]', position: 'insideBottom', offset: -5, fontSize: 10}} />
+                                    <YAxis tick={{fontSize:9}} label={{value: 'P [kW]', angle: -90, position: 'insideLeft', fontSize: 10}} />
+                                    <Tooltip formatter={(value:number)=>value.toFixed(1)+" kW"} labelFormatter={(label)=>`${label} min`} contentStyle={{fontSize: 11}} />
+                                    <Line type="monotone" dataKey="P" stroke="#059669" strokeWidth={2} dot={false} />
+                                  </LineChart>
+                                </ResponsiveContainer>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {standard === 'moc_czas_rozbioru' && (
+                <div className="text-xs leading-relaxed text-slate-600 dark:text-slate-300">
+                  <div className="border rounded-xl p-4 bg-gradient-to-br from-purple-50/80 to-pink-50/80 dark:from-slate-800/60 dark:to-purple-900/20 shadow-sm">
+                    <div className="flex items-start gap-3 mb-3">
+                      <div className="flex-shrink-0 w-10 h-10 rounded-full bg-purple-600 text-white flex items-center justify-center font-bold text-sm">
+                        TR
+                      </div>
+                      <div className="flex-1">
+                        <div className="font-bold text-base mb-1 text-slate-800 dark:text-slate-100">
+                          Moc / czas rozbioru
+                        </div>
+                        <p className="text-xs italic text-slate-600 dark:text-slate-400">Maksymalny jednorazowy rozbiór – niezależnie od norm</p>
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      <div>
+                        <div className="font-semibold text-slate-700 dark:text-slate-200 mb-2">Wzór podstawowy</div>
+                        <div className="bg-white/60 dark:bg-slate-900/40 p-3 rounded-lg border border-purple-200 dark:border-purple-800">
+                          <div className="text-center mb-2">
+                            <KatexFormula formula="P = Q_{max} \cdot c \cdot (T_{CWU} - T_Z)" displayMode={true} />
+                          </div>
+                          <div className="text-[11px] space-y-1 text-slate-700 dark:text-slate-300">
+                            <div><strong>Q<sub>max</sub></strong> – maksymalny strumień wody [kg/s lub L/s]</div>
+                            <div><strong>c</strong> – ciepło właściwe (4,186 kJ/kg·K)</div>
+                            <div><strong>T<sub>CWU</sub></strong> – temperatura ciepłej wody [°C]</div>
+                            <div><strong>T<sub>Z</sub></strong> – temperatura zimnej wody [°C]</div>
+                          </div>
+                        </div>
+                      </div>
+                      <div>
+                        <div className="font-semibold text-slate-700 dark:text-slate-200">Filozofia</div>
+                        <p className="text-xs">
+                          Tu obliczasz <strong>maksymalny jednorazowy rozbiór</strong> (np. 10-minutowy peaktime rano). 
+                          Ten sposób <strong>nie zależy od żadnej normy</strong> — bazuje na fizyce i założonym scenariuszu pracy instalacji.
+                        </p>
+                      </div>
+
+                      {/* Mini-kalkulator moc/czas rozbioru */}
+                      <div className="mt-4 space-y-3 border-t pt-3">
+                        <div className="font-semibold text-slate-700 dark:text-slate-200">🔧 Kalkulator scenariuszy peaktime</div>
+                        <div className="space-y-2 text-xs">
+                          <label className="flex items-center gap-2">
+                            <span className="font-medium">Scenariusz:</span>
+                            <select value={miniMCR_scenariusz} onChange={e=>setMiniMCR_scenariusz(e.target.value as 'rano'|'wieczor')} className="rounded border px-2 py-1 bg-white dark:bg-slate-800">
+                              <option value="rano">Poranek (6:00-9:00)</option>
+                              <option value="wieczor">Wieczór (18:00-22:00)</option>
+                            </select>
+                          </label>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                          <label className="flex flex-col gap-1">
+                            <span>Prysznice jednocześnie</span>
+                            <Input type="number" value={miniMCR_prysznice} onChange={e=>setMiniMCR_prysznice(+e.target.value)} className="h-8 text-xs" />
+                          </label>
+                          <label className="flex flex-col gap-1">
+                            <span>Q prysznica [L/s]</span>
+                            <Input type="number" step="0.01" value={miniMCR_qPrysznic} onChange={e=>setMiniMCR_qPrysznic(+e.target.value)} className="h-8 text-xs" />
+                          </label>
+                          <label className="flex flex-col gap-1">
+                            <span>Umywalki jednocześnie</span>
+                            <Input type="number" value={miniMCR_umywalki} onChange={e=>setMiniMCR_umywalki(+e.target.value)} className="h-8 text-xs" />
+                          </label>
+                          <label className="flex flex-col gap-1">
+                            <span>Q umywalki [L/s]</span>
+                            <Input type="number" step="0.01" value={miniMCR_qUmywalka} onChange={e=>setMiniMCR_qUmywalka(+e.target.value)} className="h-8 text-xs" />
+                          </label>
+                          <label className="flex flex-col gap-1 col-span-2">
+                            <span>ΔT [K]</span>
+                            <Input type="number" value={miniMCR_dT} onChange={e=>setMiniMCR_dT(+e.target.value)} className="h-8 text-xs" />
+                          </label>
+                        </div>
+                        <Button onClick={calculateMiniMCR} size="sm" variant="outline" className="w-full text-xs">
+                          Oblicz scenariusz →
+                        </Button>
+                        {miniMCR_result && (
+                          <div className="bg-white/70 dark:bg-slate-900/50 p-3 rounded-lg border border-purple-200 dark:border-purple-800 space-y-2">
+                            <div className="grid grid-cols-2 gap-2 text-xs">
+                              <div>
+                                <div className="text-[10px] opacity-70">Q<sub>max</sub> [L/s]</div>
+                                <div className="font-bold text-purple-700 dark:text-purple-400">{miniMCR_result.Qmax.toFixed(2)}</div>
+                              </div>
+                              <div>
+                                <div className="text-[10px] opacity-70">P pik [kW]</div>
+                                <div className="font-bold text-purple-700 dark:text-purple-400">{miniMCR_result.P.toFixed(1)}</div>
+                              </div>
+                            </div>
+                            <div className="text-[10px] italic text-slate-600 dark:text-slate-400">
+                              Scenariusz: {miniMCR_scenariusz === 'rano' ? 'poranny pik 7:30' : 'wieczorny pik 20:00'}
+                            </div>
+                            {miniMCR_chartData.length > 0 && (
+                              <div className="h-40 w-full mt-2">
+                                <ResponsiveContainer width="100%" height="100%">
+                                  <LineChart data={miniMCR_chartData} margin={{top:5,right:10,left:0,bottom:5}}>
+                                    <XAxis dataKey="czas" tick={{fontSize:9}} label={{value: 'Godzina', position: 'insideBottom', offset: -5, fontSize: 10}} />
+                                    <YAxis tick={{fontSize:9}} label={{value: 'Q [L/s]', angle: -90, position: 'insideLeft', fontSize: 10}} />
+                                    <Tooltip formatter={(value:number)=>value.toFixed(2)+" L/s"} contentStyle={{fontSize: 11}} />
+                                    <Line type="monotone" dataKey="Q" stroke="#9333ea" strokeWidth={2} dot={{r: 4}} />
+                                  </LineChart>
+                                </ResponsiveContainer>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {standard === 'peak_demand_pomiary' && (
+                <div className="text-xs leading-relaxed text-slate-600 dark:text-slate-300">
+                  <div className="border rounded-xl p-4 bg-gradient-to-br from-red-50/80 to-rose-50/80 dark:from-slate-800/60 dark:to-red-900/20 shadow-sm">
+                    <div className="flex items-start gap-3 mb-3">
+                      <div className="flex-shrink-0 w-10 h-10 rounded-full bg-red-600 text-white flex items-center justify-center font-bold text-sm">
+                        PD
+                      </div>
+                      <div className="flex-1">
+                        <div className="font-bold text-base mb-1 text-slate-800 dark:text-slate-100">
+                          Peak demand (pomiary)
+                        </div>
+                        <p className="text-xs italic text-slate-600 dark:text-slate-400">Najbardziej uczciwa finansowo – oparta na realnym zużyciu</p>
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      <div>
+                        <div className="font-semibold text-slate-700 dark:text-slate-200 mb-2">Metodyka pomiarowa</div>
+                        <div className="bg-white/60 dark:bg-slate-900/40 p-3 rounded-lg border border-red-200 dark:border-red-800">
+                          <div className="text-center mb-2">
+                            <KatexFormula formula="P_{zam} = P_{peak,zmierzone} + \text{margines}" displayMode={true} />
+                          </div>
+                          <div className="text-[11px] space-y-1 text-slate-700 dark:text-slate-300">
+                            <div><strong>P<sub>peak,zmierzone</sub></strong> – największy pik w logach ciepłomierza/sterownika (interwały 1–5 min)</div>
+                            <div><strong>margines</strong> – współczynnik bezpieczeństwa (zazwyczaj 5–15%)</div>
+                          </div>
+                        </div>
+                      </div>
+                      <div>
+                        <div className="font-semibold text-slate-700 dark:text-slate-200">Filozofia</div>
+                        <p className="text-xs">
+                          👉 <strong>Najbardziej uczciwa metoda finansowo</strong>, bo opiera się na realnym zużyciu, nie na „gdybaniu norm".
+                        </p>
+                      </div>
+
+                      {/* Mini-kalkulator peak demand */}
+                      <div className="mt-4 space-y-3 border-t pt-3">
+                        <div className="font-semibold text-slate-700 dark:text-slate-200">🔧 Analiza marginesu bezpieczeństwa</div>
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                          <label className="flex flex-col gap-1">
+                            <span>P<sub>peak</sub> zmierzone [kW]</span>
+                            <Input type="number" value={miniPD_Ppeak} onChange={e=>setMiniPD_Ppeak(+e.target.value)} className="h-8 text-xs" />
+                          </label>
+                          <label className="flex flex-col gap-1">
+                            <span>Margines [%]</span>
+                            <Input type="number" value={miniPD_marginesProc} onChange={e=>setMiniPD_marginesProc(+e.target.value)} className="h-8 text-xs" />
+                          </label>
+                          <label className="flex flex-col gap-1 col-span-2">
+                            <span>Stawka mocy [PLN/kW/rok]</span>
+                            <Input type="number" value={miniPD_stawkaKW} onChange={e=>setMiniPD_stawkaKW(+e.target.value)} className="h-8 text-xs" />
+                          </label>
+                        </div>
+                        <Button onClick={calculateMiniPD} size="sm" variant="outline" className="w-full text-xs">
+                          Oblicz →
+                        </Button>
+                        {miniPD_result && (
+                          <div className="bg-white/70 dark:bg-slate-900/50 p-3 rounded-lg border border-red-200 dark:border-red-800 space-y-2">
+                            <div className="grid grid-cols-2 gap-2 text-xs">
+                              <div>
+                                <div className="text-[10px] opacity-70">P<sub>zam</sub> [kW]</div>
+                                <div className="font-bold text-red-700 dark:text-red-400">{miniPD_result.Pzam.toFixed(1)}</div>
+                              </div>
+                              <div>
+                                <div className="text-[10px] opacity-70">Koszt/rok [PLN]</div>
+                                <div className="font-bold text-red-700 dark:text-red-400">{miniPD_result.kosztRoczny.toLocaleString('pl-PL')}</div>
+                              </div>
+                            </div>
+                            <div className="text-[10px] italic text-slate-600 dark:text-slate-400">
+                              P<sub>zam</sub> = {miniPD_Ppeak} × (1 + {miniPD_marginesProc}%) = {miniPD_result.Pzam.toFixed(1)} kW
+                            </div>
+                            {miniPD_chartData.length > 0 && (
+                              <div className="h-40 w-full mt-2">
+                                <ResponsiveContainer width="100%" height="100%">
+                                  <LineChart data={miniPD_chartData} margin={{top:5,right:10,left:0,bottom:5}}>
+                                    <XAxis dataKey="margines" tick={{fontSize:9}} label={{value: 'Margines [%]', position: 'insideBottom', offset: -5, fontSize: 10}} />
+                                    <YAxis tick={{fontSize:9}} label={{value: 'Koszt roczny [PLN]', angle: -90, position: 'insideLeft', fontSize: 10}} />
+                                    <Tooltip formatter={(value:number)=>value.toLocaleString('pl-PL')+" PLN"} labelFormatter={(label)=>`Margines ${label}%`} contentStyle={{fontSize: 11}} />
+                                    <Line type="monotone" dataKey="koszt" stroke="#dc2626" strokeWidth={2} dot={false} />
+                                  </LineChart>
+                                </ResponsiveContainer>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {standard === 'krzywa_mocy_sezonowa' && (
+                <div className="text-xs leading-relaxed text-slate-600 dark:text-slate-300">
+                  <div className="border rounded-xl p-4 bg-gradient-to-br from-cyan-50/80 to-sky-50/80 dark:from-slate-800/60 dark:to-cyan-900/20 shadow-sm">
+                    <div className="flex items-start gap-3 mb-3">
+                      <div className="flex-shrink-0 w-10 h-10 rounded-full bg-cyan-600 text-white flex items-center justify-center font-bold text-sm">
+                        KS
+                      </div>
+                      <div className="flex-1">
+                        <div className="font-bold text-base mb-1 text-slate-800 dark:text-slate-100">
+                          Krzywa mocy + sezon
+                        </div>
+                        <p className="text-xs italic text-slate-600 dark:text-slate-400">Histogram obciążenia – brzmi jak magia Excela, ale działa</p>
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      <div>
+                        <div className="font-semibold text-slate-700 dark:text-slate-200 mb-2">Podejście statystyczne</div>
+                        <div className="bg-white/60 dark:bg-slate-900/40 p-3 rounded-lg border border-cyan-200 dark:border-cyan-800">
+                          <div className="text-center mb-2">
+                            <KatexFormula formula="P_{zam} = P_{95\%} \text{ (z krzywej obciążenia)}" displayMode={true} />
+                          </div>
+                          <div className="text-[11px] space-y-1 text-slate-700 dark:text-slate-300">
+                            <div><strong>P<sub>95%</sub></strong> – wartość mocy pokrywająca 95% realnych przypadków</div>
+                            <div><strong>Krzywa obciążenia</strong> – histogram pikowego zapotrzebowania w różnych przedziałach czasowych</div>
+                          </div>
+                        </div>
+                      </div>
+                      <div>
+                        <div className="font-semibold text-slate-700 dark:text-slate-200">Filozofia</div>
+                        <p className="text-xs">
+                          <strong>Metoda audytorska par excellence</strong> – łączy analizę statystyczną z pragmatyzmem ekonomicznym. 
+                          Brzmi jak magia Excela, ale działa.
+                        </p>
+                      </div>
+
+                      {/* Mini-kalkulator krzywa mocy */}
+                      <div className="mt-4 space-y-3 border-t pt-3">
+                        <div className="font-semibold text-slate-700 dark:text-slate-200">🔧 Generator krzywej obciążenia</div>
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                          <label className="flex flex-col gap-1">
+                            <span>P<sub>max</sub> [kW]</span>
+                            <Input type="number" value={miniKM_Pmax} onChange={e=>setMiniKM_Pmax(+e.target.value)} className="h-8 text-xs" />
+                          </label>
+                          <label className="flex flex-col gap-1">
+                            <span>Liczba pomiarów</span>
+                            <Input type="number" value={miniKM_liczbaPomiarow} onChange={e=>setMiniKM_liczbaPomiarow(+e.target.value)} className="h-8 text-xs" />
+                          </label>
+                        </div>
+                        <Button onClick={calculateMiniKM} size="sm" variant="outline" className="w-full text-xs">
+                          Generuj histogram →
+                        </Button>
+                        {miniKM_result && (
+                          <div className="bg-white/70 dark:bg-slate-900/50 p-3 rounded-lg border border-cyan-200 dark:border-cyan-800 space-y-2">
+                            <div className="grid grid-cols-4 gap-2 text-xs">
+                              <div>
+                                <div className="text-[10px] opacity-70">P<sub>50%</sub></div>
+                                <div className="font-bold text-cyan-700 dark:text-cyan-400">{miniKM_result.P50.toFixed(0)}</div>
+                              </div>
+                              <div>
+                                <div className="text-[10px] opacity-70">P<sub>90%</sub></div>
+                                <div className="font-bold text-cyan-700 dark:text-cyan-400">{miniKM_result.P90.toFixed(0)}</div>
+                              </div>
+                              <div>
+                                <div className="text-[10px] opacity-70">P<sub>95%</sub></div>
+                                <div className="font-bold text-cyan-700 dark:text-cyan-400">{miniKM_result.P95.toFixed(0)}</div>
+                              </div>
+                              <div>
+                                <div className="text-[10px] opacity-70">P<sub>99%</sub></div>
+                                <div className="font-bold text-cyan-700 dark:text-cyan-400">{miniKM_result.P99.toFixed(0)}</div>
+                              </div>
+                            </div>
+                            <div className="text-[10px] italic text-slate-600 dark:text-slate-400">
+                              95% pomiarów {"<"} {miniKM_result.P95.toFixed(0)} kW → zalecana moc zamówiona
+                            </div>
+                            {miniKM_chartData.length > 0 && (
+                              <div className="h-40 w-full mt-2">
+                                <ResponsiveContainer width="100%" height="100%">
+                                  <LineChart data={miniKM_chartData} margin={{top:5,right:10,left:0,bottom:5}}>
+                                    <XAxis dataKey="przedział" tick={{fontSize:8}} angle={-45} textAnchor="end" height={60} />
+                                    <YAxis tick={{fontSize:9}} label={{value: 'Liczba pomiarów', angle: -90, position: 'insideLeft', fontSize: 10}} />
+                                    <Tooltip contentStyle={{fontSize: 11}} />
+                                    <Line type="monotone" dataKey="liczba" stroke="#0891b2" strokeWidth={2} fill="#0891b2" />
+                                  </LineChart>
+                                </ResponsiveContainer>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {standard === 'kosztowa' && (
+                <div className="text-xs leading-relaxed text-slate-600 dark:text-slate-300">
+                  <div className="border rounded-xl p-4 bg-gradient-to-br from-yellow-50/80 to-amber-50/80 dark:from-slate-800/60 dark:to-yellow-900/20 shadow-sm">
+                    <div className="flex items-start gap-3 mb-3">
+                      <div className="flex-shrink-0 w-10 h-10 rounded-full bg-yellow-600 text-white flex items-center justify-center font-bold text-sm">
+                        €
+                      </div>
+                      <div className="flex-1">
+                        <div className="font-bold text-base mb-1 text-slate-800 dark:text-slate-100">
+                          Metoda kosztowa
+                        </div>
+                        <p className="text-xs italic text-slate-600 dark:text-slate-400">Ekonomiczna optymalizacja mocy zamówionej</p>
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      <div>
+                        <div className="font-semibold text-slate-700 dark:text-slate-200 mb-2">Model ekonomiczny</div>
+                        <div className="bg-white/60 dark:bg-slate-900/40 p-3 rounded-lg border border-amber-200 dark:border-amber-800">
+                          <div className="text-center mb-2">
+                            <KatexFormula formula="P_{opt} = \arg\min_{P} C_{roczne}(P)" displayMode={true} />
+                          </div>
+                          <div className="text-[11px] space-y-1 text-slate-700 dark:text-slate-300">
+                            <div><strong>C<sub>roczne</sub>(P)</strong> = C<sub>stałe</sub>(P) + C<sub>kary</sub>(P)</div>
+                            <div><strong>C<sub>stałe</sub>(P)</strong> – opłata stała za moc zamówioną (rosnąca z P)</div>
+                            <div><strong>C<sub>kary</sub>(P)</strong> – koszt niedowymiarowania (kary / dopłaty przy przekroczeniach)</div>
+                          </div>
+                        </div>
+                      </div>
+                      <div>
+                        <div className="font-semibold text-slate-700 dark:text-slate-200">Filozofia</div>
+                        <p className="text-xs">
+                          Tu <strong>nie obliczasz fizycznie</strong> ile powinieneś zamówić – tylko <strong>ile Cię najmniej zaboli finansowo</strong>. 
+                          To <strong>Excel, nie termodynamika</strong>: balans między przewymiarowaniem a niedowymiarowaniem.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {standard === 'symulacja_programowa' && (
+                <div className="text-xs leading-relaxed text-slate-600 dark:text-slate-300">
+                  <div className="border rounded-xl p-4 bg-gradient-to-br from-violet-50/80 to-fuchsia-50/80 dark:from-slate-800/60 dark:to-violet-900/20 shadow-sm">
+                    <div className="flex items-start gap-3 mb-3">
+                      <div className="flex-shrink-0 w-10 h-10 rounded-full bg-violet-600 text-white flex items-center justify-center font-bold text-sm">
+                        SIM
+                      </div>
+                      <div className="flex-1">
+                        <div className="font-bold text-base mb-1 flex items-center gap-2 text-slate-800 dark:text-slate-100">
+                          Metoda „programowa"
+                          <span className="text-[10px] font-normal px-2 py-0.5 rounded-full bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300">Rekomendowana</span>
+                        </div>
+                        <p className="text-xs italic text-slate-600 dark:text-slate-400">Symulacja instalacji CWU z cyrkulacją – rzeczywista fizyka pracy budynku</p>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-4">
+                      {/* Główna teza */}
+                      <div className="bg-violet-100/50 dark:bg-violet-900/20 p-3 rounded-lg border border-violet-300 dark:border-violet-700">
+                        <p className="text-xs font-medium text-slate-800 dark:text-slate-100">
+                          To metoda, która <strong>nie bazuje wyłącznie na tabelkach z norm</strong>, tylko na rzeczywistej fizyce pracy instalacji w budynku. 
+                          Wykorzystuje dane wejściowe z konkretnego obiektu i łączy trzy światy:
+                        </p>
+                      </div>
+
+                      {/* 3 filary */}
+                      <div className="grid gap-2">
+                        <div className="flex gap-2 items-start">
+                          <div className="flex-shrink-0 w-5 h-5 rounded-full bg-violet-500 text-white flex items-center justify-center text-[10px] font-bold mt-0.5">1</div>
+                          <div>
+                            <div className="font-semibold text-slate-700 dark:text-slate-200 text-xs">Statystyka rozbiorów (PN-EN 806-3)</div>
+                            <p className="text-[11px] text-slate-600 dark:text-slate-400">ile wody może popłynąć jednocześnie</p>
+                          </div>
+                        </div>
+                        <div className="flex gap-2 items-start">
+                          <div className="flex-shrink-0 w-5 h-5 rounded-full bg-violet-500 text-white flex items-center justify-center text-[10px] font-bold mt-0.5">2</div>
+                          <div>
+                            <div className="font-semibold text-slate-700 dark:text-slate-200 text-xs">Bilans energetyczny CWU (fizyka)</div>
+                            <p className="text-[11px] text-slate-600 dark:text-slate-400">ile energii potrzeba na podgrzanie tego strumienia</p>
+                          </div>
+                        </div>
+                        <div className="flex gap-2 items-start">
+                          <div className="flex-shrink-0 w-5 h-5 rounded-full bg-violet-500 text-white flex items-center justify-center text-[10px] font-bold mt-0.5">3</div>
+                          <div>
+                            <div className="font-semibold text-slate-700 dark:text-slate-200 text-xs">Model hydrauliczny cyrkulacji</div>
+                            <p className="text-[11px] text-slate-600 dark:text-slate-400">jakie są straty, opóźnienia i pojemność instalacji</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Cytat kluczowy */}
+                      <div className="bg-white/60 dark:bg-slate-900/40 p-3 rounded-lg border-l-4 border-violet-500">
+                        <p className="text-xs font-medium italic text-slate-700 dark:text-slate-200">
+                          W praktyce my nie projektujemy „instalacji w teorii".<br />
+                          <strong>My przewidujemy, jak instalacja będzie zachowywać się rano o 6:45, gdy 40 mieszkań otworzy baterie naraz.</strong>
+                        </p>
+                      </div>
+
+                      {/* Schemat algorytmu */}
+                      <div>
+                        <div className="font-semibold text-slate-700 dark:text-slate-200 mb-3">📊 Algorytm obliczeń krok po kroku</div>
+                        <div className="space-y-2">
+                          {/* START */}
+                          <div className="flex items-center gap-2">
+                            <div className="flex-shrink-0 w-16 h-8 rounded-full bg-gradient-to-r from-violet-600 to-purple-600 text-white flex items-center justify-center text-[10px] font-bold">
+                              START
+                            </div>
+                          </div>
+                          <div className="flex justify-center">
+                            <div className="w-0.5 h-4 bg-gradient-to-b from-violet-400 to-blue-400"></div>
+                          </div>
+
+                          {/* KROK 1 */}
+                          <div className="bg-blue-50/80 dark:bg-blue-900/20 rounded-lg p-3 border-l-4 border-blue-500">
+                            <div className="flex items-start gap-2">
+                              <div className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center text-[10px] font-bold">1</div>
+                              <div className="flex-1">
+                                <div className="font-bold text-xs text-slate-800 dark:text-slate-100 mb-1">WPROWADŹ DANE BUDYNKU</div>
+                                <ul className="text-[10px] text-slate-600 dark:text-slate-400 space-y-0.5">
+                                  <li>• liczba mieszkań, pionów</li>
+                                  <li>• osoby/mieszkanie, wyposażenie (natrysk/wanna)</li>
+                                  <li>• temperatury: T<sub>z</sub>, T<sub>cw</sub>, T<sub>ret</sub></li>
+                                  <li>• dane instalacji: długości, średnice, izolacja, materiał</li>
+                                </ul>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex justify-center">
+                            <div className="w-0.5 h-4 bg-gradient-to-b from-blue-400 to-cyan-400"></div>
+                          </div>
+
+                          {/* KROK 2 */}
+                          <div className="bg-cyan-50/80 dark:bg-cyan-900/20 rounded-lg p-3 border-l-4 border-cyan-500">
+                            <div className="flex items-start gap-2">
+                              <div className="flex-shrink-0 w-6 h-6 rounded-full bg-cyan-500 text-white flex items-center justify-center text-[10px] font-bold">2</div>
+                              <div className="flex-1">
+                                <div className="font-bold text-xs text-slate-800 dark:text-slate-100 mb-1">WYZNACZ Q<sub>peak</sub> wg PN-EN 806-3</div>
+                                <ul className="text-[10px] text-slate-600 dark:text-slate-400 space-y-0.5">
+                                  <li>• przypisz jednostki obciążenia LU do punktów poboru</li>
+                                  <li>• oblicz sumaryczne LU</li>
+                                  <li>• przelicz LU → Q<sub>peak</sub> [L/s] za pomocą wzoru PN-EN</li>
+                                </ul>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex justify-center">
+                            <div className="w-0.5 h-4 bg-gradient-to-b from-cyan-400 to-green-400"></div>
+                          </div>
+
+                          {/* KROK 3 */}
+                          <div className="bg-green-50/80 dark:bg-green-900/20 rounded-lg p-3 border-l-4 border-green-500">
+                            <div className="flex items-start gap-2">
+                              <div className="flex-shrink-0 w-6 h-6 rounded-full bg-green-500 text-white flex items-center justify-center text-[10px] font-bold">3</div>
+                              <div className="flex-1">
+                                <div className="font-bold text-xs text-slate-800 dark:text-slate-100 mb-1">OBLICZ MOC DO PODGRZANIA (P<sub>1</sub>)</div>
+                                <div className="bg-white/60 dark:bg-slate-900/40 p-2 rounded border border-green-200 dark:border-green-800 mt-1">
+                                  <div className="text-center text-[11px]">
+                                    P<sub>1</sub> = Q<sub>peak</sub> · c · (T<sub>cw</sub> − T<sub>z</sub>)
+                                  </div>
+                                  <p className="text-[9px] text-center text-slate-600 dark:text-slate-400 mt-1">
+                                    gdzie c = 4,186 kJ/kg·K
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex justify-center">
+                            <div className="w-0.5 h-4 bg-gradient-to-b from-green-400 to-amber-400"></div>
+                          </div>
+
+                          {/* KROK 4 */}
+                          <div className="bg-amber-50/80 dark:bg-amber-900/20 rounded-lg p-3 border-l-4 border-amber-500">
+                            <div className="flex items-start gap-2">
+                              <div className="flex-shrink-0 w-6 h-6 rounded-full bg-amber-500 text-white flex items-center justify-center text-[10px] font-bold">4</div>
+                              <div className="flex-1">
+                                <div className="font-bold text-xs text-slate-800 dark:text-slate-100 mb-1">OBLICZ STRATY CYRKULACJI (P<sub>2</sub>)</div>
+                                
+                                {/* Opcja A - teoretyczna */}
+                                <div className="bg-white/60 dark:bg-slate-900/40 p-2 rounded border border-amber-300 dark:border-amber-700 mb-2">
+                                  <div className="font-semibold text-[10px] text-amber-800 dark:text-amber-300 mb-1">📐 OPCJA A: Obliczenia teoretyczne (UA)</div>
+                                  <ul className="text-[10px] text-slate-600 dark:text-slate-400 space-y-0.5">
+                                    <li>• dla każdej sekcji: Q<sub>straty</sub> = U · A · (T<sub>cw</sub> − T<sub>otoczenia</sub>)</li>
+                                    <li>• gdzie A = π · d · L</li>
+                                    <li>• sumuj straty wszystkich odcinków: P<sub>2</sub> = Σ Q<sub>straty</sub></li>
+                                  </ul>
+                                  <p className="text-[9px] text-slate-500 dark:text-slate-500 italic mt-1">Standardowe podejście projektowe</p>
+                                </div>
+
+                                {/* Opcja B - praktyczna z faktur */}
+                                <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/30 dark:to-emerald-900/30 p-2 rounded border-2 border-green-400 dark:border-green-600">
+                                  <div className="flex items-center gap-1 mb-1">
+                                    <div className="font-semibold text-[10px] text-green-800 dark:text-green-300">💡 OPCJA B: Dane rzeczywiste z faktur</div>
+                                    <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-green-200 dark:bg-green-800 text-green-800 dark:text-green-200 font-bold">POLECANE</span>
+                                  </div>
+                                  <ul className="text-[10px] text-slate-700 dark:text-slate-300 space-y-1">
+                                    <li className="flex items-start gap-1">
+                                      <span className="flex-shrink-0">1.</span>
+                                      <span>Pobierz faktury VAT za <strong>12 miesięcy</strong> (energia na CWU)</span>
+                                    </li>
+                                    <li className="flex items-start gap-1">
+                                      <span className="flex-shrink-0">2.</span>
+                                      <span>Odejmij energie na <strong>faktyczne rozbiory</strong> (liczniki mieszkań)</span>
+                                    </li>
+                                    <li className="flex items-start gap-1">
+                                      <span className="flex-shrink-0">3.</span>
+                                      <span>Pozostała różnica = <strong>straty cyrkulacji w rzeczywistości</strong></span>
+                                    </li>
+                                    <li className="flex items-start gap-1">
+                                      <span className="flex-shrink-0">4.</span>
+                                      <span>Przelicz na moc: P<sub>2</sub> = E<sub>straty</sub> / (8760 h)</span>
+                                    </li>
+                                  </ul>
+                                  <div className="bg-white/60 dark:bg-slate-900/40 p-2 rounded border border-green-300 dark:border-green-700 mt-2">
+                                    <p className="text-[9px] font-medium text-slate-700 dark:text-slate-300 text-center">
+                                      <strong>Przykład:</strong> Faktura roczna 450 000 kWh, rozbiory mieszkańców 280 000 kWh<br />
+                                      → Straty = 170 000 kWh/rok ≈ <strong>19,4 kW średniej mocy strat</strong>
+                                    </p>
+                                  </div>
+                                  <div className="mt-2 text-[9px] text-green-800 dark:text-green-300 font-medium italic border-t border-green-300 dark:border-green-700 pt-1.5">
+                                    ⚡ Dlaczego opcja B jest lepsza?<br />
+                                    <span className="text-[8px] text-slate-600 dark:text-slate-400 font-normal">
+                                      • Opiera się na faktach, nie teorii<br />
+                                      • Uwzględnia <strong>rzeczywisty stan techniczny</strong> instalacji<br />
+                                      • Eliminuje błędy projektowe i uproszczenia normowe<br />
+                                      • Odzwierciedla faktyczne <strong>koszty eksploatacji</strong>
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex justify-center">
+                            <div className="w-0.5 h-4 bg-gradient-to-b from-amber-400 to-orange-400"></div>
+                          </div>
+
+                          {/* KROK 5 */}
+                          <div className="bg-orange-50/80 dark:bg-orange-900/20 rounded-lg p-3 border-l-4 border-orange-500">
+                            <div className="flex items-start gap-2">
+                              <div className="flex-shrink-0 w-6 h-6 rounded-full bg-orange-500 text-white flex items-center justify-center text-[10px] font-bold">5</div>
+                              <div className="flex-1">
+                                <div className="font-bold text-xs text-slate-800 dark:text-slate-100 mb-1">SPRAWDŹ BUFOR / ZASOBNIK</div>
+                                <div className="bg-white/60 dark:bg-slate-900/40 p-2 rounded border border-orange-200 dark:border-orange-800 mt-1">
+                                  <p className="text-[10px] text-slate-600 dark:text-slate-400">
+                                    <strong>jeżeli bufor istnieje:</strong><br />
+                                    P<sub>bufor</sub> = (m · c · ΔT) / t
+                                  </p>
+                                  <p className="text-[10px] text-slate-600 dark:text-slate-400 mt-1">
+                                    <strong>jeżeli nie:</strong> P<sub>bufor</sub> = 0
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex justify-center">
+                            <div className="w-0.5 h-4 bg-gradient-to-b from-orange-400 to-red-400"></div>
+                          </div>
+
+                          {/* KROK 6 */}
+                          <div className="bg-red-50/80 dark:bg-red-900/20 rounded-lg p-3 border-l-4 border-red-500">
+                            <div className="flex items-start gap-2">
+                              <div className="flex-shrink-0 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center text-[10px] font-bold">6</div>
+                              <div className="flex-1">
+                                <div className="font-bold text-xs text-slate-800 dark:text-slate-100 mb-1">WYZNACZ MOC ZAMÓWIONĄ</div>
+                                <div className="bg-white/60 dark:bg-slate-900/40 p-2 rounded border border-red-200 dark:border-red-800 mt-1">
+                                  <div className="text-center text-sm font-bold text-slate-800 dark:text-slate-100">
+                                    P<sub>zamówiona</sub> = P<sub>1</sub> + P<sub>2</sub> − P<sub>bufor</sub>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex justify-center">
+                            <div className="w-0.5 h-4 bg-gradient-to-b from-red-400 to-purple-400"></div>
+                          </div>
+
+                          {/* WYNIK */}
+                          <div className="bg-gradient-to-br from-purple-100 to-violet-100 dark:from-purple-900/30 dark:to-violet-900/30 rounded-lg p-3 border-2 border-purple-400 dark:border-purple-600">
+                            <div className="flex items-start gap-2">
+                              <div className="flex-shrink-0 w-6 h-6 rounded-full bg-purple-600 text-white flex items-center justify-center text-[10px] font-bold">✓</div>
+                              <div className="flex-1">
+                                <div className="font-bold text-xs text-slate-800 dark:text-slate-100 mb-1">WYNIK + INTERPRETACJA</div>
+                                <ul className="text-[10px] text-slate-600 dark:text-slate-400 space-y-0.5">
+                                  <li>• moc zamówiona [kW]</li>
+                                  <li>• uzasadnienie techniczne (pik + straty + bufor)</li>
+                                  <li>• analiza kosztowa (opłata stała vs. rzeczywiste zużycie)</li>
+                                </ul>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex justify-center">
+                            <div className="w-0.5 h-4 bg-gradient-to-b from-purple-400 to-violet-600"></div>
+                          </div>
+
+                          {/* STOP */}
+                          <div className="flex items-center justify-center gap-2">
+                            <div className="w-16 h-8 rounded-full bg-gradient-to-r from-purple-600 to-violet-600 text-white flex items-center justify-center text-[10px] font-bold">
+                              STOP
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Co uwzględnia */}
+                      <div>
+                        <div className="font-semibold text-slate-700 dark:text-slate-200 mb-2">Co uwzględnia metoda programowa</div>
+                        
+                        <div className="space-y-3">
+                          {/* 1. Struktura */}
+                          <div>
+                            <div className="font-medium text-slate-700 dark:text-slate-200 text-xs mb-1">🔧 1. Struktura budynku</div>
+                            <ul className="text-[11px] list-disc pl-5 space-y-0.5 text-slate-600 dark:text-slate-400">
+                              <li>liczba mieszkań</li>
+                              <li>liczba pionów</li>
+                              <li>wyposażenie (prysznic / wanna)</li>
+                              <li>liczba mieszkańców</li>
+                            </ul>
+                            <p className="text-[11px] mt-1 text-slate-600 dark:text-slate-400">→ Dzięki temu wiemy, ile <strong>punktów poboru</strong> faktycznie istnieje.</p>
+                          </div>
+
+                          {/* 2. Statystyka */}
+                          <div>
+                            <div className="font-medium text-slate-700 dark:text-slate-200 text-xs mb-1">🔧 2. Statystyczny pik rozbioru (z PN-EN 806-3)</div>
+                            <p className="text-[11px] text-slate-600 dark:text-slate-400">
+                              Każdy punkt poboru ↔ jednostki obciążenia (LU).<br />
+                              Z LU wyznaczamy jednostkowy przepływ Q<sub>peak</sub>.
+                            </p>
+                            <div className="bg-white/60 dark:bg-slate-900/40 p-2 rounded-lg border border-violet-200 dark:border-violet-800 mt-1">
+                              <p className="text-[11px] italic text-slate-600 dark:text-slate-400">
+                                Czyli zamiast „wszyscy odkręcą kran na raz", mamy:<br />
+                                <strong>„z prawdopodobieństwem 95% w tym budynku wystąpi przepływ X L/s."</strong>
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* 3. Bilans */}
+                          <div>
+                            <div className="font-medium text-slate-700 dark:text-slate-200 text-xs mb-1">🔧 3. Bilans energetyczny (realna energia podgrzania)</div>
+                            <div className="bg-white/60 dark:bg-slate-900/40 p-2 rounded-lg border border-violet-200 dark:border-violet-800">
+                              <div className="text-center">
+                                <KatexFormula formula="P = Q_{peak} \cdot c \cdot (T_{CWU} - T_Z)" displayMode={true} />
+                              </div>
+                              <p className="text-[10px] text-center text-slate-600 dark:text-slate-400 mt-1">
+                                Tu w końcu <strong>fizyka</strong> dostaje głos.
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* 4. Straty */}
+                          <div>
+                            <div className="font-medium text-slate-700 dark:text-slate-200 text-xs mb-1">🔧 4. Straty na cyrkulacji – dwie metody</div>
+                            
+                            {/* Metoda teoretyczna */}
+                            <div className="bg-white/60 dark:bg-slate-900/40 p-2 rounded-lg border border-violet-200 dark:border-violet-800 mb-2">
+                              <div className="font-semibold text-[10px] text-slate-700 dark:text-slate-300 mb-1">📐 Metoda teoretyczna (UA)</div>
+                              <p className="text-[11px] text-slate-600 dark:text-slate-400 mb-1">
+                                Straty ciepła zależą od: izolacji rur, temperatury otoczenia, prędkości przepływu, długości instalacji.
+                              </p>
+                              <div className="text-center">
+                                <KatexFormula formula="Q_{straty} = U \cdot A \cdot (T_{CWU} - T_{otoczenia})" displayMode={true} />
+                              </div>
+                              <p className="text-[9px] text-slate-500 dark:text-slate-500 italic mt-1">Standardowe podejście projektowe</p>
+                            </div>
+
+                            {/* Metoda praktyczna z faktur - POLECANA */}
+                            <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/30 dark:to-emerald-900/30 p-3 rounded-lg border-2 border-green-400 dark:border-green-600">
+                              <div className="flex items-center gap-1 mb-2">
+                                <div className="font-semibold text-[11px] text-green-800 dark:text-green-300">💡 Metoda praktyczna – dane z faktur VAT</div>
+                                <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-green-200 dark:bg-green-800 text-green-800 dark:text-green-200 font-bold">POLECANE</span>
+                              </div>
+                              
+                              <div className="space-y-2">
+                                <p className="text-[11px] text-slate-700 dark:text-slate-300 font-medium">
+                                  Zamiast liczyć teoretycznie, <strong>sprawdź faktyczny koszt</strong> cyrkulacji w Twoim budynku:
+                                </p>
+                                
+                                <div className="bg-white/70 dark:bg-slate-900/40 p-2 rounded border border-green-300 dark:border-green-700">
+                                  <div className="text-[10px] text-slate-700 dark:text-slate-300 space-y-1">
+                                    <div className="flex items-start gap-1">
+                                      <span className="flex-shrink-0 font-bold">1.</span>
+                                      <span>Pobierz <strong>faktury VAT za CWU</strong> za ostatni rok (np. 450 000 kWh)</span>
+                                    </div>
+                                    <div className="flex items-start gap-1">
+                                      <span className="flex-shrink-0 font-bold">2.</span>
+                                      <span>Zsumuj <strong>odczyty liczników mieszkań</strong> (np. 280 000 kWh)</span>
+                                    </div>
+                                    <div className="flex items-start gap-1">
+                                      <span className="flex-shrink-0 font-bold">3.</span>
+                                      <span className="font-bold text-green-800 dark:text-green-300">Różnica = rzeczywiste straty cyrkulacji</span>
+                                    </div>
+                                    <div className="flex items-start gap-1">
+                                      <span className="flex-shrink-0 font-bold">4.</span>
+                                      <span>Przelicz na moc: <strong>P<sub>straty</sub> = E<sub>straty</sub> / 8760 h</strong></span>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div className="bg-amber-50/70 dark:bg-amber-900/30 p-2 rounded border border-amber-300 dark:border-amber-700">
+                                  <p className="text-[10px] font-semibold text-amber-900 dark:text-amber-300 mb-1">📊 Przykład z rzeczywistości:</p>
+                                  <div className="text-[9px] text-slate-700 dark:text-slate-300 space-y-0.5">
+                                    <div>• Energia z faktury: <strong>450 000 kWh/rok</strong></div>
+                                    <div>• Liczniki mieszkań: <strong>280 000 kWh/rok</strong></div>
+                                    <div className="pt-1 border-t border-amber-300 dark:border-amber-700">
+                                      • Straty cyrkulacji: <strong>170 000 kWh/rok</strong>
+                                    </div>
+                                    <div>• Średnia moc strat: <strong>170 000 ÷ 8760 = 19,4 kW</strong></div>
+                                    <div className="pt-1 border-t border-amber-300 dark:border-amber-700 font-bold text-amber-900 dark:text-amber-300">
+                                      • Koszt strat: 170 000 × 0,65 zł = <strong>110 500 zł/rok</strong> 💸
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div className="bg-violet-50/70 dark:bg-violet-900/30 p-2 rounded border border-violet-300 dark:border-violet-700">
+                                  <p className="text-[10px] font-bold text-violet-800 dark:text-violet-300 mb-1">⚡ Dlaczego ta metoda jest lepsza?</p>
+                                  <ul className="text-[9px] text-slate-700 dark:text-slate-300 space-y-0.5">
+                                    <li>✓ Opiera się na <strong>faktach, nie teorii</strong></li>
+                                    <li>✓ Uwzględnia <strong>rzeczywisty stan techniczny</strong> instalacji (dziury w izolacji, nieszczelności)</li>
+                                    <li>✓ Eliminuje błędy projektowe i <strong>uproszczenia normowe</strong></li>
+                                    <li>✓ Pokazuje <strong>prawdziwy koszt eksploatacji</strong> (argument do negocjacji mocy)</li>
+                                    <li>✓ Pozwala wyliczyć <strong>potencjalne oszczędności</strong> po termomodernizacji</li>
+                                  </ul>
+                                </div>
+
+                                <div className="bg-blue-50/70 dark:bg-blue-900/30 p-2 rounded border border-blue-300 dark:border-blue-700">
+                                  <p className="text-[10px] font-bold text-blue-800 dark:text-blue-300 mb-1">💰 Oszczędności po modernizacji:</p>
+                                  <p className="text-[9px] text-slate-700 dark:text-slate-300">
+                                    Jeśli po dociepleniu instalacji straty spadną o <strong>30%</strong>:<br />
+                                    → Oszczędność: 51 000 kWh/rok × 0,65 zł = <strong>33 150 zł/rok</strong><br />
+                                    → Zwrot inwestycji w <strong>ciepłochrony</strong> często poniżej 5 lat!
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* 5. Bufor */}
+                          <div>
+                            <div className="font-medium text-slate-700 dark:text-slate-200 text-xs mb-1">🔧 5. Bufor / zasobnik (czas nagrzewania)</div>
+                            <p className="text-[11px] text-slate-600 dark:text-slate-400">
+                              Jeśli masz bufor (np. 1000 L), nie musisz pokrywać całego piku natychmiast – możesz mieć niższą moc i dłuższy czas nagrzewania.
+                            </p>
+                            <div className="bg-white/60 dark:bg-slate-900/40 p-2 rounded-lg border border-violet-200 dark:border-violet-800 mt-1">
+                              <div className="text-center">
+                                <KatexFormula formula="P = \dfrac{m \cdot c \cdot \Delta T}{t}" displayMode={true} />
+                              </div>
+                              <p className="text-[10px] text-center text-slate-600 dark:text-slate-400 mt-1">
+                                Czas <strong>t</strong> dobiera projektant (np. 10–15 min nagrzewania między pikami).
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Rezultat końcowy */}
+                      <div className="bg-violet-100/50 dark:bg-violet-900/20 p-3 rounded-lg border border-violet-300 dark:border-violet-700">
+                        <div className="font-semibold text-slate-700 dark:text-slate-200 mb-2">Rezultat końcowy</div>
+                        <div className="bg-white/60 dark:bg-slate-900/40 p-3 rounded-lg border border-violet-200 dark:border-violet-800">
+                          <div className="text-center mb-2">
+                            <KatexFormula formula="P_{zam} = P_{peak} + Q_{straty} + P_{bufor} + \text{rezerwa}" displayMode={true} />
+                          </div>
+                          <p className="text-[11px] text-center text-slate-700 dark:text-slate-300">
+                            Jeżeli wynik mówi, że zamiast 112 kW wystarczy 72 kW – to nie opinia, tylko <strong>twarde dane</strong>.
+                          </p>
+                        </div>
+                        <p className="text-[11px] mt-2 text-slate-600 dark:text-slate-400 italic">
+                          Im mniejsza moc zamówiona, tym mniejsza opłata stała.<br />
+                          „Przepraszam, ale ja tu przyszedłem z Excelem, nie z czarną magią."
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
           <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur border-0 shadow-xl">
             <CardHeader>
               <CardTitle>Wyniki</CardTitle>
