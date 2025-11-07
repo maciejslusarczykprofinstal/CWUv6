@@ -113,6 +113,29 @@ function qpeakFromLU({
   const [miniBE_result, setMiniBE_result] = useState<{P: number} | null>(null);
   const [miniBE_chartData, setMiniBE_chartData] = useState<Array<{t: number; P: number}>>([]);
 
+  // State dla mini-kalkulatora moc/czas rozbioru
+  const [miniMCR_scenariusz, setMiniMCR_scenariusz] = useState<'rano' | 'wieczor'>('rano');
+  const [miniMCR_prysznice, setMiniMCR_prysznice] = useState(3);
+  const [miniMCR_umywalki, setMiniMCR_umywalki] = useState(2);
+  const [miniMCR_qPrysznic, setMiniMCR_qPrysznic] = useState(0.15); // L/s
+  const [miniMCR_qUmywalka, setMiniMCR_qUmywalka] = useState(0.1); // L/s
+  const [miniMCR_dT, setMiniMCR_dT] = useState(47);
+  const [miniMCR_result, setMiniMCR_result] = useState<{Qmax: number; P: number} | null>(null);
+  const [miniMCR_chartData, setMiniMCR_chartData] = useState<Array<{czas: string; Q: number}>>([]);
+
+  // State dla mini-kalkulatora peak demand
+  const [miniPD_Ppeak, setMiniPD_Ppeak] = useState(85);
+  const [miniPD_marginesProc, setMiniPD_marginesProc] = useState(10);
+  const [miniPD_stawkaKW, setMiniPD_stawkaKW] = useState(150); // PLN/kW/rok
+  const [miniPD_result, setMiniPD_result] = useState<{Pzam: number; kosztRoczny: number} | null>(null);
+  const [miniPD_chartData, setMiniPD_chartData] = useState<Array<{margines: number; koszt: number}>>([]);
+
+  // State dla mini-kalkulatora krzywa mocy
+  const [miniKM_Pmax, setMiniKM_Pmax] = useState(100);
+  const [miniKM_liczbaPomiarow, setMiniKM_liczbaPomiarow] = useState(500);
+  const [miniKM_result, setMiniKM_result] = useState<{P50: number; P90: number; P95: number; P99: number} | null>(null);
+  const [miniKM_chartData, setMiniKM_chartData] = useState<Array<{przedział: string; liczba: number}>>([]);
+
   function calculateMiniEN() {
     const FU = miniEN_umywalki * 0.5 + miniEN_zlewozmywaki * 0.7 + miniEN_prysznice * 1.0 + miniEN_wanny * 1.5;
     const qd = FU > 0 ? Math.sqrt(Math.max(FU - 1, 0)) * 0.5 : 0;
@@ -172,6 +195,82 @@ function qpeakFromLU({
       chartData.push({ t: t_min, P: +P_chart.toFixed(1) });
     }
     setMiniBE_chartData(chartData);
+  }
+
+  function calculateMiniMCR() {
+    // Qmax = suma przepływów jednocześnie działających armatury
+    const Qmax = miniMCR_prysznice * miniMCR_qPrysznic + miniMCR_umywalki * miniMCR_qUmywalka;
+    const P = 1.163 * Qmax * miniMCR_dT;
+    setMiniMCR_result({ Qmax, P });
+    
+    // Przykładowy profil rozbioru w czasie (rano: 6:00-9:00, wieczór: 18:00-22:00)
+    const chartData = [];
+    if (miniMCR_scenariusz === 'rano') {
+      chartData.push({ czas: '6:00', Q: 0 });
+      chartData.push({ czas: '6:30', Q: Qmax * 0.3 });
+      chartData.push({ czas: '7:00', Q: Qmax * 0.8 });
+      chartData.push({ czas: '7:30', Q: Qmax });
+      chartData.push({ czas: '8:00', Q: Qmax * 0.6 });
+      chartData.push({ czas: '8:30', Q: Qmax * 0.2 });
+      chartData.push({ czas: '9:00', Q: 0 });
+    } else {
+      chartData.push({ czas: '18:00', Q: 0 });
+      chartData.push({ czas: '19:00', Q: Qmax * 0.4 });
+      chartData.push({ czas: '20:00', Q: Qmax * 0.9 });
+      chartData.push({ czas: '21:00', Q: Qmax * 0.7 });
+      chartData.push({ czas: '22:00', Q: 0 });
+    }
+    setMiniMCR_chartData(chartData);
+  }
+
+  function calculateMiniPD() {
+    const Pzam = miniPD_Ppeak * (1 + miniPD_marginesProc / 100);
+    const kosztRoczny = Pzam * miniPD_stawkaKW;
+    setMiniPD_result({ Pzam, kosztRoczny });
+    
+    // Wykres wpływu marginesu na koszt (0-30%)
+    const chartData = [];
+    for (let m = 0; m <= 30; m += 2) {
+      const P = miniPD_Ppeak * (1 + m / 100);
+      const koszt = P * miniPD_stawkaKW;
+      chartData.push({ margines: m, koszt: +koszt.toFixed(0) });
+    }
+    setMiniPD_chartData(chartData);
+  }
+
+  function calculateMiniKM() {
+    // Generuj rozkład z rozkładu normalnego (symulacja pomiarów)
+    const measurements: number[] = [];
+    for (let i = 0; i < miniKM_liczbaPomiarow; i++) {
+      // Box-Muller dla rozkładu normalnego: mean = 0.6*Pmax, stdDev = 0.15*Pmax
+      const u1 = Math.random();
+      const u2 = Math.random();
+      const z = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+      const value = Math.max(0, miniKM_Pmax * 0.6 + z * miniKM_Pmax * 0.15);
+      measurements.push(value);
+    }
+    measurements.sort((a, b) => a - b);
+    
+    // Percentyle
+    const P50 = measurements[Math.floor(miniKM_liczbaPomiarow * 0.50)];
+    const P90 = measurements[Math.floor(miniKM_liczbaPomiarow * 0.90)];
+    const P95 = measurements[Math.floor(miniKM_liczbaPomiarow * 0.95)];
+    const P99 = measurements[Math.floor(miniKM_liczbaPomiarow * 0.99)];
+    setMiniKM_result({ P50, P90, P95, P99 });
+    
+    // Histogram (10 przedziałów)
+    const bins = 10;
+    const binWidth = miniKM_Pmax / bins;
+    const histogram = new Array(bins).fill(0);
+    measurements.forEach(m => {
+      const binIndex = Math.min(Math.floor(m / binWidth), bins - 1);
+      histogram[binIndex]++;
+    });
+    const chartData = histogram.map((count, i) => ({
+      przedział: `${(i * binWidth).toFixed(0)}-${((i + 1) * binWidth).toFixed(0)}`,
+      liczba: count
+    }));
+    setMiniKM_chartData(chartData);
   }
 
   function calculate() {
@@ -1332,6 +1431,74 @@ function qpeakFromLU({
                           Ten sposób <strong>nie zależy od żadnej normy</strong> — bazuje na fizyce i założonym scenariuszu pracy instalacji.
                         </p>
                       </div>
+
+                      {/* Mini-kalkulator moc/czas rozbioru */}
+                      <div className="mt-4 space-y-3 border-t pt-3">
+                        <div className="font-semibold text-slate-700 dark:text-slate-200">🔧 Kalkulator scenariuszy peaktime</div>
+                        <div className="space-y-2 text-xs">
+                          <label className="flex items-center gap-2">
+                            <span className="font-medium">Scenariusz:</span>
+                            <select value={miniMCR_scenariusz} onChange={e=>setMiniMCR_scenariusz(e.target.value as 'rano'|'wieczor')} className="rounded border px-2 py-1 bg-white dark:bg-slate-800">
+                              <option value="rano">Poranek (6:00-9:00)</option>
+                              <option value="wieczor">Wieczór (18:00-22:00)</option>
+                            </select>
+                          </label>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                          <label className="flex flex-col gap-1">
+                            <span>Prysznice jednocześnie</span>
+                            <Input type="number" value={miniMCR_prysznice} onChange={e=>setMiniMCR_prysznice(+e.target.value)} className="h-8 text-xs" />
+                          </label>
+                          <label className="flex flex-col gap-1">
+                            <span>Q prysznica [L/s]</span>
+                            <Input type="number" step="0.01" value={miniMCR_qPrysznic} onChange={e=>setMiniMCR_qPrysznic(+e.target.value)} className="h-8 text-xs" />
+                          </label>
+                          <label className="flex flex-col gap-1">
+                            <span>Umywalki jednocześnie</span>
+                            <Input type="number" value={miniMCR_umywalki} onChange={e=>setMiniMCR_umywalki(+e.target.value)} className="h-8 text-xs" />
+                          </label>
+                          <label className="flex flex-col gap-1">
+                            <span>Q umywalki [L/s]</span>
+                            <Input type="number" step="0.01" value={miniMCR_qUmywalka} onChange={e=>setMiniMCR_qUmywalka(+e.target.value)} className="h-8 text-xs" />
+                          </label>
+                          <label className="flex flex-col gap-1 col-span-2">
+                            <span>ΔT [K]</span>
+                            <Input type="number" value={miniMCR_dT} onChange={e=>setMiniMCR_dT(+e.target.value)} className="h-8 text-xs" />
+                          </label>
+                        </div>
+                        <Button onClick={calculateMiniMCR} size="sm" variant="outline" className="w-full text-xs">
+                          Oblicz scenariusz →
+                        </Button>
+                        {miniMCR_result && (
+                          <div className="bg-white/70 dark:bg-slate-900/50 p-3 rounded-lg border border-purple-200 dark:border-purple-800 space-y-2">
+                            <div className="grid grid-cols-2 gap-2 text-xs">
+                              <div>
+                                <div className="text-[10px] opacity-70">Q<sub>max</sub> [L/s]</div>
+                                <div className="font-bold text-purple-700 dark:text-purple-400">{miniMCR_result.Qmax.toFixed(2)}</div>
+                              </div>
+                              <div>
+                                <div className="text-[10px] opacity-70">P pik [kW]</div>
+                                <div className="font-bold text-purple-700 dark:text-purple-400">{miniMCR_result.P.toFixed(1)}</div>
+                              </div>
+                            </div>
+                            <div className="text-[10px] italic text-slate-600 dark:text-slate-400">
+                              Scenariusz: {miniMCR_scenariusz === 'rano' ? 'poranny pik 7:30' : 'wieczorny pik 20:00'}
+                            </div>
+                            {miniMCR_chartData.length > 0 && (
+                              <div className="h-40 w-full mt-2">
+                                <ResponsiveContainer width="100%" height="100%">
+                                  <LineChart data={miniMCR_chartData} margin={{top:5,right:10,left:0,bottom:5}}>
+                                    <XAxis dataKey="czas" tick={{fontSize:9}} label={{value: 'Godzina', position: 'insideBottom', offset: -5, fontSize: 10}} />
+                                    <YAxis tick={{fontSize:9}} label={{value: 'Q [L/s]', angle: -90, position: 'insideLeft', fontSize: 10}} />
+                                    <Tooltip formatter={(value:number)=>value.toFixed(2)+" L/s"} contentStyle={{fontSize: 11}} />
+                                    <Line type="monotone" dataKey="Q" stroke="#9333ea" strokeWidth={2} dot={{r: 4}} />
+                                  </LineChart>
+                                </ResponsiveContainer>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1369,6 +1536,57 @@ function qpeakFromLU({
                         <p className="text-xs">
                           👉 <strong>Najbardziej uczciwa metoda finansowo</strong>, bo opiera się na realnym zużyciu, nie na „gdybaniu norm".
                         </p>
+                      </div>
+
+                      {/* Mini-kalkulator peak demand */}
+                      <div className="mt-4 space-y-3 border-t pt-3">
+                        <div className="font-semibold text-slate-700 dark:text-slate-200">🔧 Analiza marginesu bezpieczeństwa</div>
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                          <label className="flex flex-col gap-1">
+                            <span>P<sub>peak</sub> zmierzone [kW]</span>
+                            <Input type="number" value={miniPD_Ppeak} onChange={e=>setMiniPD_Ppeak(+e.target.value)} className="h-8 text-xs" />
+                          </label>
+                          <label className="flex flex-col gap-1">
+                            <span>Margines [%]</span>
+                            <Input type="number" value={miniPD_marginesProc} onChange={e=>setMiniPD_marginesProc(+e.target.value)} className="h-8 text-xs" />
+                          </label>
+                          <label className="flex flex-col gap-1 col-span-2">
+                            <span>Stawka mocy [PLN/kW/rok]</span>
+                            <Input type="number" value={miniPD_stawkaKW} onChange={e=>setMiniPD_stawkaKW(+e.target.value)} className="h-8 text-xs" />
+                          </label>
+                        </div>
+                        <Button onClick={calculateMiniPD} size="sm" variant="outline" className="w-full text-xs">
+                          Oblicz →
+                        </Button>
+                        {miniPD_result && (
+                          <div className="bg-white/70 dark:bg-slate-900/50 p-3 rounded-lg border border-red-200 dark:border-red-800 space-y-2">
+                            <div className="grid grid-cols-2 gap-2 text-xs">
+                              <div>
+                                <div className="text-[10px] opacity-70">P<sub>zam</sub> [kW]</div>
+                                <div className="font-bold text-red-700 dark:text-red-400">{miniPD_result.Pzam.toFixed(1)}</div>
+                              </div>
+                              <div>
+                                <div className="text-[10px] opacity-70">Koszt/rok [PLN]</div>
+                                <div className="font-bold text-red-700 dark:text-red-400">{miniPD_result.kosztRoczny.toLocaleString('pl-PL')}</div>
+                              </div>
+                            </div>
+                            <div className="text-[10px] italic text-slate-600 dark:text-slate-400">
+                              P<sub>zam</sub> = {miniPD_Ppeak} × (1 + {miniPD_marginesProc}%) = {miniPD_result.Pzam.toFixed(1)} kW
+                            </div>
+                            {miniPD_chartData.length > 0 && (
+                              <div className="h-40 w-full mt-2">
+                                <ResponsiveContainer width="100%" height="100%">
+                                  <LineChart data={miniPD_chartData} margin={{top:5,right:10,left:0,bottom:5}}>
+                                    <XAxis dataKey="margines" tick={{fontSize:9}} label={{value: 'Margines [%]', position: 'insideBottom', offset: -5, fontSize: 10}} />
+                                    <YAxis tick={{fontSize:9}} label={{value: 'Koszt roczny [PLN]', angle: -90, position: 'insideLeft', fontSize: 10}} />
+                                    <Tooltip formatter={(value:number)=>value.toLocaleString('pl-PL')+" PLN"} labelFormatter={(label)=>`Margines ${label}%`} contentStyle={{fontSize: 11}} />
+                                    <Line type="monotone" dataKey="koszt" stroke="#dc2626" strokeWidth={2} dot={false} />
+                                  </LineChart>
+                                </ResponsiveContainer>
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -1408,6 +1626,61 @@ function qpeakFromLU({
                           <strong>Metoda audytorska par excellence</strong> – łączy analizę statystyczną z pragmatyzmem ekonomicznym. 
                           Brzmi jak magia Excela, ale działa.
                         </p>
+                      </div>
+
+                      {/* Mini-kalkulator krzywa mocy */}
+                      <div className="mt-4 space-y-3 border-t pt-3">
+                        <div className="font-semibold text-slate-700 dark:text-slate-200">🔧 Generator krzywej obciążenia</div>
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                          <label className="flex flex-col gap-1">
+                            <span>P<sub>max</sub> [kW]</span>
+                            <Input type="number" value={miniKM_Pmax} onChange={e=>setMiniKM_Pmax(+e.target.value)} className="h-8 text-xs" />
+                          </label>
+                          <label className="flex flex-col gap-1">
+                            <span>Liczba pomiarów</span>
+                            <Input type="number" value={miniKM_liczbaPomiarow} onChange={e=>setMiniKM_liczbaPomiarow(+e.target.value)} className="h-8 text-xs" />
+                          </label>
+                        </div>
+                        <Button onClick={calculateMiniKM} size="sm" variant="outline" className="w-full text-xs">
+                          Generuj histogram →
+                        </Button>
+                        {miniKM_result && (
+                          <div className="bg-white/70 dark:bg-slate-900/50 p-3 rounded-lg border border-cyan-200 dark:border-cyan-800 space-y-2">
+                            <div className="grid grid-cols-4 gap-2 text-xs">
+                              <div>
+                                <div className="text-[10px] opacity-70">P<sub>50%</sub></div>
+                                <div className="font-bold text-cyan-700 dark:text-cyan-400">{miniKM_result.P50.toFixed(0)}</div>
+                              </div>
+                              <div>
+                                <div className="text-[10px] opacity-70">P<sub>90%</sub></div>
+                                <div className="font-bold text-cyan-700 dark:text-cyan-400">{miniKM_result.P90.toFixed(0)}</div>
+                              </div>
+                              <div>
+                                <div className="text-[10px] opacity-70">P<sub>95%</sub></div>
+                                <div className="font-bold text-cyan-700 dark:text-cyan-400">{miniKM_result.P95.toFixed(0)}</div>
+                              </div>
+                              <div>
+                                <div className="text-[10px] opacity-70">P<sub>99%</sub></div>
+                                <div className="font-bold text-cyan-700 dark:text-cyan-400">{miniKM_result.P99.toFixed(0)}</div>
+                              </div>
+                            </div>
+                            <div className="text-[10px] italic text-slate-600 dark:text-slate-400">
+                              95% pomiarów {"<"} {miniKM_result.P95.toFixed(0)} kW → zalecana moc zamówiona
+                            </div>
+                            {miniKM_chartData.length > 0 && (
+                              <div className="h-40 w-full mt-2">
+                                <ResponsiveContainer width="100%" height="100%">
+                                  <LineChart data={miniKM_chartData} margin={{top:5,right:10,left:0,bottom:5}}>
+                                    <XAxis dataKey="przedział" tick={{fontSize:8}} angle={-45} textAnchor="end" height={60} />
+                                    <YAxis tick={{fontSize:9}} label={{value: 'Liczba pomiarów', angle: -90, position: 'insideLeft', fontSize: 10}} />
+                                    <Tooltip contentStyle={{fontSize: 11}} />
+                                    <Line type="monotone" dataKey="liczba" stroke="#0891b2" strokeWidth={2} fill="#0891b2" />
+                                  </LineChart>
+                                </ResponsiveContainer>
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
