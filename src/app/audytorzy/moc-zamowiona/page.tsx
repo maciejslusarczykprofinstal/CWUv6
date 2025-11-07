@@ -1863,11 +1863,58 @@ function qpeakFromLU({
                               <div className="flex-shrink-0 w-6 h-6 rounded-full bg-amber-500 text-white flex items-center justify-center text-[10px] font-bold">4</div>
                               <div className="flex-1">
                                 <div className="font-bold text-xs text-slate-800 dark:text-slate-100 mb-1">OBLICZ STRATY CYRKULACJI (P<sub>2</sub>)</div>
-                                <ul className="text-[10px] text-slate-600 dark:text-slate-400 space-y-0.5 mb-1">
-                                  <li>• dla każdej sekcji: Q<sub>straty</sub> = U · A · (T<sub>cw</sub> − T<sub>otoczenia</sub>)</li>
-                                  <li>• gdzie A = π · d · L</li>
-                                  <li>• sumuj straty wszystkich odcinków: P<sub>2</sub> = Σ Q<sub>straty</sub></li>
-                                </ul>
+                                
+                                {/* Opcja A - teoretyczna */}
+                                <div className="bg-white/60 dark:bg-slate-900/40 p-2 rounded border border-amber-300 dark:border-amber-700 mb-2">
+                                  <div className="font-semibold text-[10px] text-amber-800 dark:text-amber-300 mb-1">📐 OPCJA A: Obliczenia teoretyczne (UA)</div>
+                                  <ul className="text-[10px] text-slate-600 dark:text-slate-400 space-y-0.5">
+                                    <li>• dla każdej sekcji: Q<sub>straty</sub> = U · A · (T<sub>cw</sub> − T<sub>otoczenia</sub>)</li>
+                                    <li>• gdzie A = π · d · L</li>
+                                    <li>• sumuj straty wszystkich odcinków: P<sub>2</sub> = Σ Q<sub>straty</sub></li>
+                                  </ul>
+                                  <p className="text-[9px] text-slate-500 dark:text-slate-500 italic mt-1">Standardowe podejście projektowe</p>
+                                </div>
+
+                                {/* Opcja B - praktyczna z faktur */}
+                                <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/30 dark:to-emerald-900/30 p-2 rounded border-2 border-green-400 dark:border-green-600">
+                                  <div className="flex items-center gap-1 mb-1">
+                                    <div className="font-semibold text-[10px] text-green-800 dark:text-green-300">💡 OPCJA B: Dane rzeczywiste z faktur</div>
+                                    <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-green-200 dark:bg-green-800 text-green-800 dark:text-green-200 font-bold">POLECANE</span>
+                                  </div>
+                                  <ul className="text-[10px] text-slate-700 dark:text-slate-300 space-y-1">
+                                    <li className="flex items-start gap-1">
+                                      <span className="flex-shrink-0">1.</span>
+                                      <span>Pobierz faktury VAT za <strong>12 miesięcy</strong> (energia na CWU)</span>
+                                    </li>
+                                    <li className="flex items-start gap-1">
+                                      <span className="flex-shrink-0">2.</span>
+                                      <span>Odejmij energie na <strong>faktyczne rozbiory</strong> (liczniki mieszkań)</span>
+                                    </li>
+                                    <li className="flex items-start gap-1">
+                                      <span className="flex-shrink-0">3.</span>
+                                      <span>Pozostała różnica = <strong>straty cyrkulacji w rzeczywistości</strong></span>
+                                    </li>
+                                    <li className="flex items-start gap-1">
+                                      <span className="flex-shrink-0">4.</span>
+                                      <span>Przelicz na moc: P<sub>2</sub> = E<sub>straty</sub> / (8760 h)</span>
+                                    </li>
+                                  </ul>
+                                  <div className="bg-white/60 dark:bg-slate-900/40 p-2 rounded border border-green-300 dark:border-green-700 mt-2">
+                                    <p className="text-[9px] font-medium text-slate-700 dark:text-slate-300 text-center">
+                                      <strong>Przykład:</strong> Faktura roczna 450 000 kWh, rozbiory mieszkańców 280 000 kWh<br />
+                                      → Straty = 170 000 kWh/rok ≈ <strong>19,4 kW średniej mocy strat</strong>
+                                    </p>
+                                  </div>
+                                  <div className="mt-2 text-[9px] text-green-800 dark:text-green-300 font-medium italic border-t border-green-300 dark:border-green-700 pt-1.5">
+                                    ⚡ Dlaczego opcja B jest lepsza?<br />
+                                    <span className="text-[8px] text-slate-600 dark:text-slate-400 font-normal">
+                                      • Opiera się na faktach, nie teorii<br />
+                                      • Uwzględnia <strong>rzeczywisty stan techniczny</strong> instalacji<br />
+                                      • Eliminuje błędy projektowe i uproszczenia normowe<br />
+                                      • Odzwierciedla faktyczne <strong>koszty eksploatacji</strong>
+                                    </span>
+                                  </div>
+                                </div>
                               </div>
                             </div>
                           </div>
@@ -1989,13 +2036,87 @@ function qpeakFromLU({
 
                           {/* 4. Straty */}
                           <div>
-                            <div className="font-medium text-slate-700 dark:text-slate-200 text-xs mb-1">🔧 4. Straty na cyrkulacji</div>
-                            <p className="text-[11px] text-slate-600 dark:text-slate-400">
-                              Straty ciepła zależą od: izolacji rur, temperatury otoczenia (węzeł/piwnica), prędkości przepływu w cyrkulacji, długości instalacji.
-                            </p>
-                            <div className="bg-white/60 dark:bg-slate-900/40 p-2 rounded-lg border border-violet-200 dark:border-violet-800 mt-1">
+                            <div className="font-medium text-slate-700 dark:text-slate-200 text-xs mb-1">🔧 4. Straty na cyrkulacji – dwie metody</div>
+                            
+                            {/* Metoda teoretyczna */}
+                            <div className="bg-white/60 dark:bg-slate-900/40 p-2 rounded-lg border border-violet-200 dark:border-violet-800 mb-2">
+                              <div className="font-semibold text-[10px] text-slate-700 dark:text-slate-300 mb-1">📐 Metoda teoretyczna (UA)</div>
+                              <p className="text-[11px] text-slate-600 dark:text-slate-400 mb-1">
+                                Straty ciepła zależą od: izolacji rur, temperatury otoczenia, prędkości przepływu, długości instalacji.
+                              </p>
                               <div className="text-center">
                                 <KatexFormula formula="Q_{straty} = U \cdot A \cdot (T_{CWU} - T_{otoczenia})" displayMode={true} />
+                              </div>
+                              <p className="text-[9px] text-slate-500 dark:text-slate-500 italic mt-1">Standardowe podejście projektowe</p>
+                            </div>
+
+                            {/* Metoda praktyczna z faktur - POLECANA */}
+                            <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/30 dark:to-emerald-900/30 p-3 rounded-lg border-2 border-green-400 dark:border-green-600">
+                              <div className="flex items-center gap-1 mb-2">
+                                <div className="font-semibold text-[11px] text-green-800 dark:text-green-300">💡 Metoda praktyczna – dane z faktur VAT</div>
+                                <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-green-200 dark:bg-green-800 text-green-800 dark:text-green-200 font-bold">POLECANE</span>
+                              </div>
+                              
+                              <div className="space-y-2">
+                                <p className="text-[11px] text-slate-700 dark:text-slate-300 font-medium">
+                                  Zamiast liczyć teoretycznie, <strong>sprawdź faktyczny koszt</strong> cyrkulacji w Twoim budynku:
+                                </p>
+                                
+                                <div className="bg-white/70 dark:bg-slate-900/40 p-2 rounded border border-green-300 dark:border-green-700">
+                                  <div className="text-[10px] text-slate-700 dark:text-slate-300 space-y-1">
+                                    <div className="flex items-start gap-1">
+                                      <span className="flex-shrink-0 font-bold">1.</span>
+                                      <span>Pobierz <strong>faktury VAT za CWU</strong> za ostatni rok (np. 450 000 kWh)</span>
+                                    </div>
+                                    <div className="flex items-start gap-1">
+                                      <span className="flex-shrink-0 font-bold">2.</span>
+                                      <span>Zsumuj <strong>odczyty liczników mieszkań</strong> (np. 280 000 kWh)</span>
+                                    </div>
+                                    <div className="flex items-start gap-1">
+                                      <span className="flex-shrink-0 font-bold">3.</span>
+                                      <span className="font-bold text-green-800 dark:text-green-300">Różnica = rzeczywiste straty cyrkulacji</span>
+                                    </div>
+                                    <div className="flex items-start gap-1">
+                                      <span className="flex-shrink-0 font-bold">4.</span>
+                                      <span>Przelicz na moc: <strong>P<sub>straty</sub> = E<sub>straty</sub> / 8760 h</strong></span>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div className="bg-amber-50/70 dark:bg-amber-900/30 p-2 rounded border border-amber-300 dark:border-amber-700">
+                                  <p className="text-[10px] font-semibold text-amber-900 dark:text-amber-300 mb-1">📊 Przykład z rzeczywistości:</p>
+                                  <div className="text-[9px] text-slate-700 dark:text-slate-300 space-y-0.5">
+                                    <div>• Energia z faktury: <strong>450 000 kWh/rok</strong></div>
+                                    <div>• Liczniki mieszkań: <strong>280 000 kWh/rok</strong></div>
+                                    <div className="pt-1 border-t border-amber-300 dark:border-amber-700">
+                                      • Straty cyrkulacji: <strong>170 000 kWh/rok</strong>
+                                    </div>
+                                    <div>• Średnia moc strat: <strong>170 000 ÷ 8760 = 19,4 kW</strong></div>
+                                    <div className="pt-1 border-t border-amber-300 dark:border-amber-700 font-bold text-amber-900 dark:text-amber-300">
+                                      • Koszt strat: 170 000 × 0,65 zł = <strong>110 500 zł/rok</strong> 💸
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div className="bg-violet-50/70 dark:bg-violet-900/30 p-2 rounded border border-violet-300 dark:border-violet-700">
+                                  <p className="text-[10px] font-bold text-violet-800 dark:text-violet-300 mb-1">⚡ Dlaczego ta metoda jest lepsza?</p>
+                                  <ul className="text-[9px] text-slate-700 dark:text-slate-300 space-y-0.5">
+                                    <li>✓ Opiera się na <strong>faktach, nie teorii</strong></li>
+                                    <li>✓ Uwzględnia <strong>rzeczywisty stan techniczny</strong> instalacji (dziury w izolacji, nieszczelności)</li>
+                                    <li>✓ Eliminuje błędy projektowe i <strong>uproszczenia normowe</strong></li>
+                                    <li>✓ Pokazuje <strong>prawdziwy koszt eksploatacji</strong> (argument do negocjacji mocy)</li>
+                                    <li>✓ Pozwala wyliczyć <strong>potencjalne oszczędności</strong> po termomodernizacji</li>
+                                  </ul>
+                                </div>
+
+                                <div className="bg-blue-50/70 dark:bg-blue-900/30 p-2 rounded border border-blue-300 dark:border-blue-700">
+                                  <p className="text-[10px] font-bold text-blue-800 dark:text-blue-300 mb-1">💰 Oszczędności po modernizacji:</p>
+                                  <p className="text-[9px] text-slate-700 dark:text-slate-300">
+                                    Jeśli po dociepleniu instalacji straty spadną o <strong>30%</strong>:<br />
+                                    → Oszczędność: 51 000 kWh/rok × 0,65 zł = <strong>33 150 zł/rok</strong><br />
+                                    → Zwrot inwestycji w <strong>ciepłochrony</strong> często poniżej 5 lat!
+                                  </p>
+                                </div>
                               </div>
                             </div>
                           </div>
