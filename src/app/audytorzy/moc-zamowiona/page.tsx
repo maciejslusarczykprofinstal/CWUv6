@@ -90,6 +90,90 @@ function qpeakFromLU({
   const [costRows, setCostRows] = useState<{P:number; costFixed:number; costPenalty:number; costTotal:number}[]>([]);
   const [optimum, setOptimum] = useState<{Popt:number; costTotal:number} | null>(null);
 
+  // State dla mini-kalkulatora PN-EN 806-3
+  const [miniEN_umywalki, setMiniEN_umywalki] = useState(10);
+  const [miniEN_zlewozmywaki, setMiniEN_zlewozmywaki] = useState(10);
+  const [miniEN_prysznice, setMiniEN_prysznice] = useState(10);
+  const [miniEN_wanny, setMiniEN_wanny] = useState(0);
+  const [miniEN_dT, setMiniEN_dT] = useState(47); // T_CWU(55) - T_Z(8)
+  const [miniEN_result, setMiniEN_result] = useState<{FU: number; qd: number; P: number} | null>(null);
+  const [miniEN_chartData, setMiniEN_chartData] = useState<Array<{FU: number; qd: number}>>([]);
+
+  // State dla mini-kalkulatora PN-92/B
+  const [miniPN92_liczbaMieszkan, setMiniPN92_liczbaMieszkan] = useState(50);
+  const [miniPN92_qmax, setMiniPN92_qmax] = useState(10); // L/s - suma wszystkich armatury
+  const [miniPN92_dT, setMiniPN92_dT] = useState(47);
+  const [miniPN92_result, setMiniPN92_result] = useState<{k: number; qd: number; P: number} | null>(null);
+  const [miniPN92_chartData, setMiniPN92_chartData] = useState<Array<{flats: number; k: number}>>([]);
+
+  // State dla mini-kalkulatora bilans energetyczny
+  const [miniBE_masaKg, setMiniBE_masaKg] = useState(500);
+  const [miniBE_dT, setMiniBE_dT] = useState(47);
+  const [miniBE_czasMin, setMiniBE_czasMin] = useState(15);
+  const [miniBE_result, setMiniBE_result] = useState<{P: number} | null>(null);
+  const [miniBE_chartData, setMiniBE_chartData] = useState<Array<{t: number; P: number}>>([]);
+
+  function calculateMiniEN() {
+    const FU = miniEN_umywalki * 0.5 + miniEN_zlewozmywaki * 0.7 + miniEN_prysznice * 1.0 + miniEN_wanny * 1.5;
+    const qd = FU > 0 ? Math.sqrt(Math.max(FU - 1, 0)) * 0.5 : 0;
+    const P = 1.163 * qd * miniEN_dT;
+    setMiniEN_result({ FU, qd, P });
+    
+    // Generuj dane dla wykresu (FU od 0 do 200)
+    const chartData = [];
+    for (let fu = 0; fu <= 200; fu += 5) {
+      const qd_chart = fu > 0 ? Math.sqrt(Math.max(fu - 1, 0)) * 0.5 : 0;
+      chartData.push({ FU: fu, qd: +qd_chart.toFixed(2) });
+    }
+    setMiniEN_chartData(chartData);
+  }
+
+  function calculateMiniPN92() {
+    // Współczynnik jednoczesności według PN-92/B
+    let k = 1.0;
+    const flats = miniPN92_liczbaMieszkan;
+    if (flats <= 5) k = 1.0;
+    else if (flats <= 10) k = 0.9;
+    else if (flats <= 20) k = 0.7;
+    else if (flats <= 50) k = 0.5;
+    else if (flats <= 100) k = 0.35;
+    else k = 0.25;
+    
+    const qd = miniPN92_qmax * k;
+    const P = 1.163 * qd * miniPN92_dT;
+    setMiniPN92_result({ k, qd, P });
+    
+    // Wykres k vs liczba mieszkań
+    const chartData = [];
+    for (let f = 1; f <= 150; f += 2) {
+      let k_chart = 1.0;
+      if (f <= 5) k_chart = 1.0;
+      else if (f <= 10) k_chart = 0.9;
+      else if (f <= 20) k_chart = 0.7;
+      else if (f <= 50) k_chart = 0.5;
+      else if (f <= 100) k_chart = 0.35;
+      else k_chart = 0.25;
+      chartData.push({ flats: f, k: k_chart });
+    }
+    setMiniPN92_chartData(chartData);
+  }
+
+  function calculateMiniBE() {
+    // P = m·c·ΔT / t, gdzie c = 4.186 kJ/(kg·K)
+    const czasSec = miniBE_czasMin * 60;
+    const P = (miniBE_masaKg * 4.186 * miniBE_dT) / czasSec; // kW
+    setMiniBE_result({ P });
+    
+    // Wykres P vs czas (od 5 do 60 min)
+    const chartData = [];
+    for (let t_min = 5; t_min <= 60; t_min += 2) {
+      const t_sec = t_min * 60;
+      const P_chart = (miniBE_masaKg * 4.186 * miniBE_dT) / t_sec;
+      chartData.push({ t: t_min, P: +P_chart.toFixed(1) });
+    }
+    setMiniBE_chartData(chartData);
+  }
+
   function calculate() {
     const uwagi: string[] = [];
     const dT_K = hotC - coldC;
@@ -971,6 +1055,69 @@ function qpeakFromLU({
                           </ol>
                         </details>
                       </div>
+
+                      {/* Mini-kalkulator interaktywny */}
+                      <div className="mt-4 space-y-3 border-t pt-3">
+                        <div className="font-semibold text-slate-700 dark:text-slate-200">🔧 Mini-kalkulator PN-EN 806-3</div>
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                          <label className="flex flex-col gap-1">
+                            <span>Umywalki (0.5 LU)</span>
+                            <Input type="number" value={miniEN_umywalki} onChange={e=>setMiniEN_umywalki(+e.target.value)} className="h-8 text-xs" />
+                          </label>
+                          <label className="flex flex-col gap-1">
+                            <span>Zlewozmywaki (0.7 LU)</span>
+                            <Input type="number" value={miniEN_zlewozmywaki} onChange={e=>setMiniEN_zlewozmywaki(+e.target.value)} className="h-8 text-xs" />
+                          </label>
+                          <label className="flex flex-col gap-1">
+                            <span>Prysznice (1.0 LU)</span>
+                            <Input type="number" value={miniEN_prysznice} onChange={e=>setMiniEN_prysznice(+e.target.value)} className="h-8 text-xs" />
+                          </label>
+                          <label className="flex flex-col gap-1">
+                            <span>Wanny (1.5 LU)</span>
+                            <Input type="number" value={miniEN_wanny} onChange={e=>setMiniEN_wanny(+e.target.value)} className="h-8 text-xs" />
+                          </label>
+                          <label className="flex flex-col gap-1">
+                            <span>ΔT [K]</span>
+                            <Input type="number" value={miniEN_dT} onChange={e=>setMiniEN_dT(+e.target.value)} className="h-8 text-xs" />
+                          </label>
+                        </div>
+                        <Button onClick={calculateMiniEN} size="sm" variant="outline" className="w-full text-xs">
+                          Oblicz →
+                        </Button>
+                        {miniEN_result && (
+                          <div className="bg-white/70 dark:bg-slate-900/50 p-3 rounded-lg border border-blue-200 dark:border-blue-800 space-y-2">
+                            <div className="grid grid-cols-3 gap-2 text-xs">
+                              <div>
+                                <div className="text-[10px] opacity-70">Σ FU</div>
+                                <div className="font-bold text-blue-700 dark:text-blue-400">{miniEN_result.FU.toFixed(1)}</div>
+                              </div>
+                              <div>
+                                <div className="text-[10px] opacity-70">q<sub>d</sub> [L/s]</div>
+                                <div className="font-bold text-blue-700 dark:text-blue-400">{miniEN_result.qd.toFixed(2)}</div>
+                              </div>
+                              <div>
+                                <div className="text-[10px] opacity-70">P [kW]</div>
+                                <div className="font-bold text-blue-700 dark:text-blue-400">{miniEN_result.P.toFixed(1)}</div>
+                              </div>
+                            </div>
+                            <div className="text-[10px] italic text-slate-600 dark:text-slate-400">
+                              Wzór: q<sub>d</sub> = 0.5·√(FU−1), potem P = 1.163·q<sub>d</sub>·ΔT
+                            </div>
+                            {miniEN_chartData.length > 0 && (
+                              <div className="h-40 w-full mt-2">
+                                <ResponsiveContainer width="100%" height="100%">
+                                  <LineChart data={miniEN_chartData} margin={{top:5,right:10,left:0,bottom:5}}>
+                                    <XAxis dataKey="FU" tick={{fontSize:9}} label={{value: 'FU', position: 'insideBottom', offset: -5, fontSize: 10}} />
+                                    <YAxis tick={{fontSize:9}} label={{value: 'qd [L/s]', angle: -90, position: 'insideLeft', fontSize: 10}} />
+                                    <Tooltip formatter={(value:number)=>value.toFixed(2)+" L/s"} labelFormatter={(label)=>`FU=${label}`} contentStyle={{fontSize: 11}} />
+                                    <Line type="monotone" dataKey="qd" stroke="#2563eb" strokeWidth={2} dot={false} />
+                                  </LineChart>
+                                </ResponsiveContainer>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1002,6 +1149,61 @@ function qpeakFromLU({
                       <div>
                         <div className="font-semibold text-slate-700 dark:text-slate-200">Zastosowanie</div>
                         <p className="text-xs">Rekomendowana przy <strong>starych instalacjach</strong>, gdzie każda modernizacja jest ryzykiem, albo gdy inwestor wymaga „absolutnej pewności".</p>
+                      </div>
+
+                      {/* Mini-kalkulator PN-92/B */}
+                      <div className="mt-4 space-y-3 border-t pt-3">
+                        <div className="font-semibold text-slate-700 dark:text-slate-200">🔧 Mini-kalkulator PN-92/B</div>
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                          <label className="flex flex-col gap-1">
+                            <span>Liczba mieszkań</span>
+                            <Input type="number" value={miniPN92_liczbaMieszkan} onChange={e=>setMiniPN92_liczbaMieszkan(+e.target.value)} className="h-8 text-xs" />
+                          </label>
+                          <label className="flex flex-col gap-1">
+                            <span>Q<sub>max</sub> [L/s]</span>
+                            <Input type="number" step="0.1" value={miniPN92_qmax} onChange={e=>setMiniPN92_qmax(+e.target.value)} className="h-8 text-xs" />
+                          </label>
+                          <label className="flex flex-col gap-1">
+                            <span>ΔT [K]</span>
+                            <Input type="number" value={miniPN92_dT} onChange={e=>setMiniPN92_dT(+e.target.value)} className="h-8 text-xs" />
+                          </label>
+                        </div>
+                        <Button onClick={calculateMiniPN92} size="sm" variant="outline" className="w-full text-xs">
+                          Oblicz →
+                        </Button>
+                        {miniPN92_result && (
+                          <div className="bg-white/70 dark:bg-slate-900/50 p-3 rounded-lg border border-amber-200 dark:border-amber-800 space-y-2">
+                            <div className="grid grid-cols-3 gap-2 text-xs">
+                              <div>
+                                <div className="text-[10px] opacity-70">Wsp. k</div>
+                                <div className="font-bold text-amber-700 dark:text-amber-400">{miniPN92_result.k.toFixed(2)}</div>
+                              </div>
+                              <div>
+                                <div className="text-[10px] opacity-70">q<sub>d</sub> [L/s]</div>
+                                <div className="font-bold text-amber-700 dark:text-amber-400">{miniPN92_result.qd.toFixed(2)}</div>
+                              </div>
+                              <div>
+                                <div className="text-[10px] opacity-70">P [kW]</div>
+                                <div className="font-bold text-amber-700 dark:text-amber-400">{miniPN92_result.P.toFixed(1)}</div>
+                              </div>
+                            </div>
+                            <div className="text-[10px] italic text-slate-600 dark:text-slate-400">
+                              Wzór: q<sub>d</sub> = Q<sub>max</sub>·k, gdzie k z tabeli PN-92/B
+                            </div>
+                            {miniPN92_chartData.length > 0 && (
+                              <div className="h-40 w-full mt-2">
+                                <ResponsiveContainer width="100%" height="100%">
+                                  <LineChart data={miniPN92_chartData} margin={{top:5,right:10,left:0,bottom:5}}>
+                                    <XAxis dataKey="flats" tick={{fontSize:9}} label={{value: 'Liczba mieszkań', position: 'insideBottom', offset: -5, fontSize: 10}} />
+                                    <YAxis tick={{fontSize:9}} label={{value: 'k', angle: -90, position: 'insideLeft', fontSize: 10}} domain={[0, 1]} />
+                                    <Tooltip formatter={(value:number)=>value.toFixed(2)} labelFormatter={(label)=>`${label} mieszkań`} contentStyle={{fontSize: 11}} />
+                                    <Line type="stepAfter" dataKey="k" stroke="#d97706" strokeWidth={2} dot={false} />
+                                  </LineChart>
+                                </ResponsiveContainer>
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -1043,6 +1245,51 @@ function qpeakFromLU({
                           Nie gdybasz „na oko". Liczysz <strong>realną energię</strong> potrzebną do podgrzania faktycznie zużywanej wody. 
                           To najbardziej konkretna metoda – <strong>termodynamika, nie normy</strong>.
                         </p>
+                      </div>
+
+                      {/* Mini-kalkulator bilans energetyczny */}
+                      <div className="mt-4 space-y-3 border-t pt-3">
+                        <div className="font-semibold text-slate-700 dark:text-slate-200">🔧 Mini-kalkulator bilansu energetycznego</div>
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                          <label className="flex flex-col gap-1">
+                            <span>Masa wody [kg]</span>
+                            <Input type="number" value={miniBE_masaKg} onChange={e=>setMiniBE_masaKg(+e.target.value)} className="h-8 text-xs" />
+                          </label>
+                          <label className="flex flex-col gap-1">
+                            <span>ΔT [K]</span>
+                            <Input type="number" value={miniBE_dT} onChange={e=>setMiniBE_dT(+e.target.value)} className="h-8 text-xs" />
+                          </label>
+                          <label className="flex flex-col gap-1 col-span-2">
+                            <span>Czas nagrzewania [min]</span>
+                            <Input type="number" value={miniBE_czasMin} onChange={e=>setMiniBE_czasMin(+e.target.value)} className="h-8 text-xs" />
+                          </label>
+                        </div>
+                        <Button onClick={calculateMiniBE} size="sm" variant="outline" className="w-full text-xs">
+                          Oblicz →
+                        </Button>
+                        {miniBE_result && (
+                          <div className="bg-white/70 dark:bg-slate-900/50 p-3 rounded-lg border border-green-200 dark:border-green-800 space-y-2">
+                            <div className="text-center">
+                              <div className="text-[10px] opacity-70">Moc potrzebna</div>
+                              <div className="text-2xl font-bold text-green-700 dark:text-green-400">{miniBE_result.P.toFixed(1)} kW</div>
+                            </div>
+                            <div className="text-[10px] italic text-slate-600 dark:text-slate-400 text-center">
+                              P = (m·c·ΔT) / t = ({miniBE_masaKg}·4.186·{miniBE_dT}) / ({miniBE_czasMin}×60)
+                            </div>
+                            {miniBE_chartData.length > 0 && (
+                              <div className="h-40 w-full mt-2">
+                                <ResponsiveContainer width="100%" height="100%">
+                                  <LineChart data={miniBE_chartData} margin={{top:5,right:10,left:0,bottom:5}}>
+                                    <XAxis dataKey="t" tick={{fontSize:9}} label={{value: 'Czas [min]', position: 'insideBottom', offset: -5, fontSize: 10}} />
+                                    <YAxis tick={{fontSize:9}} label={{value: 'P [kW]', angle: -90, position: 'insideLeft', fontSize: 10}} />
+                                    <Tooltip formatter={(value:number)=>value.toFixed(1)+" kW"} labelFormatter={(label)=>`${label} min`} contentStyle={{fontSize: 11}} />
+                                    <Line type="monotone" dataKey="P" stroke="#059669" strokeWidth={2} dot={false} />
+                                  </LineChart>
+                                </ResponsiveContainer>
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
