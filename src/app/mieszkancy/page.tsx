@@ -426,7 +426,7 @@ export default function MieszkancyPage() {
             <div className="flex justify-center">
               <Button 
                 onClick={() => setShowBreakdown(!showBreakdown)}
-                className="px-12 py-8 text-xl font-bold bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white rounded-2xl shadow-2xl hover:shadow-3xl transition-all hover:scale-105"
+                className="px-14 py-8 text-2xl font-extrabold bg-gradient-to-r from-emerald-600 to-green-500 hover:from-emerald-700 hover:to-green-700 text-white rounded-2xl shadow-2xl hover:shadow-emerald-500/40 transition-all hover:scale-105 border-4 border-emerald-400 dark:border-emerald-700"
               >
                 📊 {showBreakdown ? 'Ukryj' : 'Pokaż'} rozbicie strat na zakresy
               </Button>
@@ -581,16 +581,16 @@ export default function MieszkancyPage() {
             <div className="max-w-6xl mx-auto mt-16 mb-8">
         {/* Przyciski PDF przeniesione na koniec strony */}
         {res && (
-          <div className="flex flex-col md:flex-row items-stretch md:items-center justify-center gap-4 mb-12">
+          <div className="flex flex-col md:flex-row items-stretch md:items-center justify-center gap-6 mb-12">
             <Button 
               onClick={onDownloadReport} 
-              className="px-8 py-6 text-lg font-bold bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all hover:scale-105"
+              className="px-10 py-7 text-xl font-extrabold bg-gradient-to-r from-blue-700 to-cyan-500 hover:from-blue-800 hover:to-cyan-600 text-white rounded-2xl shadow-2xl hover:shadow-blue-400/40 transition-all hover:scale-105 border-4 border-blue-400 dark:border-blue-700"
             >
               📄 Pobierz raport PDF
             </Button>
             <Button 
               onClick={onDownloadLetter} 
-              className="px-8 py-6 text-lg font-bold bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all hover:scale-105"
+              className="px-10 py-7 text-xl font-extrabold bg-gradient-to-r from-purple-700 to-pink-500 hover:from-purple-800 hover:to-pink-600 text-white rounded-2xl shadow-2xl hover:shadow-pink-400/40 transition-all hover:scale-105 border-4 border-pink-400 dark:border-pink-700"
             >
               ✉️ Pismo do Zarządcy (PDF)
             </Button>
