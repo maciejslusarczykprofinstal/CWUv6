@@ -3,12 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+  "dev": "next dev",
   "build": "next build",
-    "start": "next start",
-    "lint": "eslint --no-error-on-unmatched-pattern src/**/*.{ts,tsx}",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
-    "format": "prettier -w ."
+  "start": "next start",
+  "lint": "eslint --no-error-on-unmatched-pattern src/**/*.{ts,tsx}",
+  "typecheck": "tsc -p tsconfig.json --noEmit",
+  "format": "prettier -w .",
+  "deploy:prod": "git add -A && git commit -m \"deploy: auto\" || echo no-changes && git push"
   },
   "packageManager": "pnpm@9.0.0",
   "dependencies": {

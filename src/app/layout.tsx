@@ -57,6 +57,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </nav>
           </header>
           <main className="mx-auto max-w-7xl px-4 py-10">{children}</main>
+          <footer style={{padding: 8, fontSize: 12, opacity: 0.7}}>
+            build: {process.env.NEXT_PUBLIC_COMMIT_SHA}
+          </footer>
           <footer className="border-t bg-gradient-to-b from-background to-slate-50 dark:to-slate-950 mt-20">
             <div className="mx-auto max-w-7xl px-4 py-12">
               <div className="grid md:grid-cols-4 gap-8 mb-8">

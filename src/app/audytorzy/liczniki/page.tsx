@@ -127,7 +127,7 @@ export default function LicznikiPage() {
             <CardContent className="p-4">
               <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
                 <div className="space-y-2">
-                  <Label className="text-sm">Zużyta woda [m³]</Label>
+                  <Label className="text-sm">Zużyta woda (odczyt z wodomierza głównego) [m³]</Label>
                   <Input 
                     name="waterVolumeM3"
                     type="number"

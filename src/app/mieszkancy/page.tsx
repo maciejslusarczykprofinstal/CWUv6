@@ -149,41 +149,31 @@ export default function MieszkancyPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-100 via-slate-50 to-blue-100/50 dark:from-slate-950 dark:via-slate-900 dark:to-blue-950/30">
-      <div className="max-w-6xl mx-auto px-4 py-12 space-y-12">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-950 to-slate-800 relative overflow-x-hidden">
+      {/* Dekoracyjne gradientowe blury w tle */}
+      <div className="absolute -top-32 -left-32 w-[420px] h-[420px] bg-gradient-to-br from-blue-800/40 via-cyan-700/20 to-slate-900/0 rounded-full blur-3xl pointer-events-none z-0" />
+      <div className="absolute top-1/2 right-0 w-[320px] h-[320px] bg-gradient-to-br from-cyan-900/20 via-blue-900/10 to-slate-900/0 rounded-full blur-2xl pointer-events-none z-0" />
+      <div className="max-w-5xl mx-auto px-4 py-12 space-y-12 relative z-10">
         {/* Hero Section */}
-        <div className="text-center space-y-6 mb-16">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-full text-sm font-medium text-blue-700 dark:text-blue-300 backdrop-blur-sm">
-            <Home className="w-4 h-4" />
-            Analiza kosztów mieszkańca
-          </div>
-          <div className="space-y-4">
-            <h1 className="text-5xl md:text-6xl font-bold tracking-tight">
-              <span className="bg-gradient-to-r from-slate-900 via-blue-800 to-slate-900 dark:from-white dark:via-blue-200 dark:to-white bg-clip-text text-transparent">
-                Sprawdź swoje
-              </span>
-              <br />
-              <span className="bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
-                rachunki CWU
-              </span>
-            </h1>
-            <p className="text-xl text-slate-600 dark:text-slate-400 max-w-3xl mx-auto leading-relaxed">
-              Czy płacisz za dużo? Odkryj prawdziwe koszty energii i straty cyrkulacji 
-              w Twoim budynku dzięki precyzyjnej analizie.
-            </p>
-          </div>
+        <div className="text-center space-y-4 mb-12">
+          <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight bg-gradient-to-r from-cyan-400 via-blue-300 to-blue-600 bg-clip-text text-transparent drop-shadow-xl">
+            Mieszkańcy
+          </h1>
+          <p className="text-lg text-slate-300 max-w-2xl mx-auto">
+            Kalkulator kosztów CWU – sprawdź, czy płacisz za dużo i poznaj realne straty cyrkulacji w swoim budynku.
+          </p>
         </div>
 
         {/* Calculator Card */}
-        <Card className="backdrop-blur-sm bg-white/70 dark:bg-slate-900/70 border-0 shadow-xl shadow-blue-100/50 dark:shadow-blue-950/50">
+  <Card className="bg-gradient-to-br from-blue-900/80 via-slate-900/90 to-blue-950/80 border-0 shadow-2xl rounded-3xl backdrop-blur-md">
           <CardHeader className="pb-8">
-            <CardTitle className="flex items-center gap-3 text-2xl font-semibold text-slate-800 dark:text-slate-200">
-              <div className="p-2 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl shadow-lg">
-                <Calculator className="w-6 h-6 text-white" />
+            <CardTitle className="flex items-center gap-3 text-2xl font-extrabold text-cyan-200">
+              <div className="w-14 h-14 bg-gradient-to-br from-cyan-700 via-blue-700 to-blue-900 rounded-2xl flex items-center justify-center shadow-lg">
+                <Calculator className="w-7 h-7 text-cyan-200" />
               </div>
               Kalkulator strat na przesyle CWU
             </CardTitle>
-            <p className="text-slate-600 dark:text-slate-400 mt-2">
+            <p className="text-slate-400 mt-2">
               Oblicz straty finansowe na przesyle ciepłej wody użytkowej w budynku
             </p>
           </CardHeader>
@@ -212,7 +202,7 @@ export default function MieszkancyPage() {
                         value={inputs.cwuPriceFromBill}
                         onChange={(e) => handleInputChange('cwuPriceFromBill', Number(e.target.value))}
                         aria-label="Podgrzanie ciepłej wody w zł za metr sześcienny"
-                        className="w-full pl-10 pr-16 py-3 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500 text-lg font-semibold"
+                        className="w-full pl-10 pr-16 py-3 border-2 border-blue-400 dark:border-blue-400 rounded-xl bg-white dark:bg-[#101828] text-[#101828] dark:text-white focus:ring-2 focus:ring-blue-600 focus:border-blue-400 dark:focus:border-blue-400 transition-all placeholder-slate-400 dark:placeholder-slate-400 text-lg font-semibold"
                       />
                       <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 dark:text-slate-400 text-sm font-medium select-none">zł/m³</span>
                     </div>
@@ -231,7 +221,7 @@ export default function MieszkancyPage() {
                         value={inputs.monthlyConsumption}
                         onChange={(e) => handleInputChange('monthlyConsumption', Number(e.target.value))}
                         aria-label="Zużycie CWU w metrach sześciennych na miesiąc"
-                        className="w-full pl-10 pr-12 py-3 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500 text-lg font-semibold"
+                        className="w-full pl-10 pr-12 py-3 border-2 border-blue-400 dark:border-blue-400 rounded-xl bg-white dark:bg-[#101828] text-[#101828] dark:text-white focus:ring-2 focus:ring-blue-600 focus:border-blue-400 dark:focus:border-blue-400 transition-all placeholder-slate-400 dark:placeholder-slate-400 text-lg font-semibold"
                       />
                       <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 dark:text-slate-400 text-sm font-medium select-none">m³</span>
                     </div>
@@ -259,7 +249,7 @@ export default function MieszkancyPage() {
                       value={inputs.coldTempC}
                       onChange={(e) => handleInputChange('coldTempC', Number(e.target.value))}
                       placeholder="Zalecane: 10°C"
-                      className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
+                      className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-[#101828] text-[#101828] dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-400"
                     />
                   </Field>
                   <Field 
@@ -273,7 +263,7 @@ export default function MieszkancyPage() {
                       value={inputs.hotTempC}
                       onChange={(e) => handleInputChange('hotTempC', Number(e.target.value))}
                       placeholder="Obowiązkowo: min 55°C"
-                      className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
+                      className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-[#101828] text-[#101828] dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-400"
                     />
                   </Field>
                   <Field 
@@ -287,7 +277,7 @@ export default function MieszkancyPage() {
                       value={inputs.heatPriceFromCity}
                       onChange={(e) => handleInputChange('heatPriceFromCity', Number(e.target.value))}
                       placeholder="Z cennika: 90 zł/GJ"
-                      className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
+                      className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-[#101828] text-[#101828] dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-400"
                     />
                   </Field>
                 </div>
@@ -633,7 +623,7 @@ export default function MieszkancyPage() {
                         placeholder="np. Jan Kowalski"
                         value={inputs.residentName || ''}
                         onChange={(e) => handleInputChange('residentName', e.target.value)}
-                        className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
+                        className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-[#101828] text-[#101828] dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-400"
                       />
                     </Field>
                     <Field label="Numer lokalu" optional>
@@ -642,7 +632,7 @@ export default function MieszkancyPage() {
                         placeholder="np. 12"
                         value={inputs.apartmentNumber || ''}
                         onChange={(e) => handleInputChange('apartmentNumber', e.target.value)}
-                        className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
+                        className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-[#101828] text-[#101828] dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-400"
                       />
                     </Field>
                     <Field label="E-mail" optional>
@@ -651,7 +641,7 @@ export default function MieszkancyPage() {
                         placeholder="np. jan.kowalski@example.com"
                         value={inputs.residentEmail || ''}
                         onChange={(e) => handleInputChange('residentEmail', e.target.value)}
-                        className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
+                        className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-[#101828] text-[#101828] dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-400"
                       />
                     </Field>
                     <Field label="Telefon" optional>
@@ -660,7 +650,7 @@ export default function MieszkancyPage() {
                         placeholder="np. 600 000 000"
                         value={inputs.residentPhone || ''}
                         onChange={(e) => handleInputChange('residentPhone', e.target.value)}
-                        className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
+                        className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-[#101828] text-[#101828] dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-400"
                       />
                     </Field>
                     <Field label="Miejscowość" optional>
@@ -669,7 +659,7 @@ export default function MieszkancyPage() {
                         placeholder="np. Kraków"
                         value={inputs.letterCity || ''}
                         onChange={(e) => handleInputChange('letterCity', e.target.value)}
-                        className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
+                        className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-[#101828] text-[#101828] dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-400"
                       />
                     </Field>
                   </div>
@@ -688,7 +678,7 @@ export default function MieszkancyPage() {
                         placeholder="np. ABC Zarządzanie Nieruchomościami Sp. z o.o."
                         value={inputs.managerName || ''}
                         onChange={(e) => handleInputChange('managerName', e.target.value)}
-                        className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
+                        className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-[#101828] text-[#101828] dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-400"
                       />
                     </Field>
                     <Field label="Adres zarządcy" optional>
@@ -697,7 +687,7 @@ export default function MieszkancyPage() {
                         placeholder="np. ul. Długa 10, 00-001 Warszawa"
                         value={inputs.managerAddress || ''}
                         onChange={(e) => handleInputChange('managerAddress', e.target.value)}
-                        className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
+                        className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
                       />
                     </Field>
                     <Field label="Adres budynku" optional>
@@ -786,7 +776,9 @@ function Field({ label, unit, children, optional = false, numeric = false, hint 
         {unit && <span className="text-slate-500 dark:text-slate-400 font-normal"> ({unit})</span>}
         {optional && <span className="text-slate-400 dark:text-slate-500 font-normal ml-2">(opcjonalne)</span>}
         {numeric && (
-          <span className="ml-2 inline-flex items-center rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-200 px-2 py-0.5 text-[10px] font-semibold tracking-wide">
+          <span
+            className="ml-2 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold tracking-wide border border-blue-400 dark:border-blue-300 bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100 shadow-sm"
+          >
             WARTOŚĆ Z RACHUNKU
           </span>
         )}
