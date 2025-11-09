@@ -3,7 +3,7 @@
 import * as React from "react";
 
 interface ThemeProviderProps {
-  children: React.ReactNode;
+  children: React.ReactNode; // ...przeniesiono do ThemeProvider.tsx...
   defaultTheme?: "light" | "dark" | "system";
   storageKey?: string;
 }

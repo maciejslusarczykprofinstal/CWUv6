@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -8,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Calculator, DollarSign } from "lucide-react";
 import { useMemo, useState } from "react";
-import { useTheme } from "@/components/theme-provider";
+import { useTheme } from "next-themes";
 import { toast } from "sonner";
 
 export default function LicznikiPage() {
