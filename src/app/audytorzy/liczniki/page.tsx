@@ -8,9 +8,11 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Calculator, DollarSign } from "lucide-react";
 import { useMemo, useState } from "react";
+import { useTheme } from "@/components/theme-provider";
 import { toast } from "sonner";
 
 export default function LicznikiPage() {
+  const { theme, setTheme } = useTheme();
   // Helpers
   const coerce = (n: unknown): number => {
     const v = typeof n === "number" ? n : Number(n);
@@ -47,7 +49,7 @@ export default function LicznikiPage() {
   }
 
   // Wspólna wartość zużycia wody dla obu ścieżek
-  const [waterVolumeM3, setWaterVolumeM3] = useState<number>(800);
+  const [waterVolumeM3, setWaterVolumeM3] = useState<number>(1500);
   
   // Ścieżka 2: controlled inputs
   const [pricePerM3_2, setPricePerM3_2] = useState<number>(65);
@@ -82,13 +84,29 @@ export default function LicznikiPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50 dark:from-slate-900 dark:via-slate-900 dark:to-slate-900">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16 space-y-10">
-        <header className="space-y-2">
-          <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-            Analiza liczników CWU
-          </h1>
-          <p className="text-slate-600 dark:text-slate-400">
-            Dwie metody obliczania kosztów ciepłej wody użytkowej dla budynku. Wszystkie obliczenia działają równolegle i aktualizują się na żywo.
-          </p>
+        <header className="space-y-2 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+              Analiza liczników CWU
+            </h1>
+            <p className="text-slate-600 dark:text-slate-400">
+              Dwie metody obliczania kosztów ciepłej wody użytkowej dla budynku. Wszystkie obliczenia działają równolegle i aktualizują się na żywo.
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            aria-label={theme === "dark" ? "Tryb jasny" : "Tryb ciemny"}
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            className="flex items-center gap-2"
+          >
+            {theme === "dark" ? (
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m8.66-13.66l-.71.71M4.05 19.07l-.71.71M21 12h-1M4 12H3m16.95 7.07l-.71-.71M6.34 6.34l-.71-.71M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+            ) : (
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12.79A9 9 0 1111.21 3a7 7 0 109.79 9.79z" /></svg>
+            )}
+            {theme === "dark" ? "Dzień" : "Noc"}
+          </Button>
         </header>
 
         <div className="grid gap-6 lg:grid-cols-2">

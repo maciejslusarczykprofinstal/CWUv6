@@ -17,24 +17,21 @@ const ThemeContext = React.createContext<ThemeContextType | undefined>(
   undefined,
 );
 
+
 export function ThemeProvider({
   children,
-  defaultTheme = "system",
+  defaultTheme = "dark",
   storageKey = "ui-theme",
 }: ThemeProviderProps) {
-  const [theme, setTheme] = React.useState<"light" | "dark" | "system">(
-    defaultTheme,
-  );
+  const [theme, setTheme] = React.useState<"light" | "dark" | "system">(() => {
+    // Wymuś dark na starcie, ignoruj localStorage
+    return "dark";
+  });
 
   React.useEffect(() => {
-    const stored = localStorage.getItem(storageKey) as
-      | "light"
-      | "dark"
-      | "system"
-      | null;
-    if (stored) {
-      setTheme(stored);
-    }
+    // Zawsze ustaw dark na starcie
+    setTheme("dark");
+    localStorage.setItem(storageKey, "dark");
   }, [storageKey]);
 
   React.useEffect(() => {
