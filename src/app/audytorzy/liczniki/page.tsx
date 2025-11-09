@@ -87,10 +87,10 @@ export default function LicznikiPage() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16 space-y-10">
         <header className="space-y-2 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+            <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight bg-gradient-to-r from-cyan-300 via-blue-200 to-blue-500 bg-clip-text text-transparent drop-shadow-xl">
               Analiza liczników CWU
             </h1>
-            <p className="text-slate-600 dark:text-slate-400">
+            <p className="text-slate-200">
               Dwie metody obliczania kosztów ciepłej wody użytkowej dla budynku. Wszystkie obliczenia działają równolegle i aktualizują się na żywo.
             </p>
           </div>
