@@ -54,14 +54,14 @@ export default function MocZamowionaPage() {
 	// Mini kalkulator FU (PN-EN 806-3)
 
 		type FUKey = "umywalki" | "zlewozmywaki" | "prysznice" | "wanny" | "zmywarki" | "pralki";
-				const [flats, setFlats] = useState<number>(10);
+				const [flats, setFlats] = useState<number>(80);
 				const [fuInputs, setFuInputs] = useState<Record<FUKey, number>>({
-					umywalki: 10,
-					zlewozmywaki: 10,
-					prysznice: 10,
-					wanny: 3,
-					zmywarki: 5,
-					pralki: 7,
+					umywalki: 80,
+					zlewozmywaki: 80,
+					prysznice: 80,
+					wanny: 24,
+					zmywarki: 40,
+					pralki: 56,
 				});
 				// Zapamiętaj, które pola zostały zmienione ręcznie
 				const [manual, setManual] = useState<Partial<Record<FUKey, boolean>>>({});
