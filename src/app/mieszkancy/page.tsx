@@ -157,10 +157,10 @@ export default function MieszkancyPage() {
         {/* Hero Section */}
         <div className="text-center space-y-4 mb-12">
           <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight bg-gradient-to-r from-cyan-400 via-blue-300 to-blue-600 bg-clip-text text-transparent drop-shadow-xl">
-            Mieszkańcy
+            Mieszkańcy Analiza strat CWU
           </h1>
           <p className="text-lg text-slate-300 max-w-2xl mx-auto">
-            Kalkulator kosztów CWU – sprawdź, czy płacisz za dużo i poznaj realne straty cyrkulacji w swoim budynku.
+            Kalkulator kosztów podgrzania Ciepłej wody użytkowej – sprawdź, czy płacisz za dużo i poznaj realne straty w swoim budynku.
           </p>
         </div>
 

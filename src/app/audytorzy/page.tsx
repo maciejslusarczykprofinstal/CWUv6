@@ -21,26 +21,6 @@ export default function AudytorzyPage() {
         {/* Karty nawigacyjne */}
         <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
           <Link
-            href="/audytorzy/moc-zamowiona"
-            className="group relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-900/80 via-slate-900/90 to-blue-950/80 border-0 shadow-2xl backdrop-blur-md p-8 transition-all duration-300 hover:scale-105 hover:shadow-blue-700/30"
-          >
-            <div className="absolute inset-0 bg-gradient-to-br from-cyan-700/10 via-blue-700/10 to-slate-900/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-            <div className="relative flex items-center gap-4">
-              <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-700 via-blue-700 to-blue-900 text-cyan-200 shadow-lg group-hover:scale-110 transition-transform duration-300">
-                <Gauge className="h-7 w-7" />
-              </span>
-              <span className="flex flex-col">
-                <span className="text-xl font-bold text-slate-200 group-hover:text-cyan-300 transition-colors">
-                  Oblicz moc zamówioną
-                </span>
-                <span className="text-sm text-slate-400">
-                  Szybki kalkulator mocy z buforem i jednoczesnością
-                </span>
-              </span>
-            </div>
-          </Link>
-
-          <Link
             href="/audytorzy/liczniki"
             className="group relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-900/80 via-slate-900/90 to-blue-950/80 border-0 shadow-2xl backdrop-blur-md p-8 transition-all duration-300 hover:scale-105 hover:shadow-pink-700/30"
           >
@@ -55,6 +35,26 @@ export default function AudytorzyPage() {
                 </span>
                 <span className="text-sm text-slate-400">
                   Analiza odczytów liczników ciepła
+                </span>
+              </span>
+            </div>
+          </Link>
+
+          <Link
+            href="/audytorzy/moc-zamowiona"
+            className="group relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-900/80 via-slate-900/90 to-blue-950/80 border-0 shadow-2xl backdrop-blur-md p-8 transition-all duration-300 hover:scale-105 hover:shadow-blue-700/30"
+          >
+            <div className="absolute inset-0 bg-gradient-to-br from-cyan-700/10 via-blue-700/10 to-slate-900/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            <div className="relative flex items-center gap-4">
+              <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-700 via-blue-700 to-blue-900 text-cyan-200 shadow-lg group-hover:scale-110 transition-transform duration-300">
+                <Gauge className="h-7 w-7" />
+              </span>
+              <span className="flex flex-col">
+                <span className="text-xl font-bold text-slate-200 group-hover:text-cyan-300 transition-colors">
+                  Oblicz moc zamówioną
+                </span>
+                <span className="text-sm text-slate-400">
+                  Szybki kalkulator mocy z buforem i jednoczesnością
                 </span>
               </span>
             </div>

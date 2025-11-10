@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from "next/link";
@@ -9,8 +8,19 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Calculator, DollarSign } from "lucide-react";
 import { useMemo, useState } from "react";
+import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { useTheme } from "next-themes";
 import { toast } from "sonner";
+
+function Stat({ label, value, unit }: { label: string; value: number; unit: string }) {
+  return (
+    <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-800/50">
+      <div className="text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-400">{label}</div>
+      <div className="font-semibold text-slate-900 dark:text-slate-100">{typeof value === 'number' && !isNaN(value) ? value.toFixed(2) : "-"} {unit}</div>
+    </div>
+  );
+}
+
 
 export default function LicznikiPage() {
   const { theme, setTheme } = useTheme();
@@ -51,10 +61,8 @@ export default function LicznikiPage() {
 
   // Wspólna wartość zużycia wody dla obu ścieżek
   const [waterVolumeM3, setWaterVolumeM3] = useState<number>(1500);
-  
   // Ścieżka 2: controlled inputs
   const [pricePerM3_2, setPricePerM3_2] = useState<number>(65);
-
   const result2 = useMemo(() => {
     const w = coerce(waterVolumeM3);
     const p = coerce(pricePerM3_2);
@@ -63,17 +71,14 @@ export default function LicznikiPage() {
       waterVolume: w,
     };
   }, [waterVolumeM3, pricePerM3_2]);
-
   // Ścieżka 3: controlled inputs
   const [pricePerGJ3, setPricePerGJ3] = useState<number>(90);
-
   const result3 = useMemo(() => {
     // Fizyka: grzejemy wodę od 10°C do 55°C
     const deltaT = 55 - 10; // 45 K
     const specificHeat = 4186; // J/(kg·K)
     const energyPerM3_J = 1000 * specificHeat * deltaT;
     const energyPerM3_GJ = energyPerM3_J / 1e9; // ~0.18837 GJ/m3
-
     const pricePerGJ = coerce(pricePerGJ3);
     const w = coerce(waterVolumeM3);
     const totalEnergyGJ = w * energyPerM3_GJ;
@@ -83,51 +88,37 @@ export default function LicznikiPage() {
   }, [pricePerGJ3, waterVolumeM3]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50 dark:from-slate-900 dark:via-slate-900 dark:to-slate-900">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16 space-y-10">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-950 to-slate-800">
+      <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-16 space-y-10">
         <header className="space-y-2 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight bg-gradient-to-r from-cyan-300 via-blue-200 to-blue-500 bg-clip-text text-transparent drop-shadow-xl">
-              Analiza liczników CWU
+            <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight bg-gradient-to-r from-cyan-400 via-blue-400 to-fuchsia-500 bg-clip-text text-transparent drop-shadow-xl">
+              Analiza strat wg. liczników CWU lub faktur
             </h1>
-            <p className="text-slate-200">
+            <p className="text-slate-300">
               Dwie metody obliczania kosztów ciepłej wody użytkowej dla budynku. Wszystkie obliczenia działają równolegle i aktualizują się na żywo.
             </p>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            aria-label={theme === "dark" ? "Tryb jasny" : "Tryb ciemny"}
-            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-            className="flex items-center gap-2"
-          >
-            {theme === "dark" ? (
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m8.66-13.66l-.71.71M4.05 19.07l-.71.71M21 12h-1M4 12H3m16.95 7.07l-.71-.71M6.34 6.34l-.71-.71M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
-            ) : (
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12.79A9 9 0 1111.21 3a7 7 0 109.79 9.79z" /></svg>
-            )}
-            {theme === "dark" ? "Dzień" : "Noc"}
-          </Button>
         </header>
 
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="grid gap-8 lg:grid-cols-2">
           {/* Ścieżka 2: Rzeczywista ilość wody + cena → ile zapłacili */}
-          <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur border-0 shadow-xl">
-            <CardHeader className="border-b border-slate-200/70 dark:border-slate-700/60">
-              <CardTitle className="flex items-center gap-2 text-slate-800 dark:text-slate-200 text-base">
-                <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-green-600 text-white flex-shrink-0">
+          <Card className="bg-white/10 dark:bg-slate-900/80 backdrop-blur border-0 shadow-2xl">
+            <CardHeader className="border-b border-slate-700/60">
+              <CardTitle className="flex items-center gap-2 text-slate-200 text-base">
+                <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-green-500 via-emerald-400 to-cyan-500 text-white flex-shrink-0 shadow-lg">
                   <DollarSign className="h-5 w-5" />
                 </span>
                 <span>Koszty i zużycie CWU mieszkańców</span>
               </CardTitle>
-              <p className="text-xs text-slate-600 dark:text-slate-400 mt-2">
+              <p className="text-xs text-slate-400 mt-2">
                 Rzeczywista ilość × cena
               </p>
             </CardHeader>
-            <CardContent className="p-4">
+            <CardContent className="p-6">
               <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
                 <div className="space-y-2">
-                  <Label className="text-sm">Zużyta woda (odczyt z wodomierza głównego) [m³]</Label>
+                  <Label className="text-sm text-slate-200">Zużyta zimna woda do podgrzania (odczyt z wodomierza głównego) [m³], lub z faktury w przeciągu roku</Label>
                   <Input 
                     name="waterVolumeM3"
                     type="number"
@@ -136,11 +127,10 @@ export default function LicznikiPage() {
                     onChange={(e) => setWaterVolumeM3(Number.isFinite(e.currentTarget.valueAsNumber) ? e.currentTarget.valueAsNumber : 0)}
                     required
                   />
-                  <p className="text-xs text-slate-500">80 mieszkań: 600-1000 m³/rok</p>
+                  <p className="text-xs text-slate-400">80 mieszkań: 1000-2000 m³/rok</p>
                 </div>
-                
                 <div className="space-y-2">
-                  <Label className="text-sm">Cena [zł/m³]</Label>
+                  <Label className="text-sm text-slate-200">Cena [zł/m³]</Label>
                   <Input 
                     name="pricePerM3_2"
                     type="number"
@@ -150,7 +140,6 @@ export default function LicznikiPage() {
                     required
                   />
                 </div>
-
                 <div className="flex gap-2">
                   <Button
                     type="button"
@@ -165,18 +154,17 @@ export default function LicznikiPage() {
                   </Button>
                 </div>
               </form>
-
               {result2 && (
                 <div className="mt-4 space-y-3">
-                  <div className="p-3 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
-                    <div className="text-xs text-green-600 dark:text-green-400">Zapłacili</div>
-                    <div className="text-2xl font-bold text-green-900 dark:text-green-100">
+                  <div className="p-3 rounded-lg bg-gradient-to-r from-green-400/20 via-emerald-400/10 to-cyan-400/10 border border-emerald-700">
+                    <div className="text-xs text-emerald-400">Tyle zapłacili mieszkańcy za podgrzanie CWU</div>
+                    <div className="text-2xl font-bold text-emerald-200">
                       {result2.totalPaid.toLocaleString("pl-PL", { minimumFractionDigits: 2 })} zł
                     </div>
                   </div>
-                  <div className="p-2 rounded bg-slate-50 dark:bg-slate-800/50">
-                    <div className="text-xs text-slate-600 dark:text-slate-400">Zużyta woda</div>
-                    <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                  <div className="p-2 rounded bg-slate-800/60">
+                    <div className="text-xs text-slate-400">Zużyta woda</div>
+                    <div className="text-sm font-semibold text-slate-200">
                       {result2.waterVolume.toLocaleString("pl-PL", { minimumFractionDigits: 2 })} m³
                     </div>
                   </div>
@@ -186,22 +174,22 @@ export default function LicznikiPage() {
           </Card>
 
           {/* Ścieżka 3: Energia → Cena/m³ */}
-          <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur border-0 shadow-xl">
-            <CardHeader className="border-b border-slate-200/70 dark:border-slate-700/60">
-              <CardTitle className="flex items-center gap-2 text-slate-800 dark:text-slate-200 text-base">
-                <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-white flex-shrink-0">
+          <Card className="bg-white/10 dark:bg-slate-900/80 backdrop-blur border-0 shadow-2xl">
+            <CardHeader className="border-b border-slate-700/60">
+              <CardTitle className="flex items-center gap-2 text-slate-200 text-base">
+                <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 via-indigo-500 to-fuchsia-500 text-white flex-shrink-0 shadow-lg">
                   <Calculator className="h-5 w-5" />
                 </span>
                 <span>Energia → Cena/m³</span>
               </CardTitle>
-              <p className="text-xs text-slate-600 dark:text-slate-400 mt-2">
+              <p className="text-xs text-slate-400 mt-2">
                 m³ wody → Koszt podgrzania (10°C → 55°C)
               </p>
             </CardHeader>
-            <CardContent className="p-4">
+            <CardContent className="p-6">
               <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
                 <div className="space-y-2">
-                  <Label className="text-sm">Energia [zł/GJ]</Label>
+                  <Label className="text-sm text-slate-200">Energia [zł/GJ] wg cennika dostawcy ciepła Kraków https://www.mpec.krakow.pl/taryfy-i-cenniki</Label>
                   <Input 
                     name="pricePerGJ3"
                     type="number"
@@ -211,9 +199,8 @@ export default function LicznikiPage() {
                     required
                   />
                 </div>
-                
                 <div className="space-y-2">
-                  <Label className="text-sm">Zużycie CWU [m³]</Label>
+                  <Label className="text-sm text-slate-200">Zużycie CWU [m³]</Label>
                   <Input 
                     name="waterVolumeM3"
                     type="number"
@@ -222,9 +209,8 @@ export default function LicznikiPage() {
                     onChange={(e) => setWaterVolumeM3(Number.isFinite(e.currentTarget.valueAsNumber) ? e.currentTarget.valueAsNumber : 0)}
                     required
                   />
-                  <p className="text-xs text-slate-500">80 mieszkań: 600-1000 m³/rok</p>
+                  <p className="text-xs text-slate-400">80 mieszkań: 600-1000 m³/rok</p>
                 </div>
-
                 <div className="flex gap-2">
                   <Button
                     type="button"
@@ -239,18 +225,17 @@ export default function LicznikiPage() {
                   </Button>
                 </div>
               </form>
-
               {result3 && (
                 <div className="mt-4 space-y-3">
-                  <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
-                    <div className="text-xs text-blue-600 dark:text-blue-400">Koszt całkowity podgrzania</div>
-                    <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">
+                  <div className="p-3 rounded-lg bg-gradient-to-r from-blue-400/20 via-indigo-400/10 to-fuchsia-400/10 border border-indigo-700">
+                    <div className="text-xs text-blue-400">Koszt użytecznego podgrzania CWU</div>
+                    <div className="text-2xl font-bold text-blue-200">
                       {result3.totalCost.toLocaleString("pl-PL", { minimumFractionDigits: 2 })} zł
                     </div>
                   </div>
-                  <div className="p-2 rounded bg-slate-50 dark:bg-slate-800/50">
-                    <div className="text-xs text-slate-600 dark:text-slate-400">Cena za m³</div>
-                    <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                  <div className="p-2 rounded bg-slate-800/60">
+                    <div className="text-xs text-slate-400">Cena za m³</div>
+                    <div className="text-sm font-semibold text-slate-200">
                       {result3.pricePerM3.toFixed(2)} zł/m³
                     </div>
                   </div>
@@ -260,78 +245,99 @@ export default function LicznikiPage() {
           </Card>
         </div>
 
-        {/* Różnica: Zapłacili − Koszt całkowity podgrzania (live) */}
+        {/* Straty budynku za rok na energi zmiennej GJ (live) + wykres kołowy */}
         {Number.isFinite(result2.totalPaid) && Number.isFinite(result3.totalCost) && (
           (() => {
             const diff = result2.totalPaid - result3.totalCost;
-            const isOverpay = diff > 0; // nadpłata
-            const isUnderpay = diff < 0; // niedopłata
-            const bgClass = isOverpay
-              ? "bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800"
-              : isUnderpay
-              ? "bg-rose-50 dark:bg-rose-900/20 border-rose-200 dark:border-rose-800"
-              : "bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700";
-            const textMain = isOverpay
-              ? "text-emerald-900 dark:text-emerald-100"
-              : isUnderpay
-              ? "text-rose-900 dark:text-rose-100"
-              : "text-slate-900 dark:text-slate-100";
-            const textSub = isOverpay
-              ? "text-emerald-700 dark:text-emerald-300"
-              : isUnderpay
-              ? "text-rose-700 dark:text-rose-300"
-              : "text-slate-600 dark:text-slate-300";
-
+            const bgClass = "bg-gradient-to-r from-fuchsia-700/10 via-blue-900/20 to-slate-900/40 border-fuchsia-800";
+            const textMain = "text-fuchsia-200";
+            const textSub = "text-fuchsia-400";
+            const pieData = [
+              {
+                name: "Koszt użytecznego podgrzania CWU",
+                value: result3.totalCost,
+                color: "#38bdf8", // niebieski
+              },
+              {
+                name: "Straty budynku za rok",
+                value: Math.abs(diff),
+                color: "#a21caf", // fioletowy
+              },
+            ];
             return (
-              <Card className={`border ${bgClass} shadow-lg`}> 
-                <CardHeader className="pb-2">
-                  <CardTitle className="flex items-center gap-3 text-base">
-                    <span className={`font-semibold ${textSub}`}>Różnica</span>
-                    <Badge
-                      className={
-                        isOverpay
-                          ? "bg-emerald-600 text-white hover:bg-emerald-600/90"
-                          : isUnderpay
-                          ? "bg-rose-600 text-white hover:bg-rose-600/90"
-                          : "bg-slate-600 text-white hover:bg-slate-600/90"
-                      }
-                    >
-                      {isOverpay ? "nadpłata" : isUnderpay ? "niedopłata" : "0 zł"}
-                    </Badge>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <div className={`text-3xl md:text-4xl font-bold ${textMain}`}>
-                    {Math.abs(diff).toLocaleString("pl-PL", { minimumFractionDigits: 2 })} zł
+              <div className="flex flex-col lg:flex-row justify-center items-stretch gap-8 py-8">
+                <Card className={`border ${bgClass} shadow-2xl w-full max-w-xl mx-auto`}> 
+                  <CardHeader className="pb-2 flex flex-col items-center">
+                    <CardTitle className="text-center text-lg md:text-xl font-bold tracking-tight bg-gradient-to-r from-fuchsia-400 via-blue-400 to-cyan-400 bg-clip-text text-transparent">
+                      straty budynku za rok za zakup energi zmiennej GJ (tzw. opłata zmienna)
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-0 flex flex-col items-center">
+                    <div className={`text-4xl md:text-5xl font-extrabold ${textMain} text-center`}
+                      style={{ letterSpacing: "0.02em" }}>
+                      {Math.abs(diff).toLocaleString("pl-PL", { minimumFractionDigits: 2 })} zł
+                    </div>
+                    <div className={`mt-2 text-xs ${textSub} text-center`}
+                      style={{ letterSpacing: "0.04em" }}>
+                      Tyle mieszkańcy zapłacili za straty wewnętrzne instalacji w przeciągu roku
+                    </div>
+                    <div className="mt-6 flex justify-center">
+                      {(() => {
+                        const payload = {
+                          waterVolumeM3: waterVolumeM3,
+                          paidVolumeM3: waterVolumeM3,
+                          theoreticalVolumeM3: waterVolumeM3,
+                          pricePerM3: pricePerM3_2,
+                          pricePerGJ: pricePerGJ3,
+                          totalPaid: result2.totalPaid,
+                          totalCost: result3.totalCost,
+                          createdAt: new Date().toISOString(),
+                        };
+                        return (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => onDownloadSummary(payload)}
+                          >
+                            📄 Pobierz PDF podsumowania
+                          </Button>
+                        );
+                      })()}
+                    </div>
+                  </CardContent>
+                </Card>
+                {/* Wykres kołowy */}
+                <div className="flex flex-col items-center justify-center w-full max-w-md mx-auto bg-slate-900/60 rounded-2xl shadow-xl p-6">
+                  <h3 className="text-base font-bold text-slate-200 mb-4 text-center">Udział kosztów w rocznym rachunku mieszkańców</h3>
+                  <ResponsiveContainer width="100%" height={260}>
+                    <PieChart>
+                      <Pie
+                        data={pieData}
+                        dataKey="value"
+                        nameKey="name"
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={90}
+                        innerRadius={50}
+                        label={({ name, percent, index }) =>
+                          index === 1
+                            ? `STRATY ${((percent as number) * 100).toFixed(0)}%`
+                            : `${name}: ${((percent as number) * 100).toFixed(0)}%`
+                        }
+                      >
+                        {pieData.map((entry, idx) => (
+                          <Cell key={`cell-${idx}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip formatter={(value: number) => `${value.toLocaleString("pl-PL", { minimumFractionDigits: 2 })} zł`} />
+                      <Legend />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <div className="mt-4 text-xs text-slate-400 text-center">
+                    Całość = koszt mieszkańców za podgrzanie CWU i straty budynku
                   </div>
-                  <div className={`mt-2 text-xs ${textSub}`}>
-                    Zapłacili − Koszt całkowity podgrzania
-                  </div>
-                  <div className="mt-4">
-                    {(() => {
-                      const payload = {
-                        waterVolumeM3: waterVolumeM3,
-                        paidVolumeM3: waterVolumeM3,
-                        theoreticalVolumeM3: waterVolumeM3,
-                        pricePerM3: pricePerM3_2,
-                        pricePerGJ: pricePerGJ3,
-                        totalPaid: result2.totalPaid,
-                        totalCost: result3.totalCost,
-                        createdAt: new Date().toISOString(),
-                      };
-                      return (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => onDownloadSummary(payload)}
-                        >
-                          📄 Pobierz PDF podsumowania
-                        </Button>
-                      );
-                    })()}
-                  </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             );
           })()
         )}
