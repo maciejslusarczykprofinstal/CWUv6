@@ -278,6 +278,7 @@ export default function MocZamowionaPage() {
 								{/* Wykres liniowy mocy zamówionej w zależności od sumy FU */}
 								<div className="mt-10 bg-slate-900/80 rounded-xl p-6 border border-blue-900 shadow-inner">
 									<h4 className="text-blue-300 font-bold mb-4 text-center">Moc zamówiona w zależności od sumy FU</h4>
+<<<<<<< HEAD
 														<ResponsiveContainer width="100%" height={260}>
 															<LineChart
 																data={Array.from({ length: 41 }, (_, i) => {
@@ -295,6 +296,68 @@ export default function MocZamowionaPage() {
 																<Line type="monotone" dataKey="power" stroke="#38bdf8" strokeWidth={3} dot={false} name="Moc zamówiona [kW]" />
 															</LineChart>
 														</ResponsiveContainer>
+=======
+																		<ResponsiveContainer width="100%" height={260}>
+																								<LineChart
+																															data={(() => {
+																																const xMin = 0;
+																																const xMax = Math.max(40, Math.ceil(fuSum / 5) * 5, fuSum + 20);
+																																return Array.from({ length: xMax - xMin + 1 }, (_, i) => {
+																																	const fu = i + xMin;
+																																	const qd = fu > 1 ? 0.5 * Math.sqrt(fu - 1) : 0;
+																																	const power = 1.163 * qd * deltaT;
+																																	return { fu, qd, power };
+																																});
+																															})()}
+																									margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+																								>
+																				<CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+																														<XAxis
+																															dataKey="fu"
+																															stroke="#60a5fa"
+																															label={{ value: "Suma FU", position: "insideBottom", offset: -5, fill: '#60a5fa' }}
+																															tick={{ fill: '#60a5fa', fontSize: 12 }}
+																															domain={[
+																																Math.max(0, fuSum - 20),
+																																fuSum + 20
+																															]}
+																															type="number"
+																														/>
+																														<YAxis
+																															stroke="#60a5fa"
+																															label={{ value: "Moc zamówiona [kW]", angle: -90, position: "insideLeft", fill: '#60a5fa' }}
+																															tick={{ fill: '#60a5fa', fontSize: 12 }}
+																															domain={[0, Math.max(orderedPower * 1.2, 10)]}
+																														/>
+																				<Tooltip formatter={(v: number, name: string, props) => name === 'power' ? v.toLocaleString("pl-PL", { minimumFractionDigits: 2 }) + " kW" : v.toLocaleString("pl-PL", { minimumFractionDigits: 2 }) + " l/min"} labelFormatter={l => `Suma FU: ${l}`}/>
+																				<Line type="monotone" dataKey="power" stroke="#38bdf8" strokeWidth={3} dot={false} name="Moc zamówiona [kW]" />
+																				{/* Kropka na wykresie dla aktualnej sumy FU */}
+																														<Line
+																															dataKey="power"
+																															stroke="none"
+																															dot={(props: any) => {
+																																// Kropka na środku osi X
+																																const centerX = 220; // połowa szerokości wykresu (przy 100% width=440px)
+																																if (Math.abs(props.cx - centerX) < 6) {
+																																	return (
+																																		<circle
+																																			cx={props.cx}
+																																			cy={props.cy}
+																																			r={8}
+																																			fill="#fbbf24"
+																																			stroke="#f59e42"
+																																			strokeWidth={3}
+																																			style={{ filter: 'drop-shadow(0 0 6px #fbbf24)' }}
+																																		/>
+																																	);
+																																}
+																																return <g />;
+																															}}
+																															legendType="none"
+																														/>
+																			</LineChart>
+																		</ResponsiveContainer>
+>>>>>>> f67f7c48a0713dba4d7a80022d1ec8069d6235fc
 														<div className="text-xs text-blue-400 text-center mt-2">Wzory: <span className="font-mono">q<sub>d</sub> = 0.5·√(FU−1)</span> &nbsp; <span className="font-mono">P = 1.163·q<sub>d</sub>·ΔT</span></div>
 								</div>
 														<div className="mt-2 text-blue-300 text-center text-sm">
