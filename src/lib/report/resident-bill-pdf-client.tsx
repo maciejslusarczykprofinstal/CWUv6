@@ -1,4 +1,4 @@
-import { Document, Page, Text, View, StyleSheet, Link, Font, Image, Svg, Rect, Line, Path } from "@react-pdf/renderer";
+import { Document, Page, Text, View, StyleSheet, Link, Font, Image, Svg, Rect, Line, Path, Defs, LinearGradient, Stop, Ellipse } from "@react-pdf/renderer";
 import type { ResidentReportInput, ResidentReportResult } from "@/lib/report/types";
 
 // Rejestracja czcionki Roboto z lokalnych plików (TTF z pełnym wsparciem polskich znaków)
@@ -144,61 +144,106 @@ export function ResidentBillPDFDocument({
   };
 
   // 100% stacked bar: udział użyteczne vs straty
-  // Wykres kołowy: udział użyteczne vs straty
-  const PieChart = ({
+  // PieChart3D - pseudo-3D styl Excel
+  const PieChart3D = ({
     title,
     useful,
     loss,
-    size = 140,
+    size = 160,
   }: { title: string; useful: number; loss: number; size?: number }) => {
-    const total = Math.max(0.0001, (useful || 0) + (loss || 0));
-    const pu = (useful || 0) / total;
-    const pl = (loss || 0) / total;
-    
+    const total = Math.max(0.0001, useful + loss);
+    const pu = useful / total;
+    const pl = loss / total;
+
     const centerX = size / 2;
     const centerY = size / 2;
-    const radius = size / 2 - 10;
-    
-    // Kąt startowy dla użytecznej (od góry, 12 o'clock)
-    const startAngleUseful = -90; // -90° = góra
-    const endAngleUseful = startAngleUseful + (pu * 360);
-    
-    // Kąt dla strat
+    const radius = size / 2 - 12;
+    const thickness = 18; // grubość ścianki
+
+    // Kąty
+    const startAngleUseful = -90;
+    const endAngleUseful = startAngleUseful + pu * 360;
     const startAngleLoss = endAngleUseful;
-    const endAngleLoss = startAngleLoss + (pl * 360);
-    
-    // Funkcja do obliczenia ścieżki łuku
-    const getArcPath = (startAngle: number, endAngle: number, r: number) => {
+    const endAngleLoss = startAngleLoss + pl * 360;
+
+    // ArcPath helper
+    const getArcPath = (startAngle: number, endAngle: number, r: number, cy: number) => {
       const startRad = (startAngle * Math.PI) / 180;
       const endRad = (endAngle * Math.PI) / 180;
-      
       const x1 = centerX + r * Math.cos(startRad);
-      const y1 = centerY + r * Math.sin(startRad);
+      const y1 = cy + r * Math.sin(startRad);
       const x2 = centerX + r * Math.cos(endRad);
-      const y2 = centerY + r * Math.sin(endRad);
-      
+      const y2 = cy + r * Math.sin(endRad);
       const largeArc = endAngle - startAngle > 180 ? 1 : 0;
-      
-      return `M ${centerX} ${centerY} L ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2} Z`;
+      return `M ${centerX} ${cy} L ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2} Z`;
     };
-    
+
     return (
       <View style={{ marginTop: 8, marginBottom: 8, alignItems: "center" }}>
-        <Text style={{ fontSize: 11, fontWeight: 600, marginBottom: 8 }}>{title}</Text>
-        <Svg width={size} height={size}>
-          {/* Użyteczne - niebieski */}
-          <Path d={getArcPath(startAngleUseful, endAngleUseful, radius)} fill="#60a5fa" stroke="#fff" strokeWidth={2} />
-          {/* Straty - żółty */}
-          <Path d={getArcPath(startAngleLoss, endAngleLoss, radius)} fill="#fbbf24" stroke="#fff" strokeWidth={2} />
+        <Text style={{ fontSize: 12, fontWeight: 700, marginBottom: 8 }}>{title}</Text>
+        <Svg width={size} height={size + thickness}>
+          {/* Cień pod wykresem */}
+          <Ellipse
+            cx={centerX}
+            cy={centerY + thickness / 2}
+            rx={radius}
+            ry={radius / 2}
+            fill="#222"
+            opacity={0.18}
+          />
+          <Defs>
+            {/* Gradient dla segmentów */}
+            <LinearGradient id="usefulGrad" x1="0" y1="0" x2="0" y2="1">
+              <Stop offset="0%" stopColor="#60eaff" />
+              <Stop offset="100%" stopColor="#2563eb" />
+            </LinearGradient>
+            <LinearGradient id="lossGrad" x1="0" y1="0" x2="0" y2="1">
+              <Stop offset="0%" stopColor="#ffd580" />
+              <Stop offset="100%" stopColor="#f59e42" />
+            </LinearGradient>
+          </Defs>
+          {/* Ścianka boczna (pseudo-3D) */}
+          <Path
+            d={getArcPath(startAngleUseful, endAngleUseful, radius, centerY + thickness)}
+            fill="url(#usefulGrad)"
+            stroke="#fff"
+            strokeWidth={2}
+            opacity={0.7}
+          />
+          <Path
+            d={getArcPath(startAngleLoss, endAngleLoss, radius, centerY + thickness)}
+            fill="url(#lossGrad)"
+            stroke="#fff"
+            strokeWidth={2}
+            opacity={0.7}
+          />
+          {/* Górna część (jasna) */}
+          <Path
+            d={getArcPath(startAngleUseful, endAngleUseful, radius, centerY)}
+            fill="url(#usefulGrad)"
+            stroke="#fff"
+            strokeWidth={2}
+          />
+          <Path
+            d={getArcPath(startAngleLoss, endAngleLoss, radius, centerY)}
+            fill="url(#lossGrad)"
+            stroke="#fff"
+            strokeWidth={2}
+          />
         </Svg>
-        <View style={{ marginTop: 8 }}>
-          <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 2 }}>
-            <View style={{ width: 10, height: 10, backgroundColor: "#60a5fa", marginRight: 6 }} />
-            <Text style={{ fontSize: 10, color: "#333" }}>Użyteczne: {(pu * 100).toFixed(0)}% ({(useful || 0).toFixed(3)} GJ/m³)</Text>
+        {/* Legenda pod wykresem */}
+        <View style={{ marginTop: 10, flexDirection: "row", justifyContent: "center", gap: 16 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", marginRight: 12 }}>
+            <Ellipse cx={0} cy={0} rx={6} ry={6} fill="#60eaff" />
+            <Text style={{ fontSize: 10, marginLeft: 6, fontFamily: 'Roboto' }}>
+              Użyteczne: {(pu * 100).toFixed(0)}% ({useful.toFixed(2)} GJ)
+            </Text>
           </View>
           <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <View style={{ width: 10, height: 10, backgroundColor: "#fbbf24", marginRight: 6 }} />
-            <Text style={{ fontSize: 10, color: "#333" }}>Straty: {(pl * 100).toFixed(0)}% ({(loss || 0).toFixed(3)} GJ/m³)</Text>
+            <Ellipse cx={0} cy={0} rx={6} ry={6} fill="#ffd580" />
+            <Text style={{ fontSize: 10, marginLeft: 6, fontFamily: 'Roboto' }}>
+              Straty: {(pl * 100).toFixed(0)}% ({loss.toFixed(2)} GJ)
+            </Text>
           </View>
         </View>
       </View>
@@ -299,7 +344,7 @@ export function ResidentBillPDFDocument({
           />
         </View>
 
-        <PieChart
+        <PieChart3D
           title="Udział energii: użyteczne vs straty"
           useful={Number(r.energyPerM3) || 0}
           loss={Number(r.energyLossPerM3) || 0}

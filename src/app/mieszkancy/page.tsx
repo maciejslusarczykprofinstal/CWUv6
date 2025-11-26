@@ -159,8 +159,18 @@ export default function MieszkancyPage() {
           <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight bg-gradient-to-r from-cyan-400 via-blue-300 to-blue-600 bg-clip-text text-transparent drop-shadow-xl">
             Mieszkańcy Analiza strat CWU
           </h1>
+          <p className="text-lg md:text-xl text-blue-100 max-w-2xl mx-auto mt-4">
+            Płacisz za ciepło, którego nawet nie używasz. Serio.<br />
+            W wielu blokach nawet 2/3 kosztów ogrzewania wody znika w ścianach, piwnicach i źle ustawionej cyrkulacji. A Ty dostajesz tylko jedno: coraz wyższe rachunki. Podwyżki? Będą. Bo jeśli instalacja marnuje energię, to ktoś za to musi zapłacić — i zwykle są to mieszkańcy.<br /><br />
+            A teraz najlepsze: te straty da się ograniczyć. I to nie kosmetycznie.<br />
+            Dobrze przeprowadzona termomodernizacja, regulacja przepływów i modernizacja instalacji CWU potrafią obniżyć koszty nawet o 20–60%. To realne pieniądze, które mogą zostać w Twojej kieszeni zamiast uciekać do sieci ciepłowniczej.<br /><br />
+            Co więcej — zarządcy i spółdzielnie mają obowiązek dbać o efektywność instalacji i minimalizację strat. Prawo jest tu jasne. Jeśli budynek przepłaca, to nie jest „naturalny koszt ciepła”, tylko brak działań po stronie administracji.<br /><br />
+            Jeśli chcesz wiedzieć, ile Twój blok traci i ile można odzyskać, sprawdzimy to za Ciebie.<br />
+            Konkretnie, szybko i technicznie — ale w sposób zrozumiały dla mieszkańców.<br /><br />
+            Zatrzymaj straty. Zatrzymaj podwyżki. Zacznij oszczędzać.
+          </p>
           <p className="text-lg text-slate-300 max-w-2xl mx-auto">
-            Kalkulator kosztów podgrzania Ciepłej wody użytkowej – sprawdź, czy płacisz za dużo i poznaj realne straty w swoim budynku.
+            {/* usunięto drugi opis zgodnie z nową wersją tekstu */}
           </p>
         </div>
 
@@ -184,14 +194,17 @@ export default function MieszkancyPage() {
                 <div className="flex items-center gap-3 mb-6">
                   <div className="w-1 h-8 bg-gradient-to-b from-blue-500 to-cyan-500 rounded-full"></div>
                   <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200">
-                    Dane z rachunku
+                    <span className="text-cyan-200">Dane z rachunku</span>
                   </h3>
+                  <p className="text-base font-medium text-white bg-blue-900/80 rounded-xl px-4 py-3 mt-2 shadow-md">
+                    Przepisz dane z rachunku. Interesuje nas tylko ile płacisz za podgrzanie ciepłej wody użytkowej. Podaj również swoje zużycie miesięczne, a obliczymy ile płacisz za ciepłą wodę, którą masz w kranie, a ile procent z Twoich opłat idzie na pokrycie strat wewnątrzbudynkowych.
+                  </p>
                 </div>
                 <div className="grid md:grid-cols-2 gap-6">
                   <Field label="Podgrzanie ciepłej wody" unit="zł/m³" numeric hint="Przepisz wartość z rachunku">
                     <div className="relative">
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
-                        <Calculator className="w-4 h-4" />
+                        <Calculator className="w-4 h-4 text-cyan-200" />
                       </span>
                       <input
                         type="number"
@@ -204,13 +217,13 @@ export default function MieszkancyPage() {
                         aria-label="Podgrzanie ciepłej wody w zł za metr sześcienny"
                         className="w-full pl-10 pr-16 py-3 border-2 border-blue-400 dark:border-blue-400 rounded-xl bg-white dark:bg-[#101828] text-[#101828] dark:text-white focus:ring-2 focus:ring-blue-600 focus:border-blue-400 dark:focus:border-blue-400 transition-all placeholder-slate-400 dark:placeholder-slate-400 text-lg font-semibold"
                       />
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 dark:text-slate-400 text-sm font-medium select-none">zł/m³</span>
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-white text-sm font-medium select-none">zł/m³</span>
                     </div>
                   </Field>
                   <Field label="Zużycie CWU w miesiącu" unit="m³" numeric hint="Wprowadź swoje zużycie z rachunku">
                     <div className="relative">
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
-                        <Calculator className="w-4 h-4" />
+                        <Calculator className="w-4 h-4 text-cyan-200" />
                       </span>
                       <input
                         type="number"
@@ -223,7 +236,7 @@ export default function MieszkancyPage() {
                         aria-label="Zużycie CWU w metrach sześciennych na miesiąc"
                         className="w-full pl-10 pr-12 py-3 border-2 border-blue-400 dark:border-blue-400 rounded-xl bg-white dark:bg-[#101828] text-[#101828] dark:text-white focus:ring-2 focus:ring-blue-600 focus:border-blue-400 dark:focus:border-blue-400 transition-all placeholder-slate-400 dark:placeholder-slate-400 text-lg font-semibold"
                       />
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 dark:text-slate-400 text-sm font-medium select-none">m³</span>
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-white text-sm font-medium select-none">m³</span>
                     </div>
                   </Field>
                 </div>
@@ -234,7 +247,7 @@ export default function MieszkancyPage() {
                 <div className="flex items-center gap-3 mb-6">
                   <div className="w-1 h-8 bg-gradient-to-b from-emerald-500 to-green-500 rounded-full"></div>
                   <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200">
-                    Parametry techniczne
+                    <span className="text-cyan-200">Parametry techniczne</span>
                   </h3>
                 </div>
                 <div className="grid md:grid-cols-3 gap-6">
@@ -291,10 +304,14 @@ export default function MieszkancyPage() {
           <div className="space-y-8">
             <div className="text-center space-y-4">
               <h2 className="text-3xl font-bold text-slate-800 dark:text-slate-200">
-                Analiza strat na przesyle CWU
+                <span className="bg-gradient-to-r from-cyan-400 via-blue-300 to-blue-600 bg-clip-text text-transparent drop-shadow-xl text-4xl font-extrabold tracking-tight">
+                  Analiza strat na przesyle CWU
+                </span>
               </h2>
               <p className="text-lg text-slate-600 dark:text-slate-400">
-                Porównanie kosztów teoretycznych z rzeczywistymi opłatami
+                <span className="bg-gradient-to-r from-white via-cyan-300 to-blue-500 bg-clip-text text-transparent drop-shadow-xl text-xl font-extrabold tracking-tight">
+                  Porównanie kosztów teoretycznych z rzeczywistymi opłatami
+                </span>
               </p>
             </div>
             
@@ -412,18 +429,8 @@ export default function MieszkancyPage() {
 
             {/* ...przyciski PDF przeniesione na koniec strony... */}
 
-            {/* Breakdown button */}
-            <div className="flex justify-center">
-              <Button 
-                onClick={() => setShowBreakdown(!showBreakdown)}
-                className="px-14 py-8 text-2xl font-extrabold bg-gradient-to-r from-emerald-600 to-green-500 hover:from-emerald-700 hover:to-green-700 text-white rounded-2xl shadow-2xl hover:shadow-emerald-500/40 transition-all hover:scale-105 border-4 border-emerald-400 dark:border-emerald-700"
-              >
-                📊 {showBreakdown ? 'Ukryj' : 'Pokaż'} rozbicie strat na zakresy
-              </Button>
-            </div>
-
-            {/* Breakdown Analysis */}
-            {showBreakdown && inputs && (
+            {/* Breakdown Analysis zawsze widoczny */}
+            {inputs && (
               <Card className="backdrop-blur-sm bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-950/30 dark:to-green-950/30 border-2 border-emerald-200 dark:border-emerald-800 shadow-2xl">
                 <CardHeader>
                   <CardTitle className="text-2xl text-emerald-800 dark:text-emerald-200 flex items-center gap-3">

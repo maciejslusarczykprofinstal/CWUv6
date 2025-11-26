@@ -1,3 +1,4 @@
+"use client";
 import { Wrench, Calculator, FileText, Clock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
@@ -20,7 +21,13 @@ export default function WykonawcyPage() {
 
         {/* Karty narzędzi */}
         <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4">
-          <div className="group relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-900/80 via-slate-900/90 to-blue-950/80 border-0 shadow-2xl backdrop-blur-md p-8 transition-all duration-300 hover:scale-105 hover:shadow-blue-700/30 cursor-pointer">
+          <div
+            className="group relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-900/80 via-slate-900/90 to-blue-950/80 border-0 shadow-2xl backdrop-blur-md p-8 transition-all duration-300 hover:scale-105 hover:shadow-blue-700/30 cursor-pointer"
+            onClick={() => window.location.href = '/wykonawcy/szybka-wycena'}
+            role="button"
+            tabIndex={0}
+            aria-label="Szybka wycena"
+          >
             <div className="absolute inset-0 bg-gradient-to-br from-cyan-700/10 via-blue-700/10 to-slate-900/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             <div className="relative flex flex-col items-center gap-4">
               <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-700 via-blue-700 to-blue-900 text-cyan-200 shadow-lg group-hover:scale-110 transition-transform duration-300">

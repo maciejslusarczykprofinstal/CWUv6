@@ -117,7 +117,7 @@ export async function POST(req: Request) {
         data.dT_circ,
         data.hours_circ,
       );
-      circGJ = loss.GJ;
+      circGJ = loss;
     } else if (data.circulationPct && data.purchasedGJ) {
       circGJ = data.purchasedGJ * (data.circulationPct / 100);
     }

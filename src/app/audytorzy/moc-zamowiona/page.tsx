@@ -1,4 +1,6 @@
+
 "use client";
+import { orderedPowerCWU, calcModernizedLossAndEnergy } from "@/lib/calc/cwu";
 
 
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
@@ -62,7 +64,7 @@ const METHODS = [
 	{
 		key: "pn-en-806-3",
 		label: "PN-EN 806-3",
-		desc: `Obliczenia wg normy europejskiej dla instalacji ciepłej wody.\n\nFilozofia\nZamiast „wszyscy odkręcą kran na raz" norma zakłada prawdopodobieństwo jednoczesnego użycia. Im więcej mieszkań, tym mniejsza szansa, że wszyscy potrzebują wody w tym samym momencie.\n\nZastosowanie\nDoskonała do nowych budynków wielorodzinnych, hoteli, obiektów użyteczności publicznej. Mniej konserwatywna niż PN-92, ale wciąż bezpieczna.\n\nAlgorytm (skrót)\nPokaż szczegóły obliczeń\nWyznaczamy jednostki obciążenia (FU) dla każdego punktu czerpania wody (umywalka, prysznic, itd.).\nSumujemy FU: Σ FU.\nObliczamy przepływ obliczeniowy:\nq_d = k · ΣFU\ngdzie k to współczynnik (zazwyczaj 0.5).\nPrzeliczamy na moc:\nP = 1.163 · q_d · ΔT\ngdzie ΔT to różnica temperatur (°C), przyjmujemy podgrzanie od 10°C do 55°C (ΔT = 45°C).`
+		desc: "Norma europejska dla CWU. Uwzględnia jednoczesność, oblicza moc na podstawie sumy FU."
 	},
 	{
 		key: "bilans-energetyczny",
@@ -152,25 +154,26 @@ export default function MocZamowionaPage() {
 				const orderedPower = 1.163 * qd * deltaT; // moc zamówiona w kW
 
 	return (
-		<div className="min-h-screen flex bg-gradient-to-br from-slate-900 via-blue-950 to-slate-800">
-			{/* Lewy panel z przyciskami */}
-			<aside className="w-full max-w-xs md:max-w-sm lg:max-w-xs xl:max-w-xs flex flex-col gap-3 p-6 bg-slate-900/80 border-r border-slate-800 shadow-2xl">
-				<h2 className="text-lg font-bold text-slate-200 mb-4 tracking-tight">Wybierz metodę obliczeniową</h2>
-				<div className="flex flex-col gap-3">
-					{METHODS.map((m) => (
-						<Button
-							key={m.key}
-							variant={selected === m.key ? "default" : "outline"}
-							className={`flex flex-col items-start justify-center min-h-[90px] h-auto min-w-0 w-full px-5 py-4 rounded-2xl font-semibold text-base transition-all border-2 whitespace-normal break-words text-left ${selected === m.key ? "border-blue-500 bg-gradient-to-r from-blue-700 to-cyan-600 text-white shadow-lg" : "border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700/80"}`}
-							style={{ wordBreak: "break-word", whiteSpace: "normal" }}
-							onClick={() => setSelected(m.key)}
-						>
-							<span className="font-bold text-base mb-1 w-full block leading-snug break-words whitespace-normal">{m.label}</span>
-							<span className="text-xs text-slate-400 leading-tight w-full block break-words whitespace-normal">{m.desc}</span>
-						</Button>
-					))}
-				</div>
-			</aside>
+				<div className="min-h-screen flex bg-gradient-to-br from-slate-900 via-blue-950 to-slate-800">
+						{/* Lewy panel z przyciskami */}
+
+
+						<aside className="w-full max-w-xs md:max-w-sm lg:max-w-xs xl:max-w-xs flex flex-col gap-6 p-6 bg-slate-900/90 border-r border-slate-800 shadow-2xl">
+							<div className="flex flex-col gap-6 mt-4 w-full md:flex-row md:flex-wrap md:gap-4">
+								{METHODS.map((m) => (
+									<Button
+										key={m.key}
+										variant={selected === m.key ? "default" : "outline"}
+										className={`w-full min-w-[220px] max-w-full md:w-[calc(50%-0.5rem)] lg:w-full flex flex-col items-start justify-center min-h-[110px] px-6 py-6 rounded-2xl font-semibold text-base transition-all border-2 whitespace-pre-line break-words text-left mb-2 md:mb-0 ${selected === m.key ? "border-blue-500 bg-gradient-to-r from-blue-700 to-cyan-600 text-white shadow-lg" : "border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700/80"}`}
+										style={{ wordBreak: "break-word", whiteSpace: "pre-line" }}
+										onClick={() => setSelected(m.key)}
+									>
+										<span className="font-bold text-base mb-3 w-full block leading-snug break-words whitespace-pre-line text-wrap hyphens-auto">{m.label}</span>
+										<span className="text-xs text-slate-300 leading-tight w-full block break-words whitespace-pre-line text-wrap hyphens-auto" style={{wordBreak: 'break-word'}}>{m.desc}</span>
+									</Button>
+								))}
+							</div>
+						</aside>
 
 			{/* Prawy panel na treść */}
 			<main className="flex-1 flex items-center justify-center p-8">
@@ -181,6 +184,7 @@ export default function MocZamowionaPage() {
 						</CardTitle>
 					</CardHeader>
 					<CardContent>
+
 						<div className="text-slate-300 text-lg min-h-[80px] whitespace-pre-line">
 							{METHODS.find((m) => m.key === selected)?.desc}
 						</div>
@@ -329,195 +333,120 @@ export default function MocZamowionaPage() {
 															)}
 										</div>
 									)}
-						<div className="mt-8 flex flex-col items-center justify-center gap-2 text-slate-500 text-xs">
-							<label className="mb-1 text-base text-slate-400 font-semibold">Straty obliczone w panelu Liczniki:</label>
-							<div className="flex items-center gap-2 mb-2">
-								<input
-									type="number"
-									min={0}
-									max={100}
-									step={0.01}
-									placeholder="Wpisz wartość"
-									value={loss}
-									onChange={e => setLoss(Number(e.target.value))}
-									className="w-24 px-3 py-2 rounded-lg bg-slate-800 border border-blue-700 text-blue-200 font-bold text-lg text-center"
-								/>
-								<span className="text-blue-400 font-semibold text-base">%</span>
-							</div>
-							<label className="mt-2 mb-1 text-base text-red-400 font-bold">REDUKCJA STRAT O</label>
-							<div className="flex items-center gap-2">
-								<input
-									type="number"
-									min={0}
-									max={100}
-									step={0.01}
-									placeholder="Wpisz wartość"
-									value={reduction}
-									onChange={e => setReduction(Number(e.target.value))}
-									className="w-24 px-3 py-2 rounded-lg bg-slate-800 border border-red-400 text-red-300 font-bold text-lg text-center"
-								/>
-								<span className="text-red-400 font-semibold text-base">%</span>
-							</div>
-							{/* STRATY PO MODERNIZACJI */}
-							<label className="mt-4 mb-1 text-base text-green-400 font-bold">STRATY PO MODERNIZACJI</label>
-							<div className="flex items-center gap-2">
-								<input
-									type="number"
-									value={((loss * reduction) / 100).toFixed(2)}
-									readOnly
-									className="w-24 px-3 py-2 rounded-lg bg-slate-800 border border-green-400 text-green-300 font-bold text-lg text-center"
-								/>
-								<span className="text-green-400 font-semibold text-base">%</span>
-							</div>
-
-
-							{/* Wzór normowy PN-EN 15316-3-2 nad wynikiem */}
-							<div className="w-full text-blue-300 text-xs mb-2 text-center">
-								<span className="font-bold">Wzór normowy PN-EN 15316-3-2:</span><br />
-								<div className="flex justify-center mt-1">
-									<KatexFormula formula={"E_{po} = E_{dzis'} \\cdot \\frac{1 + x_{po}}{1 + x}"} />
-								</div>
-								<div className="mt-2 text-blue-200 text-xs text-left mx-auto max-w-md">
-									<b>x<sub>po</sub></b> = <span className="text-green-400 font-bold">STRATY PO MODERNIZACJI</span><br />
-									<b>x</b> = <span className="text-blue-400 font-bold">Straty obliczone w panelu Liczniki</span><br />
-									<b>E<sub>dzis'</sub></b> = <span className="text-blue-400 font-bold">Podaj oryginalne Q<sub>rok</sub> [GJ/rok]</span><br />
-									<b>E<sub>po</sub></b> = <span className="text-blue-400 font-bold">Zużycie energii na CWU (Q<sub>rok</sub>) [GJ/rok] po modernizacji</span>
-								</div>
-							</div>
-							{/* Zużycie energii po modernizacji i moc */}
-							<label className="mt-4 mb-1 text-base text-blue-400 font-bold">Zużycie energii na CWU (Q<sub>rok</sub>) [GJ/rok] po modernizacji:</label>
-							<div className="flex items-center gap-2 mb-2">
-											<input
-												type="number"
-												value={(() => {
-													const x = loss;
-													const x_po = (loss * reduction) / 100;
-													const wyniki = obliczMocZamowiona({
-														E_dzis: qrokOriginal,
-														x,
-														x_po,
-														t_inst: tinstMod,
-														k_szczyt: kszczytMod,
-														bufor: buforMod,
-														f_u: fu
-													});
-													return wyniki.E_po.toFixed(2);
-												})()}
-												readOnly
-												className="w-24 px-3 py-2 rounded-lg bg-slate-800 border border-blue-400 text-blue-300 font-bold text-lg text-center"
-											/>
-											<span className="text-blue-400 font-semibold text-base">GJ/rok</span>
-							</div>
-
-							{/* Wykres liniowy E(x) */}
-
-
-							<label className="mb-1 text-xs text-slate-400">Podaj E<sub>dzis'</sub> [GJ/rok]:</label>
-							<div className="flex items-center gap-2 mb-2">
-								<input
-									type="number"
-									value={qrokOriginal}
-									onChange={e => setQrokOriginal(Number(e.target.value))}
-									className="w-24 px-3 py-2 rounded-lg bg-slate-800 border border-blue-400 text-blue-300 font-bold text-lg text-center"
-								/>
-								<span className="text-blue-400 font-semibold text-base">GJ/rok</span>
-							</div>
-							<label className="mb-1 text-base text-blue-400 font-semibold">Moc zamówiona dla instalacji po modernizacji:</label>
-							<div className="flex items-center gap-2 mb-2">
-											<input
-												type="number"
-												value={(() => {
-													const x = loss;
-													const x_po = (loss * reduction) / 100;
-													const wyniki = obliczMocZamowiona({
-														E_dzis: qrokOriginal,
-														x,
-														x_po,
-														t_inst: tinstMod,
-														k_szczyt: kszczytMod,
-														bufor: buforMod,
-														f_u: fu
-													});
-													return wyniki.P_zam.toFixed(2);
-												})()}
-												readOnly
-												className="w-24 px-3 py-2 rounded-lg bg-slate-800 border border-blue-400 text-blue-300 font-bold text-lg text-center"
-											/>
-											<span className="text-blue-400 font-semibold text-base">kW</span>
-							</div>
-							{/* Szczegółowy tok obliczeń z podstawieniem liczbowym – poprawiona logika i symbolika */}
-							<div className="w-full bg-slate-900/80 border border-blue-700 rounded-lg p-4 mt-2 text-blue-200 text-sm">
-								<div className="font-bold mb-2 text-blue-400">Szczegółowy tok obliczeń:</div>
-											{(() => {
-  const x = loss;
-  const x_po = (loss * reduction) / 100;
-	const wyniki = obliczMocZamowiona({
-		E_dzis: qrokOriginal,
-		x,
-		x_po,
-		t_inst: tinstMod,
-		k_szczyt: kszczytMod,
-		bufor: buforMod,
-		f_u: fu
-	});
-  const eta_po = wyniki.eta_po;
-  const P_sr_uz_po = wyniki.P_sr_prim * eta_po;
-  const P_szczyt_uz_po = wyniki.P_szczyt_prim * eta_po;
-  return (
-    <ol className="list-decimal pl-6 space-y-2">
-      <li>
-        <b>E<sub>po</sub> = E<sub>dzis'</sub> · (1 + x<sub>po</sub>) / (1 + x)</b><br />
-        <span className="font-mono">
-          E<sub>po</sub> = {qrokOriginal} · (1 + {(x_po.toFixed(2))}%) / (1 + {(x.toFixed(2))}%) = {wyniki.E_po.toLocaleString("pl-PL", { maximumFractionDigits: 2 })} GJ/rok
-        </span>
-      </li>
-      <li>
-        <b>P<sub>sr,prim,po</sub> = E<sub>po</sub> × 277,78 / (365 × t<sub>inst</sub>)</b><br />
-        <span className="font-mono">P<sub>sr,prim,po</sub> = {wyniki.E_po.toLocaleString("pl-PL", { maximumFractionDigits: 2 })} × 277,78 / (365 × {tinstMod}) = {wyniki.P_sr_prim.toLocaleString("pl-PL", { maximumFractionDigits: 2 })} kW</span>
-      </li>
-      <li>
-        <b>P<sub>sr,uż,po</sub> = P<sub>sr,prim,po</sub> × η<sub>po</sub></b><br />
-        <span className="font-mono">η<sub>po</sub> = 1 / (1 + x<sub>po</sub>) = {eta_po.toLocaleString("pl-PL", { maximumFractionDigits: 4 })}<br />
-        P<sub>sr,uż,po</sub> = {wyniki.P_sr_prim.toLocaleString("pl-PL", { maximumFractionDigits: 2 })} × {eta_po.toLocaleString("pl-PL", { maximumFractionDigits: 4 })} = {P_sr_uz_po.toLocaleString("pl-PL", { maximumFractionDigits: 2 })} kW</span>
-      </li>
-      <li>
-        <b>P<sub>szczyt,prim,po</sub> = k<sub>szczyt</sub> × P<sub>sr,prim,po</sub></b><br />
-        <span className="font-mono">P<sub>szczyt,prim,po</sub> = {kszczytMod} × {wyniki.P_sr_prim.toLocaleString("pl-PL", { maximumFractionDigits: 2 })} = {wyniki.P_szczyt_prim.toLocaleString("pl-PL", { maximumFractionDigits: 2 })} kW</span>
-      </li>
-      <li>
-        <b>P<sub>szczyt,uż,po</sub> = P<sub>szczyt,prim,po</sub> × η<sub>po</sub></b><br />
-        <span className="font-mono">P<sub>szczyt,uż,po</sub> = {wyniki.P_szczyt_prim.toLocaleString("pl-PL", { maximumFractionDigits: 2 })} × {eta_po.toLocaleString("pl-PL", { maximumFractionDigits: 4 })} = {P_szczyt_uz_po.toLocaleString("pl-PL", { maximumFractionDigits: 2 })} kW</span>
-      </li>
-      <li>
-        <b>P<sub>zam,po</sub> = bufor × P<sub>szczyt,prim,po</sub></b><br />
-        <span className="font-mono">P<sub>zam,po</sub> = {buforMod} × {wyniki.P_szczyt_prim.toLocaleString("pl-PL", { maximumFractionDigits: 2 })} = <span className="font-bold text-blue-400">{wyniki.P_zam.toLocaleString("pl-PL", { maximumFractionDigits: 2 })} kW</span></span>
-      </li>
-    </ol>
-  );
-})()}
-							</div>
-							<div className="grid grid-cols-2 gap-2 mb-2">
-								<div>
-									<label className="text-xs text-slate-400">t<sub>inst</sub> [h/dobę]</label>
-									<input type="number" min={1} step={1} value={tinstMod} onChange={e => setTinstMod(Number(e.target.value))} className="w-full px-2 py-1 rounded bg-slate-800 border border-blue-400 text-blue-300 font-bold text-sm text-center" />
-								</div>
-								<div>
-									<label className="text-xs text-slate-400">η<sub>po</sub> (sprawność po modernizacji)</label>
-									<input type="number" value={(() => {
-										const x_po = (loss * reduction) / 10000;
-										return (1 / (1 + x_po)).toLocaleString("pl-PL", { maximumFractionDigits: 4 });
-									})()} readOnly className="w-full px-2 py-1 rounded bg-slate-800 border border-blue-400 text-blue-300 font-bold text-sm text-center" />
-								</div>
-								<div>
-									<label className="text-xs text-slate-400">k<sub>szczyt</sub></label>
-									<input type="number" min={1} max={2} step={0.01} value={kszczytMod} onChange={e => setKszczytMod(Number(e.target.value))} className="w-full px-2 py-1 rounded bg-slate-800 border border-blue-400 text-blue-300 font-bold text-sm text-center" />
-								</div>
-								<div>
-									<label className="text-xs text-slate-400">Bufor</label>
-									<input type="number" min={1} max={1.2} step={0.01} value={buforMod} onChange={e => setBuforMod(Number(e.target.value))} className="w-full px-2 py-1 rounded bg-slate-800 border border-blue-400 text-blue-300 font-bold text-sm text-center" />
-								</div>
-							</div>
-						</div>
+								{selected === "symulacja-programowa" && (
+									<div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-8">
+										<div className="flex flex-col items-center justify-center gap-2 text-slate-500 text-xs p-4 rounded-xl bg-slate-900/80 border border-blue-700 shadow-lg">
+											<label className="mb-1 text-base text-slate-400 font-semibold">Straty obliczone w panelu Liczniki:</label>
+											<div className="flex items-center gap-2 mb-2">
+												<input
+													type="number"
+													min={0}
+													max={100}
+													step={0.01}
+													placeholder="Wpisz wartość"
+													value={loss}
+													onChange={e => setLoss(Number(e.target.value))}
+													className="w-24 px-3 py-2 rounded-lg bg-slate-800 border border-blue-700 text-blue-200 font-bold text-lg text-center"
+												/>
+												<span className="text-blue-400 font-semibold text-base">%</span>
+											</div>
+											<label className="mt-2 mb-1 text-base text-red-400 font-bold">REDUKCJA STRAT O</label>
+											<div className="flex items-center gap-2">
+												<input
+													type="number"
+													min={0}
+													max={100}
+													step={1}
+													placeholder="Wpisz wartość"
+													value={reduction}
+													onChange={e => setReduction(Number(e.target.value))}
+													className="w-24 px-3 py-2 rounded-lg bg-slate-800 border border-red-400 text-red-300 font-bold text-lg text-center"
+												/>
+												<span className="text-red-400 font-semibold text-base">%</span>
+											</div>
+											<label className="mt-4 mb-1 text-base text-green-400 font-bold">STRATY PO MODERNIZACJI</label>
+											<div className="flex items-center gap-2">
+												<input
+													type="text"
+													value={
+														typeof loss === "number" && typeof reduction === "number" && !isNaN(loss) && !isNaN(reduction)
+															? ((loss * (1 - reduction / 100)).toLocaleString("pl-PL", { maximumFractionDigits: 2 }))
+															: "–"
+													}
+													readOnly
+													className="w-24 px-3 py-2 rounded-lg bg-slate-800 border border-green-400 text-green-300 font-bold text-lg text-center"
+												/>
+												<span className="text-green-400 font-semibold text-base">%</span>
+											</div>
+											<div className="w-full text-blue-300 text-xs mb-2 text-center">
+												<span className="font-bold">Wzór normowy PN-EN 15316-3-2:</span><br />
+												<div className="flex justify-center mt-1">
+													<KatexFormula formula={"E_{po} = E_{dzis'} \\cdot \\frac{1 + x_{po}}{1 + x}"} />
+												</div>
+												<div className="mt-2 text-blue-200 text-xs text-left mx-auto max-w-md">
+													<b>x<sub>po</sub></b> = <span className="text-green-400 font-bold">STRATY PO MODERNIZACJI</span><br />
+													<b>x</b> = <span className="text-blue-400 font-bold">Straty obliczone w panelu Liczniki</span><br />
+													<b>E<sub>dzis'</sub></b> = <span className="text-blue-400 font-bold">Podaj oryginalne Q<sub>rok</sub> [GJ/rok]</span><br />
+													<b>E<sub>po</sub></b> = <span className="text-blue-400 font-bold">Zużycie energii na CWU (Q<sub>rok</sub>) [GJ/rok] po modernizacji</span>
+												</div>
+											</div>
+											<label className="mt-4 mb-1 text-base text-blue-400 font-bold">Zużycie energii na CWU (Q<sub>rok</sub>) [GJ/rok] po modernizacji:</label>
+											<div className="flex items-center gap-2 mb-2">
+												<input
+													type="text"
+													value={
+														typeof loss === "number" && typeof reduction === "number" && typeof qrokOriginal === "number" &&
+														!isNaN(loss) && !isNaN(reduction) && !isNaN(qrokOriginal)
+															? (
+																(
+																	qrokOriginal * (1 + (loss * (1 - reduction / 100)) / 100) / (1 + loss / 100)
+																).toLocaleString("pl-PL", { maximumFractionDigits: 2 })
+															)
+															: "–"
+													}
+													readOnly
+													className="w-24 px-3 py-2 rounded-lg bg-slate-800 border border-blue-400 text-blue-300 font-bold text-lg text-center"
+												/>
+												<span className="text-blue-400 font-semibold text-base">GJ/rok</span>
+											</div>
+											<label className="mb-1 text-xs text-slate-400">Podaj E<sub>dzis'</sub> [GJ/rok]:</label>
+											<div className="flex items-center gap-2 mb-2">
+												<input
+													type="number"
+													value={qrokOriginal}
+													onChange={e => setQrokOriginal(Number(e.target.value))}
+													className="w-24 px-3 py-2 rounded-lg bg-slate-800 border border-blue-400 text-blue-300 font-bold text-lg text-center"
+												/>
+												<span className="text-blue-400 font-semibold text-base">GJ/rok</span>
+											</div>
+										</div>
+										<div className="flex flex-col items-center justify-center gap-2 text-blue-300 text-base p-4 rounded-xl bg-blue-900/80 border border-blue-400 shadow-lg">
+											<label className="mb-1 text-base text-blue-400 font-semibold">Moc zamówiona dla instalacji po modernizacji:</label>
+											<div className="flex items-center gap-2 mb-2">
+												<input
+													type="number"
+													value={(() => {
+														const x = loss;
+														const x_po = x * (1 - reduction / 100);
+														const wyniki = obliczMocZamowiona({
+															E_dzis: qrokOriginal,
+															x,
+															x_po,
+															t_inst: tinstMod,
+															k_szczyt: kszczytMod,
+															bufor: buforMod,
+															f_u: fu
+														});
+														return wyniki.P_zam.toFixed(2);
+													})()}
+													readOnly
+													className="w-24 px-3 py-2 rounded-lg bg-slate-800 border border-blue-400 text-blue-300 font-bold text-lg text-center"
+												/>
+												<span className="text-blue-400 font-semibold text-base">kW</span>
+											</div>
+										</div>
+									</div>
+								)}
 					</CardContent>
 				</Card>
 			</main>

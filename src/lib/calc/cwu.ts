@@ -1,4 +1,20 @@
+// Eksport bezpośredni funkcji z tego pliku
 import Decimal from "decimal.js";
+
+/**
+ * Oblicza straty cyrkulacji metodą UA×ΔT×t
+ * @param UA - Współczynnik przenikania [W/K]
+ * @param deltaT - Różnica temperatur [K]
+ * @param hours - Liczba godzin pracy [h]
+ * @returns Straty energii w GJ
+ */
+export function circulationLossByUA(UA: number, deltaT: number, hours: number): number {
+  // Q = UA × ΔT × t [Wh], potem konwersja na GJ
+  const Q_Wh = new Decimal(UA).mul(deltaT).mul(hours);
+  const Q_kWh = Q_Wh.div(1000);
+  const Q_GJ = Q_kWh.div(277.78); // 1 GJ = 277.78 kWh
+  return Q_GJ.toNumber();
+}
 
 // ========================
 // HELPERY JEDNOSTEK
@@ -149,19 +165,56 @@ export function orderedPowerCWU(params: {
 }
 
 // ========================
-// STRATY CYRKULACJI
+// STRATY CYRKULACJI wg PN-EN 15316-3-2
 // ========================
 
-export function circulationLossByUA(UA_WK: number, dT: number, hours: number) {
-  // Q = UA × ΔT × t [W⋅h] → [kWh]
-  const Q_Wh = new Decimal(UA_WK).mul(dT).mul(hours); // W⋅h
-  const Q_kWh = Q_Wh.div(1000); // kWh
-  const Q_GJ = Q_kWh.mul(3.6).div(1000); // GJ (1 kWh = 3.6 MJ)
+// Zgodnie z PN-EN 15316-3-2
+export function calcModernizedLossAndEnergy(x: number, redukcja: number, Edzis: number) {
+    if (!Number.isFinite(x)) {
+      throw new Error("x must be a finite number");
+    }
 
-  return {
-    kWh: Q_kWh.toNumber(),
-    GJ: Q_GJ.toNumber(),
-  };
+    if (!Number.isFinite(redukcja)) {
+      throw new Error("redukcja must be a finite number");
+    }
+
+    if (!Number.isFinite(Edzis)) {
+      throw new Error("Edzis must be a finite number");
+    }
+
+    if (x < 0) {
+      throw new Error("x must be >= 0");
+    }
+
+    if (redukcja < 0 || redukcja > 100) {
+      throw new Error("redukcja must be between 0 and 100");
+    }
+
+    if (Edzis < 0) {
+      throw new Error("Edzis must be >= 0");
+    }
+  // Walidacja danych wejściowych
+  if (
+    x == null || redukcja == null || Edzis == null ||
+    typeof x !== "number" || typeof redukcja !== "number" || typeof Edzis !== "number" ||
+    isNaN(x) || isNaN(redukcja) || isNaN(Edzis) ||
+    !isFinite(x) || !isFinite(redukcja) || !isFinite(Edzis) ||
+    x < 0 || redukcja < 0 || redukcja > 100 || Edzis < 0
+  ) {
+    throw new Error("Nieprawidłowe dane wejściowe do calcModernizedLossAndEnergy");
+  }
+
+  // Straty po modernizacji wg zasady redukcji względnej
+  const x_po = x * (1 - redukcja / 100);
+
+  // Zamiana % -> ułamki
+  const x_frac = x / 100;
+  const x_po_frac = x_po / 100;
+
+  // Zużycie energii wg PN-EN 15316-3-2
+  const E_po = Edzis * ((1 + x_po_frac) / (1 + x_frac));
+
+  return { x_po, E_po };
 }
 
 // ========================
