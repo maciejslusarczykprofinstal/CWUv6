@@ -19,6 +19,7 @@ const navigation = [
   { name: "Audytorzy", href: "/audytorzy", icon: Shield },
   { name: "Wykonawcy", href: "/wykonawcy", icon: Briefcase },
   { name: "Inwestorzy", href: "/inwestorzy", icon: TrendingUp },
+  { name: "Sponsorzy", href: "/sponsorzy", icon: Briefcase },
 ];
 
 export function Navigation() {
