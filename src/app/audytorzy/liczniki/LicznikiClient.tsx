@@ -61,8 +61,14 @@ export default function LicznikiClient() {
   }, [waterVolumeM3, pricePerM3_2]);
 
   // Ścieżka 3: controlled inputs
+
   const [pricePerGJ3, setPricePerGJ3] = useState<number>(90);
   const [waterVolumeM3_3, setWaterVolumeM3_3] = useState<number>(800);
+
+  // Synchronizacja: zmiana w panelu 1 ustawia panel 2
+  useEffect(() => {
+    setWaterVolumeM3_3(waterVolumeM3);
+  }, [waterVolumeM3]);
 
   const result3 = useMemo(() => {
     // Fizyka: grzejemy wodę od 10°C do 55°C
