@@ -63,12 +63,6 @@ export default function LicznikiClient() {
   // Ścieżka 3: controlled inputs
 
   const [pricePerGJ3, setPricePerGJ3] = useState<number>(90);
-  const [waterVolumeM3_3, setWaterVolumeM3_3] = useState<number>(800);
-
-  // Synchronizacja: zmiana w panelu 1 ustawia panel 2
-  useEffect(() => {
-    setWaterVolumeM3_3(waterVolumeM3);
-  }, [waterVolumeM3]);
 
   const result3 = useMemo(() => {
     // Fizyka: grzejemy wodę od 10°C do 55°C
@@ -80,10 +74,10 @@ export default function LicznikiClient() {
     const pricePerGJ = coerce(pricePerGJ3);
     const w = coerce(waterVolumeM3);
     const totalEnergyGJ = w * energyPerM3_GJ;
-    const totalCost = totalEnergyGJ * pricePerGJ;
+    const totalCost = totalEnergyGJ * pricePerGJ3;
     const pricePerM3 = w > 0 ? totalCost / w : 0;
     return { pricePerM3, totalCost };
-  }, [pricePerGJ3, waterVolumeM3_3]);
+  }, [pricePerGJ3, waterVolumeM3]);
 
   // Zapisuj wyniki do localStorage na każdą zmianę
   useEffect(() => {
@@ -233,13 +227,13 @@ export default function LicznikiClient() {
                 <div className="space-y-2">
                   <Label className="text-sm">Zużycie CWU [m³]</Label>
                   <Input 
-                    name="waterVolumeM3_3"
+                    name="waterVolumeM3"
                     type="number"
                     step="0.01"
-                    value={waterVolumeM3_3}
+                    value={waterVolumeM3}
                     onChange={(e) => {
                       const val = Number.isFinite(e.currentTarget.valueAsNumber) ? e.currentTarget.valueAsNumber : 0;
-                      setWaterVolumeM3_3(val);
+                      setWaterVolumeM3(val);
                     }}
                     required
                   />
@@ -253,7 +247,7 @@ export default function LicznikiClient() {
                     className="bg-gradient-to-r from-blue-700 to-cyan-600 text-white border-blue-500 font-semibold shadow"
                     onClick={() => {
                       setPricePerGJ3(90);
-                      setWaterVolumeM3_3(800);
+                      setWaterVolumeM3(800);
                     }}
                   >
                     Wyczyść
@@ -265,7 +259,7 @@ export default function LicznikiClient() {
                 <div className="mt-4 space-y-3">
                   <div className="p-3 rounded-lg bg-gradient-to-r from-blue-700 to-cyan-600 border border-blue-400 shadow-lg">
                     <div className="text-xs text-blue-100">
-                      Koszt podgrzania {Number(result3 && !isNaN(result3.pricePerM3) ? result3.pricePerM3 : 0) > 0 ? waterVolumeM3_3.toLocaleString("pl-PL", { minimumFractionDigits: 2 }) : "..."} m³ wody bez strat wewnątrzbudynkowych od temperatury początkowej do wymaganych 55°C.
+                      Koszt podgrzania {Number(result3 && !isNaN(result3.pricePerM3) ? result3.pricePerM3 : 0) > 0 ? waterVolumeM3.toLocaleString("pl-PL", { minimumFractionDigits: 2 }) : "..."} m³ wody bez strat wewnątrzbudynkowych od temperatury początkowej do wymaganych 55°C.
                     </div>
                     <div className="text-2xl font-bold text-white">
                       {result3.totalCost.toLocaleString("pl-PL", { minimumFractionDigits: 2 })} zł
