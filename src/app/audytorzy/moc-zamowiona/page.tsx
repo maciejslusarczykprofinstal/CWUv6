@@ -161,16 +161,23 @@ export default function MocZamowionaPage() {
 						<aside className="w-full max-w-xs md:max-w-sm lg:max-w-xs xl:max-w-xs flex flex-col gap-6 p-6 bg-slate-900/90 border-r border-slate-800 shadow-2xl">
 							<div className="flex flex-col gap-6 mt-4 w-full md:flex-row md:flex-wrap md:gap-4">
 								{METHODS.map((m) => (
-									<Button
-										key={m.key}
-										variant={selected === m.key ? "default" : "outline"}
-										className={`w-full min-w-[220px] max-w-full md:w-[calc(50%-0.5rem)] lg:w-full flex flex-col items-start justify-center min-h-[110px] px-6 py-6 rounded-2xl font-semibold text-base transition-all border-2 whitespace-pre-line break-words text-left mb-2 md:mb-0 ${selected === m.key ? "border-blue-500 bg-gradient-to-r from-blue-700 to-cyan-600 text-white shadow-lg" : "border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700/80"}`}
-										style={{ wordBreak: "break-word", whiteSpace: "pre-line" }}
-										onClick={() => setSelected(m.key)}
-									>
-										<span className="font-bold text-base mb-3 w-full block leading-snug break-words whitespace-pre-line text-wrap hyphens-auto">{m.label}</span>
-										<span className="text-xs text-slate-300 leading-tight w-full block break-words whitespace-pre-line text-wrap hyphens-auto" style={{wordBreak: 'break-word'}}>{m.desc}</span>
-									</Button>
+									<div key={m.key} className="relative w-full min-w-[220px] max-w-full md:w-[calc(50%-0.5rem)] lg:w-full mb-2 md:mb-0">
+									  <Button
+									    variant={selected === m.key ? "default" : "outline"}
+									    className={`w-full flex flex-col items-start justify-center min-h-[110px] px-6 py-6 rounded-2xl font-semibold text-base transition-all border-2 whitespace-pre-line break-words text-left ${selected === m.key ? "border-blue-500 bg-gradient-to-r from-blue-700 to-cyan-600 text-white shadow-lg" : "border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700/80"}`}
+									    style={{ wordBreak: "break-word", whiteSpace: "pre-line" }}
+									    onClick={() => setSelected(m.key)}
+									  >
+										<span className="font-bold text-base mb-3 w-full block leading-snug break-words whitespace-pre-line text-wrap hyphens-auto">{m.label}
+											{(m.label === "Moc Zamówiona" || m.label === "Symulacja programowa") && (
+												<span className="ml-3 inline-block align-middle -rotate-6 px-2 py-0.5 bg-gradient-to-r from-pink-500 to-yellow-400 text-white text-xs font-extrabold rounded shadow-md border border-white/20" style={{transform: 'skew(-12deg)'}}>
+													Płatne
+												</span>
+											)}
+										</span>
+									    <span className="text-xs text-slate-300 leading-tight w-full block break-words whitespace-pre-line text-wrap hyphens-auto" style={{wordBreak: 'break-word'}}>{m.desc}</span>
+									  </Button>
+									</div>
 								))}
 							</div>
 						</aside>
