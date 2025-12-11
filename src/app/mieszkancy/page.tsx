@@ -305,7 +305,7 @@ export default function MieszkancyPage() {
             <div className="text-center space-y-4">
               <h2 className="text-3xl font-bold text-slate-800 dark:text-slate-200">
                 <span className="bg-gradient-to-r from-cyan-400 via-blue-300 to-blue-600 bg-clip-text text-transparent drop-shadow-xl text-4xl font-extrabold tracking-tight">
-                  Analiza strat na przesyle CWU
+                  WYNIKI
                 </span>
               </h2>
               <p className="text-lg text-slate-600 dark:text-slate-400">
