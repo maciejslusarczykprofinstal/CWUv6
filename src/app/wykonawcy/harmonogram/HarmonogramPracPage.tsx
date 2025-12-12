@@ -2,7 +2,44 @@
 // Komponent do planowania etapów, terminów, monitorowania postępu i generowania harmonogramu dla inwestora/mieszkańców
 // Zgodnie z wytycznymi – mockowane dane, pełna logika, responsywność, styl Next.js + Tailwind
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import { PDFDownloadLink, Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
+// Prosty PDF harmonogramu
+
+
+type HarmonogramPDFProps = {
+  project: Project | null;
+  stages: Stage[];
+  startDate: string;
+};
+
+function HarmonogramPDF({ project, stages, startDate }: HarmonogramPDFProps) {
+  return (
+    <Document>
+      <Page size="A4" style={{ padding: 40, fontSize: 12, fontFamily: "Helvetica" }}>
+        <View style={{ marginBottom: 16 }}>
+          <Text style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>Harmonogram prac</Text>
+          <Text>Projekt: {project?.name}</Text>
+          <Text>Adres: {project?.address}</Text>
+          {project?.estimateId && <Text>ID wyceny: {project.estimateId}</Text>}
+          {project?.offerId && <Text>ID oferty: {project.offerId}</Text>}
+          <Text>Data rozpoczęcia: {startDate}</Text>
+        </View>
+        <View>
+          <Text style={{ fontWeight: 700, marginBottom: 6 }}>Etapy:</Text>
+          {stages.map((s, i) => (
+            <View key={s.id} style={{ marginBottom: 4 }}>
+              <Text>{i + 1}. {s.name}</Text>
+              <Text>  • {s.startDate ? s.startDate.split('T')[0] : "-"} → {s.endDate ? s.endDate.split('T')[0] : "-"} ({s.durationDays} dni)</Text>
+              <Text>  • Status: {s.status === "not_started" ? "Nie rozpoczęto" : s.status === "in_progress" ? "W trakcie" : s.status === "completed" ? "Zakończono" : "Opóźnione"}, Postęp: {s.progress}%</Text>
+              {s.notes && <Text>  • Notatki: {s.notes}</Text>}
+            </View>
+          ))}
+        </View>
+      </Page>
+    </Document>
+  );
+}
 import { CalendarClock, Plus, ChevronUp, ChevronDown, Eye, Printer, FileText, List } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
@@ -53,7 +90,36 @@ const defaultStages: Stage[] = [
   { id: "s7", projectId: "1", name: "Odbiór techniczny i rozruch", type: "odbior", durationDays: 2, order: 7, status: "not_started", progress: 0 },
 ];
 
+const stepLabels = [
+  "Wybór projektu",
+  "Etapy modernizacji",
+  "Planowanie terminów",
+  "Postęp prac",
+  "Udostępnianie harmonogramu",
+];
+
 export default function HarmonogramPracPage() {
+    // Krok aktywny (0-4)
+    const [activeStep, setActiveStep] = useState(0);
+    const [validationError, setValidationError] = useState<string | null>(null);
+
+    // Walidacja kroków
+    function validateStep(step: number): string | null {
+      if (step > 0 && !currentProjectId) return "Wybierz projekt, aby kontynuować.";
+      if (step > 1 && sortedStages.length === 0) return "Dodaj przynajmniej jeden etap.";
+      if (step > 2) {
+        if (!projectStartDate) return "Ustaw datę rozpoczęcia projektu.";
+        if (sortedStages.some(s => !s.startDate || !s.endDate)) return "Ustal terminy dla wszystkich etapów.";
+        if (sortedStages.some(s => !s.durationDays || s.durationDays < 1)) return "Czas trwania każdego etapu musi być >= 1 dzień.";
+      }
+      return null;
+    }
+
+    function trySetStep(nextStep: number) {
+      const err = validateStep(nextStep);
+      setValidationError(err);
+      if (!err) setActiveStep(nextStep);
+    }
   // Stan projektów i aktualnie wybranego projektu
   const [projects, setProjects] = useState<Project[]>([
     { id: "1", name: "Modernizacja CWU – Zielona 8", address: "ul. Zielona 8, Warszawa", estimateId: "WY-2025-001", offerId: "OF-2025-001" },
@@ -66,6 +132,14 @@ export default function HarmonogramPracPage() {
   // Modal do tworzenia nowego projektu
   const [showNewProjectModal, setShowNewProjectModal] = useState(false);
   const [newProject, setNewProject] = useState<Partial<Project>>({ name: "", address: "", estimateId: "", offerId: "" });
+  useEffect(() => {
+    if (!showNewProjectModal) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setShowNewProjectModal(false);
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [showNewProjectModal]);
 
   // Etapy modernizacji
   const [stages, setStages] = useState<Stage[]>(defaultStages);
@@ -145,6 +219,11 @@ export default function HarmonogramPracPage() {
 
   function generateSchedule() {
     if (!projectStartDate) return;
+    const invalid = stages.find(s => !s.durationDays || s.durationDays < 1);
+    if (invalid) {
+      alert("Ustal prawidłowy czas trwania (>=1 dzień) dla wszystkich etapów.");
+      return;
+    }
     const start = new Date(projectStartDate);
     setStages(prev => {
       let current = new Date(start);
@@ -166,8 +245,7 @@ export default function HarmonogramPracPage() {
   }
 
   function handleExportPDF() {
-    // TODO: integracja z generatorem PDF
-    alert("Eksport PDF będzie dostępny wkrótce.");
+    // Nie używamy tej funkcji, bo PDFDownloadLink jest w renderze
   }
 
   function handleCreateProject(e: React.FormEvent) {
@@ -191,270 +269,312 @@ export default function HarmonogramPracPage() {
         </div>
 
         {/* Pasek kroków (nagłówki sekcji) */}
-        <div className="flex flex-wrap gap-2 mb-8 justify-center">
-          {[
-            "Wybór projektu",
-            "Etapy modernizacji",
-            "Planowanie terminów",
-            "Postęp prac",
-            "Udostępnianie harmonogramu",
-          ].map((label, i) => (
-            <span key={label} className={`px-4 py-2 rounded-xl font-bold text-sm ${i === 0 ? "bg-green-700 text-white" : "bg-slate-800 text-green-300"}`}>{label}</span>
+        <div className="flex flex-wrap gap-2 mb-2 justify-center">
+          {stepLabels.map((label, i) => (
+            <button
+              key={label}
+              type="button"
+              className={`px-4 py-2 rounded-xl font-bold text-sm transition-all border ${activeStep === i ? "bg-green-700 text-white border-green-700 scale-105" : "bg-slate-800 text-green-300 border-green-700 hover:bg-green-800 hover:text-white"}`}
+              onClick={() => trySetStep(i)}
+              aria-current={activeStep === i ? "step" : undefined}
+              disabled={i > activeStep + 1}
+            >
+              {label}
+            </button>
           ))}
         </div>
-
-        {/* Sekcja 1: Wybór projektu / budynku */}
-        <div className="mb-10">
-          <h3 className="text-xl font-bold text-green-200 mb-4">Wybierz projekt / budynek</h3>
-          <div className="flex flex-col md:flex-row md:items-end gap-4">
-            <div>
-              <label className="block text-green-300 font-semibold mb-1">Projekt</label>
-              <select
-                className="w-64 rounded-lg bg-slate-800 text-green-100 px-3 py-2 border border-green-700"
-                value={currentProjectId || ""}
-                onChange={e => setCurrentProjectId(e.target.value)}
-              >
-                {projects.map(p => (
-                  <option key={p.id} value={p.id}>{p.name} – {p.address}</option>
-                ))}
-              </select>
-            </div>
-            <button
-              type="button"
-              className="flex items-center gap-2 px-5 py-2 rounded-xl font-bold bg-gradient-to-r from-green-700 to-cyan-600 text-white shadow-lg hover:scale-105 transition-all"
-              onClick={() => setShowNewProjectModal(true)}
-            >
-              <Plus className="w-5 h-5" /> Utwórz nowy projekt harmonogramu
-            </button>
-          </div>
+        {validationError && (
+          <div className="text-center text-red-400 font-semibold mb-6">{validationError}</div>
+        )}
+        {/* Przyciski Dalej/Wstecz */}
+        <div className="flex justify-between mt-4 mb-8 max-w-2xl mx-auto">
+          <button
+            type="button"
+            className="px-6 py-2 rounded-xl font-bold bg-slate-800 text-green-200 border border-green-700 hover:bg-slate-700 disabled:opacity-50"
+            onClick={() => trySetStep(activeStep - 1)}
+            disabled={activeStep === 0}
+          >
+            Wstecz
+          </button>
+          <button
+            type="button"
+            className="px-6 py-2 rounded-xl font-bold bg-gradient-to-r from-green-700 to-cyan-600 text-white shadow-lg hover:scale-105 transition-all disabled:opacity-50"
+            onClick={() => trySetStep(activeStep + 1)}
+            disabled={activeStep === stepLabels.length - 1}
+          >
+            Dalej
+          </button>
         </div>
+
+        {/* Sekcje kroków */}
+        {activeStep === 0 && (
+          <div className="mb-10">
+            <h3 className="text-xl font-bold text-green-200 mb-4">Wybierz projekt / budynek</h3>
+            <div className="flex flex-col md:flex-row md:items-end gap-4">
+              <div>
+                <label className="block text-green-300 font-semibold mb-1">Projekt</label>
+                <select
+                  className="w-64 rounded-lg bg-slate-800 text-green-100 px-3 py-2 border border-green-700"
+                  value={currentProjectId || ""}
+                  onChange={e => setCurrentProjectId(e.target.value)}
+                >
+                  {projects.map(p => (
+                    <option key={p.id} value={p.id}>{p.name} – {p.address}</option>
+                  ))}
+                </select>
+              </div>
+              <button
+                type="button"
+                className="flex items-center gap-2 px-5 py-2 rounded-xl font-bold bg-gradient-to-r from-green-700 to-cyan-600 text-white shadow-lg hover:scale-105 transition-all"
+                onClick={() => setShowNewProjectModal(true)}
+              >
+                <Plus className="w-5 h-5" /> Utwórz nowy projekt harmonogramu
+              </button>
+            </div>
+          </div>
+        )}
+
+        {activeStep === 1 && (
+          <div className="mb-12">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-bold text-green-200">Etapy modernizacji</h3>
+              <button type="button" className="flex items-center gap-2 px-4 py-2 rounded-xl font-bold bg-slate-800 text-green-200 border border-green-700 hover:bg-slate-700" onClick={addStage}>
+                <Plus className="w-4 h-4" /> Dodaj etap
+              </button>
+            </div>
+            <p className="text-sm text-slate-400 mb-4">Możesz edytować nazwy etapów, typ prac, czas trwania oraz kolejność. To pozwoli dopasować harmonogram do realiów inwestycji.</p>
+            <div className="space-y-4">
+              {sortedStages.map(stage => (
+                <div key={stage.id} className="border border-green-800 rounded-2xl p-4 bg-slate-900/60">
+                  <div className="flex flex-col md:flex-row md:items-start gap-4">
+                    <div className="flex-1">
+                      <label className="block text-green-300 font-semibold mb-1">Nazwa etapu</label>
+                      <input type="text" className="w-full rounded-lg bg-slate-800 text-green-100 px-3 py-2 border border-green-700" value={stage.name} onChange={e => handleStageChange(stage.id, "name", e.target.value)} />
+                    </div>
+                    <div>
+                      <label className="block text-green-300 font-semibold mb-1">Typ</label>
+                      <select className="rounded-lg bg-slate-800 text-green-100 px-3 py-2 border border-green-700" value={stage.type} onChange={e => handleStageChange(stage.id, "type", e.target.value)}>
+                        {stageTypeOptions.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-green-300 font-semibold mb-1">Czas trwania (dni)</label>
+                      <input type="number" min={1} className="w-28 rounded-lg bg-slate-800 text-green-100 px-3 py-2 border border-green-700" value={stage.durationDays} onChange={e => handleStageChange(stage.id, "durationDays", Number(e.target.value))} />
+                    </div>
+                    <div className="flex gap-2">
+                      <button type="button" className="p-2 rounded-full bg-slate-800 text-green-200 border border-green-700 hover:bg-slate-700" onClick={() => moveStage(stage.id, "up")} aria-label="Przesuń w górę">
+                        <ChevronUp className="w-4 h-4" />
+                      </button>
+                      <button type="button" className="p-2 rounded-full bg-slate-800 text-green-200 border border-green-700 hover:bg-slate-700" onClick={() => moveStage(stage.id, "down")} aria-label="Przesuń w dół">
+                        <ChevronDown className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {sortedStages.length === 0 && (
+                <div className="text-center text-slate-400 border border-dashed border-green-800 rounded-2xl p-6">Brak zdefiniowanych etapów. Dodaj pierwszy etap, aby rozpocząć planowanie.</div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {activeStep === 2 && (
+          <div className="mb-12">
+            {/* Sekcja 3: Planowanie terminów */}
+            {/* ...istniejący kod sekcji 3... */}
+            {/* Skopiowane z poprzedniej sekcji 3 */}
+            <div className="flex flex-col md:flex-row md:items-end gap-4 mb-4">
+              <div>
+                <label className="block text-green-300 font-semibold mb-1">Data rozpoczęcia projektu</label>
+                <input type="date" className="rounded-lg bg-slate-800 text-green-100 px-3 py-2 border border-green-700" value={projectStartDate} onChange={e => setProjectStartDate(e.target.value)} />
+              </div>
+              <div className="flex items-center gap-4">
+                <label className="flex items-center gap-2 text-green-200">
+                  <input type="checkbox" checked={scheduleOptions.workdaysOnly} onChange={e => setScheduleOptions(o => ({ ...o, workdaysOnly: e.target.checked }))} /> Tylko dni robocze
+                </label>
+                <label className="flex items-center gap-2 text-green-200">
+                  <input type="checkbox" checked={scheduleOptions.includeWeekends} onChange={e => setScheduleOptions(o => ({ ...o, includeWeekends: e.target.checked }))} /> Uwzględnij weekendy
+                </label>
+              </div>
+              <button type="button" className="flex items-center gap-2 px-5 py-2 rounded-xl font-bold bg-gradient-to-r from-green-700 to-cyan-600 text-white shadow-lg hover:scale-105 transition-all" onClick={generateSchedule}>
+                <CalendarClock className="w-5 h-5" /> Generuj terminy
+              </button>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-green-200">
+                    <th className="text-left py-2">Etap</th>
+                    <th className="text-left py-2">Start</th>
+                    <th className="text-left py-2">Koniec</th>
+                    <th className="text-left py-2">Dni</th>
+                    <th className="text-left py-2">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sortedStages.map(stage => (
+                    <tr key={stage.id} className="border-t border-green-800 text-green-100">
+                      <td className="py-2">{stage.name}</td>
+                      <td className="py-2">
+                        <input type="date" className="rounded-lg bg-slate-800 px-2 py-1 border border-green-700" value={formatDateInput(stage.startDate)} onChange={e => handleStageDateChange(stage.id, "startDate", e.target.value)} />
+                      </td>
+                      <td className="py-2">
+                        <input type="date" className="rounded-lg bg-slate-800 px-2 py-1 border border-green-700" value={formatDateInput(stage.endDate)} onChange={e => handleStageDateChange(stage.id, "endDate", e.target.value)} />
+                      </td>
+                      <td className="py-2">{stage.durationDays} dni</td>
+                      <td className="py-2">
+                        <Badge variant="outline" className="border-green-700 text-green-200">
+                          {stage.status === "not_started" ? "Nie rozpoczęto" : stage.status === "in_progress" ? "W trakcie" : stage.status === "completed" ? "Zakończono" : "Opóźnione"}
+                        </Badge>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {activeStep === 3 && (
+          <div className="mb-12">
+            {/* Sekcja 4: Postęp prac */}
+            {/* ...istniejący kod sekcji 4... */}
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-bold text-green-200">Postęp prac</h3>
+              <div className="flex items-center gap-3">
+                <span className="text-green-300">Łączny postęp:</span>
+                <div className="w-40 h-3 bg-slate-800 rounded-full overflow-hidden border border-green-800">
+                  <div className="h-full bg-green-600" style={{ width: `${overallProgress}%` }} />
+                </div>
+                <span className="text-green-200 font-bold">{overallProgress}%</span>
+              </div>
+            </div>
+            <div className="space-y-4">
+              {sortedStages.map(stage => (
+                <div key={stage.id} className="border border-green-800 rounded-2xl p-4 bg-slate-900/60">
+                  <div className="flex flex-col md:flex-row md:items-center gap-4">
+                    <div className="flex-1">
+                      <div className="text-green-200 font-semibold mb-1">{stage.name}</div>
+                      <div className="flex items-center gap-3">
+                        <select className="rounded-lg bg-slate-800 text-green-100 px-3 py-2 border border-green-700" value={stage.status} onChange={e => handleStageChange(stage.id, "status", e.target.value)}>
+                          <option value="not_started">Nie rozpoczęto</option>
+                          <option value="in_progress">W trakcie</option>
+                          <option value="completed">Zakończono</option>
+                          <option value="delayed">Opóźnione</option>
+                        </select>
+                        <input type="range" min={0} max={100} value={stage.progress} onChange={e => handleStageChange(stage.id, "progress", Number(e.target.value))} />
+                        <span className="text-green-200 font-bold w-10 text-right">{stage.progress}%</span>
+                      </div>
+                    </div>
+                    <div className="flex-1">
+                      <label className="block text-green-300 font-semibold mb-1">Notatki</label>
+                      <input type="text" className="w-full rounded-lg bg-slate-800 text-green-100 px-3 py-2 border border-green-700" value={stage.notes || ""} onChange={e => handleStageChange(stage.id, "notes", e.target.value)} placeholder="Uwagi, ryzyka, ustalenia" />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {activeStep === 4 && (
+          <div className="mb-8">
+            {/* Podsumowanie harmonogramu */}
+            <div className="bg-slate-800/80 rounded-2xl p-6 mb-6 border border-green-700 max-w-2xl mx-auto">
+              <h3 className="text-2xl font-bold text-green-200 mb-2">Podsumowanie harmonogramu</h3>
+              <div className="text-green-100 mb-2"><span className="font-semibold">Projekt:</span> {currentProject?.name} – {currentProject?.address}</div>
+              <div className="text-green-100 mb-2"><span className="font-semibold">Liczba etapów:</span> {sortedStages.length}</div>
+              <div className="text-green-100 mb-2"><span className="font-semibold">Data rozpoczęcia:</span> {projectStartDate}</div>
+              <div className="text-green-100 mb-2"><span className="font-semibold">Data zakończenia:</span> {sortedStages.length ? formatDateInput(sortedStages[sortedStages.length-1].endDate) : "-"}</div>
+              <div className="text-green-100 mb-2"><span className="font-semibold">Łączny postęp:</span> {overallProgress}%</div>
+              {currentProject?.estimateId && (
+                <div className="mb-2"><span className="font-semibold">ID wyceny:</span> <a href={`/wykonawcy/generator-ofert?wycena=${currentProject.estimateId}`} className="underline text-cyan-400" target="_blank" rel="noopener noreferrer">{currentProject.estimateId}</a></div>
+              )}
+              {currentProject?.offerId && (
+                <div className="mb-2"><span className="font-semibold">ID oferty:</span> <a href={`/wykonawcy/generator-ofert?oferta=${currentProject.offerId}`} className="underline text-cyan-400" target="_blank" rel="noopener noreferrer">{currentProject.offerId}</a></div>
+              )}
+            </div>
+            <div className="flex justify-between items-center mb-4">
+              <div className="flex items-center gap-2">
+                <button type="button" className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold border ${viewMode === "list" ? "bg-green-700 text-white border-green-700" : "bg-slate-800 text-green-200 border-green-700"}`} onClick={() => setViewMode("list")}> <List className="w-4 h-4" /> Lista </button>
+                <button type="button" className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold border ${viewMode === "timeline" ? "bg-green-700 text-white border-green-700" : "bg-slate-800 text-green-200 border-green-700"}`} onClick={() => setViewMode("timeline")}> <CalendarClock className="w-4 h-4" /> Oś czasu </button>
+              </div>
+              <div className="flex items-center gap-2">
+                <button type="button" className="flex items-center gap-2 px-4 py-2 rounded-xl font-bold bg-slate-800 text-green-200 border border-green-700" onClick={() => setShowClientPreview(true)}>
+                  <Eye className="w-4 h-4" /> Podgląd dla klienta
+                </button>
+                <button type="button" className="flex items-center gap-2 px-4 py-2 rounded-xl font-bold bg-slate-800 text-green-200 border border-green-700" onClick={handlePrint}>
+                  <Printer className="w-4 h-4" /> Drukuj
+                </button>
+                <PDFDownloadLink
+                  document={<HarmonogramPDF project={currentProject} stages={sortedStages} startDate={projectStartDate} />}
+                  fileName={`harmonogram_${currentProject?.name?.replace(/\s+/g, "_") || "projekt"}.pdf`}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl font-bold bg-slate-800 text-green-200 border border-green-700 hover:bg-slate-700"
+                >
+                  {({ loading }) => (
+                    <>
+                      <FileText className="w-4 h-4" /> {loading ? "Generowanie..." : "PDF"}
+                    </>
+                  )}
+                </PDFDownloadLink>
+              </div>
+            </div>
+            {viewMode === "list" ? (
+              <div className="space-y-2">
+                {sortedStages.map(s => (
+                  <div key={s.id} className="flex items-center gap-3 border border-green-800 rounded-xl p-3 bg-slate-900/60">
+                    <div className="flex-1 text-green-200">{s.name}</div>
+                    <div className="text-green-300">{formatDateInput(s.startDate)} → {formatDateInput(s.endDate)}</div>
+                    <div className="text-green-300">{s.durationDays} dni</div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="border border-green-800 rounded-2xl p-4 bg-slate-900/60">
+                {/* Oblicz proporcje szerokości względem całego projektu */}
+                {(() => {
+                  const starts = sortedStages.map(s => s.startDate ? new Date(s.startDate).getTime() : null).filter(Boolean) as number[];
+                  const ends = sortedStages.map(s => s.endDate ? new Date(s.endDate).getTime() : null).filter(Boolean) as number[];
+                  const minStart = starts.length ? Math.min(...starts) : null;
+                  const maxEnd = ends.length ? Math.max(...ends) : null;
+                  return (
+                    <div className="space-y-3">
+                      {sortedStages.map(s => {
+                        const sStart = s.startDate ? new Date(s.startDate).getTime() : null;
+                        const sEnd = s.endDate ? new Date(s.endDate).getTime() : null;
+                        let leftPct = 0;
+                        let widthPct = 0;
+                        if (minStart && maxEnd && sStart && sEnd && maxEnd > minStart && sEnd >= sStart) {
+                          leftPct = ((sStart - minStart) / (maxEnd - minStart)) * 100;
+                          widthPct = ((sEnd - sStart) / (maxEnd - minStart)) * 100;
+                        }
+                        return (
+                          <div key={s.id}>
+                            <div className="text-green-300 mb-1">{s.name} ({formatDateInput(s.startDate)} → {formatDateInput(s.endDate)})</div>
+                            <div className="relative h-6 bg-slate-800 rounded-full overflow-hidden border border-green-800">
+                              <div className="absolute top-0 left-0 h-full bg-green-600" style={{ width: `${Math.max(3, widthPct)}%`, marginLeft: `${leftPct}%` }} />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Modal nowego projektu */}
         {showNewProjectModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-            <form className="bg-slate-900 rounded-2xl p-8 shadow-2xl border border-green-800 w-full max-w-md space-y-4" onSubmit={handleCreateProject}>
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4" onClick={(e) => {
+            if (e.target === e.currentTarget) setShowNewProjectModal(false);
+          }}>
+            <form className="bg-slate-900 rounded-2xl p-6 md:p-8 shadow-2xl border border-green-800 w-full max-w-lg md:max-w-xl space-y-4 max-h-[80vh] overflow-y-auto" onSubmit={handleCreateProject}>
               <h4 className="text-lg font-bold text-green-200 mb-2">Nowy projekt harmonogramu</h4>
               <div>
-
-              {/* Sekcja 3: Planowanie terminów */}
-              <div className="mb-12">
-                <h3 className="text-xl font-bold text-green-200 mb-4">Planowanie terminów</h3>
-                <div className="grid md:grid-cols-3 gap-4 mb-4">
-                  <div>
-                    <label className="block text-green-300 font-semibold mb-1">Data rozpoczęcia prac</label>
-                    <input type="date" className="w-full rounded-lg bg-slate-800 text-green-100 px-3 py-2 border border-green-700" value={projectStartDate} onChange={e => setProjectStartDate(e.target.value)} />
-                  </div>
-                  <label className="flex items-center gap-2 text-green-200 font-semibold">
-                    <input type="checkbox" checked={scheduleOptions.workdaysOnly} onChange={() => setScheduleOptions(o => ({ ...o, workdaysOnly: !o.workdaysOnly }))} />
-                    Uwzględniaj tylko dni robocze (pon–pt)
-                  </label>
-                  <label className="flex items-center gap-2 text-green-200 font-semibold">
-                    <input type="checkbox" checked={scheduleOptions.includeWeekends} onChange={() => setScheduleOptions(o => ({ ...o, includeWeekends: !o.includeWeekends }))} />
-                    Uwzględniaj weekendy
-                  </label>
-                </div>
-                <button type="button" className="px-6 py-2 rounded-xl font-bold bg-gradient-to-r from-green-700 to-cyan-600 text-white shadow-lg hover:scale-105 transition-all" onClick={generateSchedule}>
-                  Wyznacz terminy etapów
-                </button>
-                <div className="overflow-x-auto mt-6">
-                  <table className="w-full text-sm border border-green-800 rounded-2xl overflow-hidden">
-                    <thead className="bg-slate-800 text-green-200">
-                      <tr>
-                        <th className="px-3 py-2 text-left">Etap</th>
-                        <th className="px-3 py-2">Start</th>
-                        <th className="px-3 py-2">Koniec</th>
-                        <th className="px-3 py-2">Czas trwania (dni)</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {sortedStages.map(stage => (
-                        <tr key={stage.id} className="border-t border-green-900">
-                          <td className="px-3 py-2 text-green-100">{stage.name}</td>
-                          <td className="px-3 py-2">
-                            <input type="date" className="rounded-lg bg-slate-900 text-green-100 px-2 py-1 border border-green-700" value={formatDateInput(stage.startDate)} onChange={e => handleStageDateChange(stage.id, "startDate", e.target.value)} />
-                          </td>
-                          <td className="px-3 py-2">
-                            <input type="date" className="rounded-lg bg-slate-900 text-green-100 px-2 py-1 border border-green-700" value={formatDateInput(stage.endDate)} onChange={e => handleStageDateChange(stage.id, "endDate", e.target.value)} />
-                          </td>
-                          <td className="px-3 py-2 text-center text-green-100">{stage.durationDays}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-              {/* Sekcja 4: Monitorowanie postępu */}
-              <div className="mb-12">
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
-                  <div>
-                    <h3 className="text-xl font-bold text-green-200">Postęp prac</h3>
-                    <p className="text-sm text-slate-400">Aktualizuj statusy etapów, aby monitorować realizację.</p>
-                  </div>
-                  <div className="text-lg font-bold text-green-200">Postęp projektu: <span className="text-white">{overallProgress}%</span></div>
-                </div>
-                <div className="space-y-4">
-                  {sortedStages.map(stage => (
-                    <div key={stage.id} className="border border-green-800 rounded-2xl p-4 bg-slate-900/60">
-                      <div className="flex flex-col md:flex-row md:items-center gap-4">
-                        <div className="flex-1">
-                          <div className="text-green-200 font-semibold">{stage.name}</div>
-                          <div className="text-xs text-slate-400">{stage.startDate ? new Date(stage.startDate).toLocaleDateString("pl-PL") : "brak terminu"} – {stage.endDate ? new Date(stage.endDate).toLocaleDateString("pl-PL") : "brak"}</div>
-                        </div>
-                        <div>
-                          <label className="block text-green-300 font-semibold mb-1">Status</label>
-                          <select className="rounded-lg bg-slate-800 text-green-100 px-3 py-2 border border-green-700" value={stage.status} onChange={e => handleStageChange(stage.id, "status", e.target.value)}>
-                            <option value="not_started">Nie rozpoczęto</option>
-                            <option value="in_progress">W toku</option>
-                            <option value="completed">Zakończono</option>
-                            <option value="delayed">Opóźnione</option>
-                          </select>
-                        </div>
-                        <div className="flex-1">
-                          <label className="block text-green-300 font-semibold mb-1">Postęp (%)</label>
-                          <input type="range" min={0} max={100} value={stage.progress} onChange={e => handleStageChange(stage.id, "progress", Number(e.target.value))} className="w-full" />
-                          <div className="text-sm text-green-200">{stage.progress}%</div>
-                        </div>
-                      </div>
-                      <div className="mt-3">
-                        <label className="block text-green-300 font-semibold mb-1">Notatki</label>
-                        <textarea className="w-full rounded-lg bg-slate-800 text-green-100 px-3 py-2 border border-green-700" rows={2} value={stage.notes || ""} onChange={e => handleStageChange(stage.id, "notes", e.target.value)} placeholder="Uwagi dla zespołu lub inwestora" />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Widoki harmonogramu */}
-              <div className="mb-12">
-                <div className="flex items-center gap-4 mb-4">
-                  <h3 className="text-xl font-bold text-green-200">Widok harmonogramu</h3>
-                  <div className="flex gap-2">
-                    <button type="button" className={`px-4 py-2 rounded-xl font-bold border ${viewMode === "list" ? "bg-green-700 text-white border-green-700" : "bg-slate-800 text-green-200 border-green-700"}`} onClick={() => setViewMode("list")}>
-                      <List className="inline-block w-4 h-4 mr-1" /> Widok listy
-                    </button>
-                    <button type="button" className={`px-4 py-2 rounded-xl font-bold border ${viewMode === "timeline" ? "bg-green-700 text-white border-green-700" : "bg-slate-800 text-green-200 border-green-700"}`} onClick={() => setViewMode("timeline")}>
-                      <CalendarClock className="inline-block w-4 h-4 mr-1" /> Widok osi czasu
-                    </button>
-                  </div>
-                </div>
-                {viewMode === "list" ? (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm border border-green-800 rounded-2xl overflow-hidden">
-                      <thead className="bg-slate-800 text-green-200">
-                        <tr>
-                          <th className="px-3 py-2 text-left">Etap</th>
-                          <th className="px-3 py-2">Start</th>
-                          <th className="px-3 py-2">Koniec</th>
-                          <th className="px-3 py-2">Status</th>
-                          <th className="px-3 py-2">Postęp</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {sortedStages.map(stage => (
-                          <tr key={stage.id} className="border-t border-green-900">
-                            <td className="px-3 py-2 text-green-100">{stage.name}</td>
-                            <td className="px-3 py-2 text-center text-green-100">{stage.startDate ? new Date(stage.startDate).toLocaleDateString("pl-PL") : "-"}</td>
-                            <td className="px-3 py-2 text-center text-green-100">{stage.endDate ? new Date(stage.endDate).toLocaleDateString("pl-PL") : "-"}</td>
-                            <td className="px-3 py-2 text-center">
-                              <Badge variant="secondary" className="bg-slate-800 text-green-200 border border-green-700">
-                                {stage.status === "not_started" && "Nie rozpoczęto"}
-                                {stage.status === "in_progress" && "W toku"}
-                                {stage.status === "completed" && "Zakończono"}
-                                {stage.status === "delayed" && "Opóźnione"}
-                              </Badge>
-                            </td>
-                            <td className="px-3 py-2 text-center text-green-100">{stage.progress}%</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {sortedStages.map(stage => {
-                      const widthPercent = stage.durationDays ? Math.min(100, stage.durationDays * 5) : 10;
-                      return (
-                        <div key={stage.id} className="bg-slate-800 rounded-2xl p-4">
-                          <div className="flex justify-between text-sm text-green-200 mb-1">
-                            <span>{stage.name}</span>
-                            <span>{stage.startDate ? new Date(stage.startDate).toLocaleDateString("pl-PL") : "-"} – {stage.endDate ? new Date(stage.endDate).toLocaleDateString("pl-PL") : "-"}</span>
-                          </div>
-                          <div className="h-3 rounded-full bg-slate-900 overflow-hidden">
-                            <div className="h-full bg-gradient-to-r from-green-600 to-cyan-500" style={{ width: `${widthPercent}%` }} />
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-
-              {/* Sekcja 5: Udostępnianie harmonogramu */}
-              <div className="mb-12">
-                <h3 className="text-xl font-bold text-green-200 mb-4">Udostępnij harmonogram</h3>
-                <div className="grid md:grid-cols-2 gap-4 mb-4">
-                  <label className="flex items-center gap-2 text-green-200">
-                    <input type="checkbox" checked={shareOptions.showNames} onChange={() => setShareOptions(o => ({ ...o, showNames: !o.showNames }))} />
-                    Pokaż nazwy etapów
-                  </label>
-                  <label className="flex items-center gap-2 text-green-200">
-                    <input type="checkbox" checked={shareOptions.showDates} onChange={() => setShareOptions(o => ({ ...o, showDates: !o.showDates }))} />
-                    Pokaż daty start/koniec
-                  </label>
-                  <label className="flex items-center gap-2 text-green-200">
-                    <input type="checkbox" checked={shareOptions.showNotes} onChange={() => setShareOptions(o => ({ ...o, showNotes: !o.showNotes }))} />
-                    Pokaż opis/uwagi
-                  </label>
-                  <label className="flex items-center gap-2 text-green-200">
-                    <input type="checkbox" checked={shareOptions.hideInternal} onChange={() => setShareOptions(o => ({ ...o, hideInternal: !o.hideInternal }))} />
-                    Ukryj wewnętrzne notatki i statusy
-                  </label>
-                </div>
-                <div className="flex flex-wrap gap-4">
-                  <button type="button" className="flex items-center gap-2 px-5 py-2 rounded-xl font-bold bg-gradient-to-r from-green-700 to-cyan-600 text-white shadow-lg hover:scale-105" onClick={() => setShowClientPreview(true)}>
-                    <Eye className="w-5 h-5" /> Podgląd harmonogramu dla klienta
-                  </button>
-                  <button type="button" className="flex items-center gap-2 px-5 py-2 rounded-xl font-bold bg-slate-800 text-green-200 border border-green-700 hover:bg-slate-700" onClick={handlePrint}>
-                    <Printer className="w-5 h-5" /> Wersja do wydruku
-                  </button>
-                  <button type="button" className="flex items-center gap-2 px-5 py-2 rounded-xl font-bold bg-slate-800 text-green-200 border border-green-700 hover:bg-slate-700" onClick={handleExportPDF}>
-                    <FileText className="w-5 h-5" /> Pobierz jako PDF
-                  </button>
-                </div>
-              </div>
-
-              {showClientPreview && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-                  <div className="bg-white text-slate-900 rounded-3xl shadow-2xl max-w-3xl w-full p-8 overflow-y-auto max-h-[90vh]">
-                    <div className="flex justify-between items-start mb-4">
-                      <div>
-                        <h4 className="text-2xl font-bold text-green-700">Planowany harmonogram prac przy modernizacji instalacji CWU</h4>
-                        {currentProject && (
-                          <p className="text-sm text-slate-600">Projekt: {currentProject.name} – {currentProject.address}</p>
-                        )}
-                      </div>
-                      <button type="button" className="text-sm text-slate-500 hover:text-slate-900" onClick={() => setShowClientPreview(false)}>Zamknij</button>
-                    </div>
-                    <div className="space-y-4">
-                      {sortedStages.map(stage => (
-                        <div key={stage.id} className="border border-green-200 rounded-2xl p-4">
-                          {shareOptions.showNames && <div className="font-bold text-green-800">{stage.name}</div>}
-                          {shareOptions.showDates && (
-                            <div className="text-sm text-slate-600">{stage.startDate ? new Date(stage.startDate).toLocaleDateString("pl-PL") : "-"} – {stage.endDate ? new Date(stage.endDate).toLocaleDateString("pl-PL") : "-"}</div>
-                          )}
-                          {shareOptions.showNotes && stage.notes && (
-                            <div className="text-sm text-slate-700 mt-2">{stage.notes}</div>
-                          )}
-                          {!shareOptions.hideInternal && (
-                            <div className="text-xs text-slate-500 mt-2">Status: {stage.status}, Postęp: {stage.progress}%</div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
                 <label className="block text-green-300 font-semibold mb-1">Nazwa projektu</label>
                 <input type="text" className="w-full rounded-lg bg-slate-800 text-green-100 px-3 py-2 border border-green-700" value={newProject.name || ""} onChange={e => setNewProject(np => ({ ...np, name: e.target.value }))} required />
               </div>
@@ -524,7 +644,224 @@ export default function HarmonogramPracPage() {
           </div>
         </div>
 
-        {/* TODO: kolejne sekcje */}
+        {/* Sekcja 3: Planowanie terminów */}
+        <div className="mb-12">
+          <div className="flex flex-col md:flex-row md:items-end gap-4 mb-4">
+            <div>
+              <label className="block text-green-300 font-semibold mb-1">Data rozpoczęcia projektu</label>
+              <input type="date" className="rounded-lg bg-slate-800 text-green-100 px-3 py-2 border border-green-700" value={projectStartDate} onChange={e => setProjectStartDate(e.target.value)} />
+            </div>
+            <div className="flex items-center gap-4">
+              <label className="flex items-center gap-2 text-green-200">
+                <input type="checkbox" checked={scheduleOptions.workdaysOnly} onChange={e => setScheduleOptions(o => ({ ...o, workdaysOnly: e.target.checked }))} /> Tylko dni robocze
+              </label>
+              <label className="flex items-center gap-2 text-green-200">
+                <input type="checkbox" checked={scheduleOptions.includeWeekends} onChange={e => setScheduleOptions(o => ({ ...o, includeWeekends: e.target.checked }))} /> Uwzględnij weekendy
+              </label>
+            </div>
+            <button type="button" className="flex items-center gap-2 px-5 py-2 rounded-xl font-bold bg-gradient-to-r from-green-700 to-cyan-600 text-white shadow-lg hover:scale-105 transition-all" onClick={generateSchedule}>
+              <CalendarClock className="w-5 h-5" /> Generuj terminy
+            </button>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-green-200">
+                  <th className="text-left py-2">Etap</th>
+                  <th className="text-left py-2">Start</th>
+                  <th className="text-left py-2">Koniec</th>
+                  <th className="text-left py-2">Dni</th>
+                  <th className="text-left py-2">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sortedStages.map(stage => (
+                  <tr key={stage.id} className="border-t border-green-800 text-green-100">
+                    <td className="py-2">{stage.name}</td>
+                    <td className="py-2">
+                      <input type="date" className="rounded-lg bg-slate-800 px-2 py-1 border border-green-700" value={formatDateInput(stage.startDate)} onChange={e => handleStageDateChange(stage.id, "startDate", e.target.value)} />
+                    </td>
+                    <td className="py-2">
+                      <input type="date" className="rounded-lg bg-slate-800 px-2 py-1 border border-green-700" value={formatDateInput(stage.endDate)} onChange={e => handleStageDateChange(stage.id, "endDate", e.target.value)} />
+                    </td>
+                    <td className="py-2">{stage.durationDays} dni</td>
+                    <td className="py-2">
+                      <Badge variant="outline" className="border-green-700 text-green-200">
+                        {stage.status === "not_started" ? "Nie rozpoczęto" : stage.status === "in_progress" ? "W trakcie" : stage.status === "completed" ? "Zakończono" : "Opóźnione"}
+                      </Badge>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Sekcja 4: Postęp prac */}
+        <div className="mb-12">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-xl font-bold text-green-200">Postęp prac</h3>
+            <div className="flex items-center gap-3">
+              <span className="text-green-300">Łączny postęp:</span>
+              <div className="w-40 h-3 bg-slate-800 rounded-full overflow-hidden border border-green-800">
+                <div className="h-full bg-green-600" style={{ width: `${overallProgress}%` }} />
+              </div>
+              <span className="text-green-200 font-bold">{overallProgress}%</span>
+            </div>
+          </div>
+          <div className="space-y-4">
+            {sortedStages.map(stage => (
+              <div key={stage.id} className="border border-green-800 rounded-2xl p-4 bg-slate-900/60">
+                <div className="flex flex-col md:flex-row md:items-center gap-4">
+                  <div className="flex-1">
+                    <div className="text-green-200 font-semibold mb-1">{stage.name}</div>
+                    <div className="flex items-center gap-3">
+                      <select className="rounded-lg bg-slate-800 text-green-100 px-3 py-2 border border-green-700" value={stage.status} onChange={e => handleStageChange(stage.id, "status", e.target.value)}>
+                        <option value="not_started">Nie rozpoczęto</option>
+                        <option value="in_progress">W trakcie</option>
+                        <option value="completed">Zakończono</option>
+                        <option value="delayed">Opóźnione</option>
+                      </select>
+                      <input type="range" min={0} max={100} value={stage.progress} onChange={e => handleStageChange(stage.id, "progress", Number(e.target.value))} />
+                      <span className="text-green-200 font-bold w-10 text-right">{stage.progress}%</span>
+                    </div>
+                  </div>
+                  <div className="flex-1">
+                    <label className="block text-green-300 font-semibold mb-1">Notatki</label>
+                    <input type="text" className="w-full rounded-lg bg-slate-800 text-green-100 px-3 py-2 border border-green-700" value={stage.notes || ""} onChange={e => handleStageChange(stage.id, "notes", e.target.value)} placeholder="Uwagi, ryzyka, ustalenia" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Sekcja 5: Widok listy / osi czasu + udostępnianie */}
+        <div className="mb-8">
+          <div className="flex justify-between items-center mb-4">
+            <div className="flex items-center gap-2">
+              <button type="button" className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold border ${viewMode === "list" ? "bg-green-700 text-white border-green-700" : "bg-slate-800 text-green-200 border-green-700"}`} onClick={() => setViewMode("list")}>
+                <List className="w-4 h-4" /> Lista
+              </button>
+              <button type="button" className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold border ${viewMode === "timeline" ? "bg-green-700 text-white border-green-700" : "bg-slate-800 text-green-200 border-green-700"}`} onClick={() => setViewMode("timeline")}>
+                <CalendarClock className="w-4 h-4" /> Oś czasu
+              </button>
+            </div>
+            <div className="flex items-center gap-2">
+              <button type="button" className="flex items-center gap-2 px-4 py-2 rounded-xl font-bold bg-slate-800 text-green-200 border border-green-700" onClick={() => setShowClientPreview(true)}>
+                <Eye className="w-4 h-4" /> Podgląd dla klienta
+              </button>
+              <button type="button" className="flex items-center gap-2 px-4 py-2 rounded-xl font-bold bg-slate-800 text-green-200 border border-green-700" onClick={handlePrint}>
+                <Printer className="w-4 h-4" /> Drukuj
+              </button>
+              <PDFDownloadLink
+                document={<HarmonogramPDF project={currentProject} stages={sortedStages} startDate={projectStartDate} />}
+                fileName={`harmonogram_${currentProject?.name?.replace(/\s+/g, "_") || "projekt"}.pdf`}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl font-bold bg-slate-800 text-green-200 border border-green-700 hover:bg-slate-700"
+              >
+                {({ loading }) => (
+                  <>
+                    <FileText className="w-4 h-4" /> {loading ? "Generowanie..." : "PDF"}
+                  </>
+                )}
+              </PDFDownloadLink>
+            </div>
+          </div>
+
+          {viewMode === "list" ? (
+            <div className="space-y-2">
+              {sortedStages.map(s => (
+                <div key={s.id} className="flex items-center gap-3 border border-green-800 rounded-xl p-3 bg-slate-900/60">
+                  <div className="flex-1 text-green-200">{s.name}</div>
+                  <div className="text-green-300">{formatDateInput(s.startDate)} → {formatDateInput(s.endDate)}</div>
+                  <div className="text-green-300">{s.durationDays} dni</div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="border border-green-800 rounded-2xl p-4 bg-slate-900/60">
+              {/* Oblicz proporcje szerokości względem całego projektu */}
+              {(() => {
+                const starts = sortedStages.map(s => s.startDate ? new Date(s.startDate).getTime() : null).filter(Boolean) as number[];
+                const ends = sortedStages.map(s => s.endDate ? new Date(s.endDate).getTime() : null).filter(Boolean) as number[];
+                const minStart = starts.length ? Math.min(...starts) : null;
+                const maxEnd = ends.length ? Math.max(...ends) : null;
+                return (
+                  <div className="space-y-3">
+                    {sortedStages.map(s => {
+                      const sStart = s.startDate ? new Date(s.startDate).getTime() : null;
+                      const sEnd = s.endDate ? new Date(s.endDate).getTime() : null;
+                      let leftPct = 0;
+                      let widthPct = 0;
+                      if (minStart && maxEnd && sStart && sEnd && maxEnd > minStart && sEnd >= sStart) {
+                        leftPct = ((sStart - minStart) / (maxEnd - minStart)) * 100;
+                        widthPct = ((sEnd - sStart) / (maxEnd - minStart)) * 100;
+                      }
+                      return (
+                        <div key={s.id}>
+                          <div className="text-green-300 mb-1">{s.name} ({formatDateInput(s.startDate)} → {formatDateInput(s.endDate)})</div>
+                          <div className="relative h-6 bg-slate-800 rounded-full overflow-hidden border border-green-800">
+                            <div className="absolute top-0 left-0 h-full bg-green-600" style={{ width: `${Math.max(3, widthPct)}%`, marginLeft: `${leftPct}%` }} />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
+            </div>
+          )}
+        </div>
+
+        {/* Modal podglądu dla klienta */}
+        {showClientPreview && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4" onClick={(e) => { if (e.target === e.currentTarget) setShowClientPreview(false); }}>
+            <div className="bg-slate-900 rounded-2xl p-6 md:p-8 shadow-2xl border border-green-800 w-full max-w-3xl space-y-4 max-h-[80vh] overflow-y-auto">
+              <div className="flex justify-between items-center">
+                <h4 className="text-lg font-bold text-green-200">Harmonogram dla inwestora / mieszkańców</h4>
+                <button className="px-3 py-1 rounded-xl font-bold bg-slate-800 text-green-200 border border-green-700" onClick={() => setShowClientPreview(false)}>Zamknij</button>
+              </div>
+              <div className="text-green-100">
+                <div className="mb-2"><span className="font-semibold">Projekt:</span> {currentProject?.name} – {currentProject?.address}</div>
+                <div className="mb-2"><span className="font-semibold">Start:</span> {projectStartDate}</div>
+                {currentProject?.estimateId && (
+                  <div className="mb-2">
+                    <span className="font-semibold">ID wyceny:</span> <a href={`/wykonawcy/generator-ofert?wycena=${currentProject.estimateId}`} className="underline text-cyan-400" target="_blank" rel="noopener noreferrer">{currentProject.estimateId}</a>
+                  </div>
+                )}
+                {currentProject?.offerId && (
+                  <div className="mb-2">
+                    <span className="font-semibold">ID oferty:</span> <a href={`/wykonawcy/generator-ofert?oferta=${currentProject.offerId}`} className="underline text-cyan-400" target="_blank" rel="noopener noreferrer">{currentProject.offerId}</a>
+                  </div>
+                )}
+              </div>
+              <div className="space-y-2">
+                {sortedStages.map(s => (
+                  <div key={s.id} className="flex items-center gap-3 border border-green-800 rounded-xl p-3 bg-slate-900/60">
+                    {shareOptions.showNames && <div className="flex-1 text-green-200">{s.name}</div>}
+                    {shareOptions.showDates && <div className="text-green-300">{formatDateInput(s.startDate)} → {formatDateInput(s.endDate)}</div>}
+                    {shareOptions.showNotes && s.notes && <div className="text-green-300">{s.notes}</div>}
+                  </div>
+                ))}
+              </div>
+              <div className="flex items-center gap-4">
+                <label className="flex items-center gap-2 text-green-200">
+                  <input type="checkbox" checked={shareOptions.showNames} onChange={e => setShareOptions(o => ({ ...o, showNames: e.target.checked }))} /> Nazwy etapów
+                </label>
+                <label className="flex items-center gap-2 text-green-200">
+                  <input type="checkbox" checked={shareOptions.showDates} onChange={e => setShareOptions(o => ({ ...o, showDates: e.target.checked }))} /> Daty
+                </label>
+                <label className="flex items-center gap-2 text-green-200">
+                  <input type="checkbox" checked={shareOptions.showNotes} onChange={e => setShareOptions(o => ({ ...o, showNotes: e.target.checked }))} /> Notatki
+                </label>
+                <label className="flex items-center gap-2 text-green-200">
+                  <input type="checkbox" checked={shareOptions.hideInternal} onChange={e => setShareOptions(o => ({ ...o, hideInternal: e.target.checked }))} /> Ukryj wewnętrzne
+                </label>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
