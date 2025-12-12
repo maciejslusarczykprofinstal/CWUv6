@@ -1,10 +1,7 @@
-// Harmonogram prac i terminy realizacji
-// Komponent do planowania etapów, terminów, monitorowania postępu i generowania harmonogramu dla inwestora/mieszkańców
-// Zgodnie z wytycznymi – mockowane dane, pełna logika, responsywność, styl Next.js + Tailwind
 
+"use client";
 import React, { useEffect, useMemo, useState } from "react";
 import { PDFDownloadLink, Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
-// Prosty PDF harmonogramu
 
 
 type HarmonogramPDFProps = {
