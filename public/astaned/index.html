@@ -27,10 +27,12 @@
 
         <div class="header-contact" aria-label="Kontakt">
           <div class="header-contact-line">
-            <span class="muted">Telefon:</span> <strong>+48 XXX XXX XXX</strong>
+            <span class="muted">Telefon:</span>
+            <strong><a class="contact-link" href="tel:500445690">500 445 690</a></strong>
           </div>
           <div class="header-contact-line">
-            <span class="muted">E-mail:</span> <strong>kontakt@astaned.pl</strong>
+            <span class="muted">E-mail:</span>
+            <strong><a class="contact-link" href="mailto:stsl1@o2.pl">stsl1@o2.pl</a></strong>
           </div>
         </div>
       </div>
@@ -56,8 +58,8 @@
           <div class="hero-media" aria-label="Zdjęcie ilustracyjne">
             <!-- Uwaga: plik umieść w /public/astaned/img/hero.jpg -->
             <img
-              src="/astaned/img/hero.jpg"
-              alt="Gabinet stomatologiczny — przykład przestrzeni medycznej"
+              src="/astaned/img/gabinet.jpg"
+              alt="Gabinet stomatologiczny — wnętrze przestrzeni medycznej (zdjęcie dokumentacyjne)"
               loading="eager"
               width="960"
               height="640"
@@ -70,37 +72,114 @@
       <section class="section" aria-labelledby="about-title">
         <div class="container">
           <h2 id="about-title">O firmie AstaNed</h2>
-          <div class="prose">
-            <p>
-              AstaNed to mała, rodzinna firma z wieloletnim doświadczeniem w projektowaniu oraz doradztwie technicznym
-              w zakresie <strong>osłon radiologicznych</strong> — ze szczególnym uwzględnieniem realiów pracy gabinetów
-              stomatologicznych. Pracujemy spokojnie i rzetelnie: najpierw zbieramy informacje o planowanej pracowni
-              RTG/CBCT, następnie proponujemy rozwiązania dopasowane do układu pomieszczeń i potrzeb inwestycji.
-            </p>
-            <p>
-              W centrum naszego podejścia jest <strong>bezpieczeństwo pacjentów oraz personelu</strong>, a także zgodność
-              z aktualnymi wymaganiami formalnymi. Wiemy, że dla właściciela gabinetu liczy się przede wszystkim
-              praktyczny efekt: projekt ma „po prostu działać” — bez niejasności, bez przerzucania odpowiedzialności
-              pomiędzy branżami i bez zbędnej teorii.
-            </p>
-            <p>
-              Wspieramy zarówno nowe inwestycje (uruchomienie gabinetu od zera), jak i modernizacje — gdy pojawia się
-              potrzeba dołożenia aparatu, zmiany lokalizacji pracowni RTG lub przebudowy w związku z rozwojem gabinetu.
-              Działamy głównie w Krakowie i Małopolsce, dzięki czemu znamy lokalne uwarunkowania i typowe scenariusze
-              realizacyjne.
-            </p>
+          <div class="split" aria-label="Opis firmy i zdjęcie dokumentacyjne">
+            <div class="split-text prose">
+              <p>
+                AstaNed to mała, rodzinna firma z wieloletnim doświadczeniem w projektowaniu oraz doradztwie technicznym
+                w zakresie <strong>osłon radiologicznych</strong> — ze szczególnym uwzględnieniem realiów pracy gabinetów
+                stomatologicznych. Pracujemy spokojnie i rzetelnie: najpierw zbieramy informacje o planowanej pracowni
+                RTG/CBCT, następnie proponujemy rozwiązania dopasowane do układu pomieszczeń i potrzeb inwestycji.
+              </p>
+              <p>
+                W centrum naszego podejścia jest <strong>bezpieczeństwo pacjentów oraz personelu</strong>, a także zgodność
+                z aktualnymi wymaganiami formalnymi. Wiemy, że dla właściciela gabinetu liczy się przede wszystkim
+                praktyczny efekt: projekt ma „po prostu działać” — bez niejasności, bez przerzucania odpowiedzialności
+                pomiędzy branżami i bez zbędnej teorii.
+              </p>
+              <p>
+                Wspieramy zarówno nowe inwestycje (uruchomienie gabinetu od zera), jak i modernizacje — gdy pojawia się
+                potrzeba dołożenia aparatu, zmiany lokalizacji pracowni RTG lub przebudowy w związku z rozwojem gabinetu.
+                Działamy głównie w Krakowie i Małopolsce, dzięki czemu znamy lokalne uwarunkowania i typowe scenariusze
+                realizacyjne.
+              </p>
+
+              <div class="company-block" aria-label="Dane firmy">
+                <h3 class="subheading">Dane firmy</h3>
+                <p class="company-name"><strong>STANISŁAW ŚLUSARCZYK ASTANED</strong></p>
+                <address class="company-address">
+                  Seniorów Lotnictwa 10 lok. 55<br />
+                  31-455 Kraków
+                </address>
+                <p class="company-row">
+                  <span class="muted">Telefon:</span>
+                  <strong><a class="contact-link" href="tel:500445690">500 445 690</a></strong>
+                </p>
+                <p class="company-row">
+                  <span class="muted">E-mail:</span>
+                  <strong><a class="contact-link" href="mailto:stsl1@o2.pl">stsl1@o2.pl</a></strong>
+                </p>
+                <p class="company-row"><span class="muted">NIP:</span> <strong>6761708402</strong></p>
+                <p class="company-row"><span class="muted">REGON:</span> <strong>120552382</strong></p>
+              </div>
+            </div>
+
+            <div class="split-media" aria-label="Zdjęcie dokumentacyjne">
+              <img
+                src="/astaned/img/Astaned_zdjecie12.jpg"
+                alt="Gabinet stomatologiczny — dokumentacja prac związanych z osłonami radiologicznymi"
+                loading="lazy"
+                width="960"
+                height="640"
+              />
+            </div>
           </div>
         </div>
       </section>
 
       <!-- 3. OFERTA (ACCORDION) -->
-      <section class="section section-alt" aria-labelledby="offer-title">
+      <section class="section section-alt section-bg section-bg-offer" aria-labelledby="offer-title">
         <div class="container">
           <h2 id="offer-title">Oferta</h2>
           <p class="section-lead">
             Poniżej znajdziesz zakres usług opisany prostym językiem — tak, aby właściciel gabinetu mógł szybko ocenić,
             co obejmuje wsparcie i jak wygląda współpraca.
           </p>
+
+          <div class="split split--reverse" aria-label="Zakres usług">
+            <div class="split-text prose">
+              <h3 class="subheading">Zakres usług</h3>
+              <p>
+                Zakres usług obejmuje przygotowanie projektów osłon radiologicznych dla pracowni RTG/CBCT, konsultacje
+                techniczne na etapie planowania oraz wsparcie w uzgodnieniach z architektem i wykonawcą.
+              </p>
+              <p>
+                Dokumentacja jest przygotowywana tak, aby była czytelna dla właściciela gabinetu i jednocześnie użyteczna
+                dla wykonawcy — bez domysłów na budowie i bez kosztownych poprawek.
+              </p>
+            </div>
+            <div class="split-media" aria-label="Ilustracja zakresu usług">
+              <img
+                src="/astaned/img/obraz1.jpg"
+                alt="Gabinet stomatologiczny — dokumentacja związana z zakresem usług i osłonami radiologicznymi"
+                loading="lazy"
+                width="960"
+                height="640"
+              />
+            </div>
+          </div>
+
+          <div class="split" aria-label="Jak wygląda współpraca">
+            <div class="split-text prose">
+              <h3 class="subheading">Jak wygląda współpraca</h3>
+              <p>
+                Zaczynamy od zebrania podstawowych informacji (układ pomieszczeń, planowany aparat, sąsiednie
+                pomieszczenia). Następnie dobieramy rozwiązania osłonowe i opisujemy je w sposób możliwy do wykonania.
+              </p>
+              <p>
+                W trakcie realizacji odpowiadamy na pytania wykonawcy i doprecyzowujemy detale, aby prace przebiegały
+                bez przestojów i bez zmian „na ostatnią chwilę”.
+              </p>
+            </div>
+            <div class="split-media" aria-label="Ilustracja współpracy">
+              <img
+                src="/astaned/img/obraz2.jpg"
+                alt="Pracownia RTG w gabinecie stomatologicznym — przykład kontekstu współpracy przy osłonach radiologicznych"
+                loading="lazy"
+                width="960"
+                height="640"
+              />
+            </div>
+          </div>
 
           <div class="accordion" data-accordion>
             <div class="acc-item">
@@ -112,32 +191,45 @@
               </h3>
               <div class="acc-panel">
                 <div class="acc-panel-inner">
-                  <p>
-                    Przygotowujemy rozwiązania osłonowe dopasowane do konkretnych pomieszczeń i rodzaju aparatu.
-                    W praktyce oznacza to m.in. dobór właściwych materiałów i rozwiązań (np. w ścianach, drzwiach,
-                    przegrodach) oraz wskazanie miejsc szczególnie wrażliwych z punktu widzenia bezpieczeństwa.
-                  </p>
-                  <p>
-                    Wyjaśniamy, co jest naprawdę istotne dla gabinetu — gdzie osłona ma kluczowe znaczenie, a gdzie
-                    można zastosować prostsze rozwiązanie bez ryzyka. Dbamy o to, aby projekt był możliwy do
-                    zrealizowania przez wykonawcę bez „domyślania się” i bez kosztownych poprawek.
-                  </p>
-                  <p>
-                    Dla właściciela gabinetu liczy się przewidywalność: dlatego opisujemy krok po kroku, jakie informacje
-                    są potrzebne na starcie (plan pomieszczeń, planowany aparat, sąsiednie pomieszczenia) i co otrzymasz
-                    w ramach opracowania. Zależy nam, aby dokumentacja była czytelna również dla osób nietechnicznych —
-                    bez nadmiaru skrótów i bez „języka laboratoryjnego”.
-                  </p>
-                  <ul>
-                    <li><strong>RTG punktowe</strong> — wsparcie w dopasowaniu osłon do małych pracowni i adaptacji lokali.</li>
-                    <li><strong>Pantomograf</strong> — uwzględnienie typowych układów gabinetowych oraz przepływu pacjenta.</li>
-                    <li><strong>CBCT</strong> — szczególna dbałość o spójność rozwiązań osłonowych w całym układzie pomieszczeń.</li>
-                    <li><strong>Modernizacje</strong> — gdy gabinet działa i trzeba wprowadzić zmiany możliwie „bez rewolucji”.</li>
-                  </ul>
-                  <p>
-                    Jeśli nie masz pewności, czy w danym miejscu da się bezpiecznie zlokalizować pracownię RTG/CBCT,
-                    zaczynamy od krótkiej konsultacji i wskazania realnych wariantów.
-                  </p>
+                  <div class="split" aria-label="Opis usługi i zdjęcie">
+                    <div class="split-text prose">
+                      <p>
+                        Przygotowujemy rozwiązania osłonowe dopasowane do konkretnych pomieszczeń i rodzaju aparatu.
+                        W praktyce oznacza to m.in. dobór właściwych materiałów i rozwiązań (np. w ścianach, drzwiach,
+                        przegrodach) oraz wskazanie miejsc szczególnie wrażliwych z punktu widzenia bezpieczeństwa.
+                      </p>
+                      <p>
+                        Wyjaśniamy, co jest naprawdę istotne dla gabinetu — gdzie osłona ma kluczowe znaczenie, a gdzie
+                        można zastosować prostsze rozwiązanie bez ryzyka. Dbamy o to, aby projekt był możliwy do
+                        zrealizowania przez wykonawcę bez „domyślania się” i bez kosztownych poprawek.
+                      </p>
+                      <p>
+                        Dla właściciela gabinetu liczy się przewidywalność: dlatego opisujemy krok po kroku, jakie informacje
+                        są potrzebne na starcie (plan pomieszczeń, planowany aparat, sąsiednie pomieszczenia) i co otrzymasz
+                        w ramach opracowania. Zależy nam, aby dokumentacja była czytelna również dla osób nietechnicznych —
+                        bez nadmiaru skrótów i bez „języka laboratoryjnego”.
+                      </p>
+                      <ul>
+                        <li><strong>RTG punktowe</strong> — wsparcie w dopasowaniu osłon do małych pracowni i adaptacji lokali.</li>
+                        <li><strong>Pantomograf</strong> — uwzględnienie typowych układów gabinetowych oraz przepływu pacjenta.</li>
+                        <li><strong>CBCT</strong> — szczególna dbałość o spójność rozwiązań osłonowych w całym układzie pomieszczeń.</li>
+                        <li><strong>Modernizacje</strong> — gdy gabinet działa i trzeba wprowadzić zmiany możliwie „bez rewolucji”.</li>
+                      </ul>
+                      <p>
+                        Jeśli nie masz pewności, czy w danym miejscu da się bezpiecznie zlokalizować pracownię RTG/CBCT,
+                        zaczynamy od krótkiej konsultacji i wskazania realnych wariantów.
+                      </p>
+                    </div>
+                    <div class="split-media" aria-label="Ilustracja usługi">
+                      <img
+                        src="/astaned/img/obraz3.jpg"
+                        alt="Gabinet stomatologiczny — kontekst projektu osłon radiologicznych dla pracowni RTG/CBCT"
+                        loading="lazy"
+                        width="960"
+                        height="640"
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -151,27 +243,40 @@
               </h3>
               <div class="acc-panel">
                 <div class="acc-panel-inner">
-                  <p>
-                    Pomagamy dobrać praktyczne rozwiązania jeszcze przed rozpoczęciem prac budowlanych — tak, aby
-                    uniknąć sytuacji, w której na końcu inwestycji okazuje się, że konieczne są kosztowne przeróbki.
-                    Konsultujemy rozmieszczenie urządzeń, możliwe przebiegi instalacji, a także typowe błędy, które
-                    spotykamy w adaptacjach lokali.
-                  </p>
-                  <p>
-                    Jeżeli potrzebujesz „drugiej opinii” — spokojnie sprawdzimy założenia i wskażemy ryzyka w sposób
-                    zrozumiały dla osoby prowadzącej gabinet.
-                  </p>
-                  <p>
-                    Doradztwo techniczne jest szczególnie przydatne wtedy, gdy inwestor ma już wstępny projekt wnętrz,
-                    ale chce upewnić się, że decyzje będą bezpieczne i nie spowodują problemów na etapie realizacji.
-                    Zwykle kilka prostych korekt na początku oszczędza wiele nerwów na końcu.
-                  </p>
-                  <ul>
-                    <li>Weryfikacja założeń układu pomieszczeń pod planowany aparat RTG/CBCT.</li>
-                    <li>Wskazanie miejsc wymagających szczególnej uwagi (np. sąsiedztwo ciągów komunikacyjnych).</li>
-                    <li>Praktyczne sugestie dla wykonawcy: co zrobić, żeby nie wracać do poprawek.</li>
-                    <li>Ustalenie, jakie dane przygotować przed dalszymi krokami formalnymi.</li>
-                  </ul>
+                  <div class="split split--reverse" aria-label="Opis usługi i zdjęcie">
+                    <div class="split-text prose">
+                      <p>
+                        Pomagamy dobrać praktyczne rozwiązania jeszcze przed rozpoczęciem prac budowlanych — tak, aby
+                        uniknąć sytuacji, w której na końcu inwestycji okazuje się, że konieczne są kosztowne przeróbki.
+                        Konsultujemy rozmieszczenie urządzeń, możliwe przebiegi instalacji, a także typowe błędy, które
+                        spotykamy w adaptacjach lokali.
+                      </p>
+                      <p>
+                        Jeżeli potrzebujesz „drugiej opinii” — spokojnie sprawdzimy założenia i wskażemy ryzyka w sposób
+                        zrozumiały dla osoby prowadzącej gabinet.
+                      </p>
+                      <p>
+                        Doradztwo techniczne jest szczególnie przydatne wtedy, gdy inwestor ma już wstępny projekt wnętrz,
+                        ale chce upewnić się, że decyzje będą bezpieczne i nie spowodują problemów na etapie realizacji.
+                        Zwykle kilka prostych korekt na początku oszczędza wiele nerwów na końcu.
+                      </p>
+                      <ul>
+                        <li>Weryfikacja założeń układu pomieszczeń pod planowany aparat RTG/CBCT.</li>
+                        <li>Wskazanie miejsc wymagających szczególnej uwagi (np. sąsiedztwo ciągów komunikacyjnych).</li>
+                        <li>Praktyczne sugestie dla wykonawcy: co zrobić, żeby nie wracać do poprawek.</li>
+                        <li>Ustalenie, jakie dane przygotować przed dalszymi krokami formalnymi.</li>
+                      </ul>
+                    </div>
+                    <div class="split-media" aria-label="Ilustracja doradztwa">
+                      <img
+                        src="/astaned/img/obraz4.jpg"
+                        alt="Gabinet stomatologiczny — ilustracja doradztwa technicznego przy osłonach radiologicznych"
+                        loading="lazy"
+                        width="960"
+                        height="640"
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -185,25 +290,38 @@
               </h3>
               <div class="acc-panel">
                 <div class="acc-panel-inner">
-                  <p>
-                    Wiemy, że inwestycje gabinetowe to praca zespołowa. Współpracujemy z architektami, projektantami
-                    branżowymi oraz wykonawcami, aby osłony radiologiczne były spójne z układem funkcjonalnym,
-                    konstrukcją przegród i rozwiązaniami wykończeniowymi.
-                  </p>
-                  <p>
-                    Odpowiadamy na pytania wykonawców i doprecyzowujemy szczegóły, aby ograniczyć przestoje na budowie.
-                    Zależy nam na tym, żeby gabinet mógł sprawnie przejść od projektu do realizacji.
-                  </p>
-                  <p>
-                    W praktyce najczęstsze nieporozumienia wynikają z detali (np. prowadzenia instalacji, zmian grubości
-                    przegród, zamian materiałów). Dlatego komunikujemy się jasno i rzeczowo, a wytyczne przekazujemy w
-                    formie, którą wykonawca może zastosować bez interpretacji.
-                  </p>
-                  <ul>
-                    <li>Uzgodnienia z architektem: spójność rozwiązań osłonowych z funkcją i estetyką wnętrza.</li>
-                    <li>Kontakt z wykonawcą: doprecyzowanie detali w trakcie prac.</li>
-                    <li>Minimalizacja ryzyka „na końcu”: wczesne wychwycenie zmian wpływających na osłony.</li>
-                  </ul>
+                  <div class="split" aria-label="Opis współpracy i zdjęcie">
+                    <div class="split-text prose">
+                      <p>
+                        Wiemy, że inwestycje gabinetowe to praca zespołowa. Współpracujemy z architektami, projektantami
+                        branżowymi oraz wykonawcami, aby osłony radiologiczne były spójne z układem funkcjonalnym,
+                        konstrukcją przegród i rozwiązaniami wykończeniowymi.
+                      </p>
+                      <p>
+                        Odpowiadamy na pytania wykonawców i doprecyzowujemy szczegóły, aby ograniczyć przestoje na budowie.
+                        Zależy nam na tym, żeby gabinet mógł sprawnie przejść od projektu do realizacji.
+                      </p>
+                      <p>
+                        W praktyce najczęstsze nieporozumienia wynikają z detali (np. prowadzenia instalacji, zmian grubości
+                        przegród, zamian materiałów). Dlatego komunikujemy się jasno i rzeczowo, a wytyczne przekazujemy w
+                        formie, którą wykonawca może zastosować bez interpretacji.
+                      </p>
+                      <ul>
+                        <li>Uzgodnienia z architektem: spójność rozwiązań osłonowych z funkcją i estetyką wnętrza.</li>
+                        <li>Kontakt z wykonawcą: doprecyzowanie detali w trakcie prac.</li>
+                        <li>Minimalizacja ryzyka „na końcu”: wczesne wychwycenie zmian wpływających na osłony.</li>
+                      </ul>
+                    </div>
+                    <div class="split-media" aria-label="Ilustracja współpracy z wykonawcą">
+                      <img
+                        src="/astaned/img/obraz5.jpg"
+                        alt="Gabinet stomatologiczny — ilustracja współpracy projektowej i wykonawczej przy osłonach RTG"
+                        loading="lazy"
+                        width="960"
+                        height="640"
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -217,24 +335,37 @@
               </h3>
               <div class="acc-panel">
                 <div class="acc-panel-inner">
-                  <p>
-                    Wspieramy przygotowanie dokumentacji oraz uporządkowanie informacji potrzebnych przy odbiorach.
-                    Dzięki temu proces jest mniej stresujący: wiadomo, co i w jakiej kolejności przygotować.
-                  </p>
-                  <p>
-                    Jeśli inwestycja jest w trakcie — możemy pomóc tak poprowadzić działania, aby finalnie wszystko było
-                    spójne z projektem i gotowe do dalszych kroków formalnych.
-                  </p>
-                  <p>
-                    Dla wielu gabinetów kluczowe jest poczucie „domknięcia” tematu: aby po zakończeniu prac było jasne,
-                    że osłony zostały wykonane zgodnie z założeniami, a dokumenty są uporządkowane. Pomagamy w zebraniu
-                    i ułożeniu informacji, tak aby odbiór nie był zaskoczeniem.
-                  </p>
-                  <ul>
-                    <li>Podpowiedź, jakie materiały i informacje przygotować przed odbiorem.</li>
-                    <li>Weryfikacja spójności wykonania z projektem (na poziomie praktycznym).</li>
-                    <li>Wsparcie w komunikacji: kto co ma dostarczyć i w jakiej kolejności.</li>
-                  </ul>
+                  <div class="split split--reverse" aria-label="Opis odbiorów i zdjęcie">
+                    <div class="split-text prose">
+                      <p>
+                        Wspieramy przygotowanie dokumentacji oraz uporządkowanie informacji potrzebnych przy odbiorach.
+                        Dzięki temu proces jest mniej stresujący: wiadomo, co i w jakiej kolejności przygotować.
+                      </p>
+                      <p>
+                        Jeśli inwestycja jest w trakcie — możemy pomóc tak poprowadzić działania, aby finalnie wszystko było
+                        spójne z projektem i gotowe do dalszych kroków formalnych.
+                      </p>
+                      <p>
+                        Dla wielu gabinetów kluczowe jest poczucie „domknięcia” tematu: aby po zakończeniu prac było jasne,
+                        że osłony zostały wykonane zgodnie z założeniami, a dokumenty są uporządkowane. Pomagamy w zebraniu
+                        i ułożeniu informacji, tak aby odbiór nie był zaskoczeniem.
+                      </p>
+                      <ul>
+                        <li>Podpowiedź, jakie materiały i informacje przygotować przed odbiorem.</li>
+                        <li>Weryfikacja spójności wykonania z projektem (na poziomie praktycznym).</li>
+                        <li>Wsparcie w komunikacji: kto co ma dostarczyć i w jakiej kolejności.</li>
+                      </ul>
+                    </div>
+                    <div class="split-media" aria-label="Ilustracja dokumentacji">
+                      <img
+                        src="/astaned/img/obraz6.jpg"
+                        alt="Dokumentacja prac w gabinecie stomatologicznym — kontekst odbiorów i osłon radiologicznych"
+                        loading="lazy"
+                        width="960"
+                        height="640"
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -246,18 +377,31 @@
       <section class="section" aria-labelledby="why-title">
         <div class="container">
           <h2 id="why-title">Dlaczego AstaNed</h2>
-          <ul class="checklist">
-            <li>Wieloletnie doświadczenie i spokojny, rzetelny sposób pracy.</li>
-            <li>Specjalizacja wyłącznie w osłonach radiologicznych dla gabinetów (RTG/CBCT).</li>
-            <li>Znajomość przepisów i praktycznych wymagań dokumentacyjnych.</li>
-            <li>Lokalna firma z Małopolski — realny kontakt i wsparcie na miejscu.</li>
-            <li>Pomoc „na etapie decyzji”, a nie tylko dostarczenie dokumentu.</li>
-          </ul>
+          <div class="split split--reverse" aria-label="Lista powodów i zdjęcie">
+            <div class="split-text">
+              <ul class="checklist">
+                <li>Wieloletnie doświadczenie i spokojny, rzetelny sposób pracy.</li>
+                <li>Specjalizacja wyłącznie w osłonach radiologicznych dla gabinetów (RTG/CBCT).</li>
+                <li>Znajomość przepisów i praktycznych wymagań dokumentacyjnych.</li>
+                <li>Lokalna firma z Małopolski — realny kontakt i wsparcie na miejscu.</li>
+                <li>Pomoc „na etapie decyzji”, a nie tylko dostarczenie dokumentu.</li>
+              </ul>
+            </div>
+            <div class="split-media" aria-label="Ilustracja bezpieczeństwa RTG">
+              <img
+                src="/astaned/img/obraz7.jpg"
+                alt="Gabinet stomatologiczny — kontekst bezpieczeństwa i osłon radiologicznych (RTG/CBCT)"
+                loading="lazy"
+                width="960"
+                height="640"
+              />
+            </div>
+          </div>
         </div>
       </section>
 
       <!-- 5. REALIZACJE -->
-      <section class="section section-alt" aria-labelledby="projects-title">
+      <section class="section section-alt section-bg section-bg-projects" aria-labelledby="projects-title">
         <div class="container">
           <h2 id="projects-title">Realizacje</h2>
           <div class="projects-grid">
@@ -265,7 +409,7 @@
               <!-- Uwaga: plik umieść w /public/astaned/img/realizacje.jpg -->
               <img
                 src="/astaned/img/realizacje.jpg"
-                alt="Przykładowa realizacja — gabinet stomatologiczny (zdjęcie poglądowe)"
+                alt="Gabinet stomatologiczny — dokumentacja realizacji osłon radiologicznych (zdjęcie główne)"
                 loading="lazy"
                 width="960"
                 height="640"
@@ -289,6 +433,16 @@
               </p>
             </div>
           </div>
+
+          <figure class="section-break" aria-label="Zdjęcie dokumentacyjne">
+            <img
+              src="/astaned/img/obraz11.jpg"
+              alt="Gabinet stomatologiczny — zdjęcie dokumentacyjne realizacji osłon radiologicznych (dodatkowe)"
+              loading="lazy"
+              width="1120"
+              height="560"
+            />
+          </figure>
         </div>
       </section>
 
@@ -299,9 +453,21 @@
           <div class="contact-grid">
             <div class="contact-card" aria-label="Dane kontaktowe">
               <h3>Dane</h3>
-              <p class="contact-line"><span class="muted">Telefon:</span> <strong>+48 XXX XXX XXX</strong></p>
-              <p class="contact-line"><span class="muted">E-mail:</span> <strong>kontakt@astaned.pl</strong></p>
-              <p class="contact-line"><span class="muted">Obszar:</span> <strong>Kraków / Małopolska</strong></p>
+              <p class="contact-line"><strong>STANISŁAW ŚLUSARCZYK ASTANED</strong></p>
+              <p class="contact-line">
+                <span class="muted">Adres:</span>
+                <strong>Seniorów Lotnictwa 10 lok. 55, 31-455 Kraków</strong>
+              </p>
+              <p class="contact-line">
+                <span class="muted">Telefon:</span>
+                <strong><a class="contact-link" href="tel:500445690">500 445 690</a></strong>
+              </p>
+              <p class="contact-line">
+                <span class="muted">E-mail:</span>
+                <strong><a class="contact-link" href="mailto:stsl1@o2.pl">stsl1@o2.pl</a></strong>
+              </p>
+              <p class="contact-line"><span class="muted">NIP:</span> <strong>6761708402</strong></p>
+              <p class="contact-line"><span class="muted">REGON:</span> <strong>120552382</strong></p>
               <p class="contact-note">
                 Preferujemy spokojny kontakt: krótki opis sytuacji (nowy gabinet / modernizacja / CBCT) oraz lokalizacja.
                 Odpowiemy z propozycją dalszych kroków.
@@ -317,19 +483,19 @@
               <form class="contact-form" action="#" method="post">
                 <label>
                   Imię i nazwisko
-                  <input type="text" name="name" autocomplete="name" placeholder="Jan Kowalski" />
+                  <input type="text" name="name" autocomplete="name" />
                 </label>
                 <label>
                   Telefon (opcjonalnie)
-                  <input type="tel" name="phone" autocomplete="tel" placeholder="+48..." />
+                  <input type="tel" name="phone" autocomplete="tel" />
                 </label>
                 <label>
                   E-mail
-                  <input type="email" name="email" autocomplete="email" placeholder="adres@domena.pl" required />
+                  <input type="email" name="email" autocomplete="email" required />
                 </label>
                 <label>
                   Wiadomość
-                  <textarea name="message" rows="5" placeholder="Krótko opisz gabinet i planowany sprzęt (RTG/CBCT)." required></textarea>
+                  <textarea name="message" rows="5" required></textarea>
                 </label>
                 <button type="submit" class="btn" disabled aria-disabled="true">
                   Wyślij (wymaga backendu)
@@ -340,6 +506,16 @@
               </form>
             </div>
           </div>
+
+          <figure class="section-break" aria-label="Zdjęcie dokumentacyjne">
+            <img
+              src="/astaned/img/obraz10.jpg"
+              alt="Gabinet stomatologiczny — kontekst bezpieczeństwa RTG oraz osłon radiologicznych (kontakt i dokumentacja)"
+              loading="lazy"
+              width="1120"
+              height="560"
+            />
+          </figure>
         </div>
       </section>
     </main>
@@ -348,8 +524,13 @@
     <footer class="site-footer" role="contentinfo">
       <div class="container footer-inner">
         <div>
-          <div class="footer-brand">AstaNed</div>
-          <div class="footer-muted">Projektowanie osłon radiologicznych • RTG / CBCT • Kraków / Małopolska</div>
+          <div class="footer-brand">STANISŁAW ŚLUSARCZYK ASTANED</div>
+          <div class="footer-muted">
+            Seniorów Lotnictwa 10 lok. 55, 31-455 Kraków •
+            tel. <a class="contact-link" href="tel:500445690">500 445 690</a> •
+            <a class="contact-link" href="mailto:stsl1@o2.pl">stsl1@o2.pl</a>
+          </div>
+          <div class="footer-muted">NIP: 6761708402 • REGON: 120552382</div>
         </div>
         <div class="footer-muted">&copy; <span id="year">2025</span> AstaNed</div>
       </div>

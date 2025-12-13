@@ -53,7 +53,7 @@ img {
 .container {
   max-width: var(--container);
   margin: 0 auto;
-  padding: 0 18px;
+  padding: 0 22px;
 }
 
 /* Dostępność */
@@ -141,7 +141,7 @@ img {
 
 /* Hero */
 .hero {
-  padding: 34px 0 26px;
+  padding: 40px 0 30px;
   background: linear-gradient(180deg, #ffffff, #f4f7fb);
 }
 
@@ -189,7 +189,7 @@ img {
 
 /* Sekcje */
 .section {
-  padding: 34px 0;
+  padding: 44px 0;
 }
 
 .section-alt {
@@ -204,6 +204,12 @@ img {
   letter-spacing: -0.2px;
 }
 
+.subheading {
+  margin: 18px 0 10px;
+  font-size: 18px;
+  color: var(--navy);
+}
+
 .section-lead {
   margin: 0 0 18px;
   color: var(--muted);
@@ -216,6 +222,85 @@ img {
 
 .prose p {
   margin: 0 0 12px;
+}
+
+.contact-link {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+}
+
+.contact-link:focus-visible {
+  border-radius: 10px;
+}
+
+/* Sekcje z tłem (jasny overlay) */
+.section-bg {
+  position: relative;
+  overflow: hidden;
+}
+
+.section-bg > .container {
+  position: relative;
+  z-index: 1;
+}
+
+.section-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  opacity: 1;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.section-bg-offer::before {
+  background-image: linear-gradient(rgba(246, 248, 251, 0.92), rgba(246, 248, 251, 0.92)),
+    url("/astaned/img/obraz8.jpg");
+}
+
+.section-bg-projects::before {
+  background-image: linear-gradient(rgba(246, 248, 251, 0.92), rgba(246, 248, 251, 0.92)),
+    url("/astaned/img/obraz9.jpg");
+}
+
+/* Układ naprzemienny: tekst + zdjęcie (statyczny, dokumentacyjny) */
+.split {
+  display: grid;
+  grid-template-columns: 1.05fr 0.95fr;
+  gap: 18px;
+  align-items: start;
+  margin: 14px 0 0;
+}
+
+.split--reverse {
+  grid-template-columns: 0.95fr 1.05fr;
+}
+
+.split--reverse .split-text {
+  order: 2;
+}
+
+.split--reverse .split-media {
+  order: 1;
+}
+
+.split-media {
+  border-radius: var(--radius);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  background: #eef3f9;
+}
+
+.split-media img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  max-height: 320px;
 }
 
 .prose ul {
@@ -313,6 +398,47 @@ img {
 .acc-panel-inner {
   padding: 12px 14px 16px;
   color: var(--text);
+}
+
+/* Dane firmowe (blok informacyjny) */
+.company-block {
+  margin-top: 14px;
+  padding: 14px 14px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: #fff;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.05);
+  max-width: 80ch;
+}
+
+.company-name {
+  margin: 0 0 6px;
+}
+
+.company-address {
+  font-style: normal;
+  margin: 0 0 10px;
+  color: var(--text);
+}
+
+.company-row {
+  margin: 0 0 6px;
+}
+
+/* Przerywniki ze zdjęciami (między sekcjami, ale bez zmiany układu sekcji) */
+.section-break {
+  margin: 18px 0 0;
+  border-radius: var(--radius);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  background: #eef3f9;
+}
+
+.section-break img {
+  width: 100%;
+  max-height: 320px;
+  object-fit: cover;
 }
 
 /* Realizacje */
@@ -437,6 +563,63 @@ img {
   font-size: 14px;
 }
 
+/* Wydruk: czytelny dokument, bez teł i elementów interaktywnych */
+@media print {
+  :root {
+    --bg: #ffffff;
+    --surface: #ffffff;
+    --surface-alt: #ffffff;
+  }
+
+  body {
+    background: #fff;
+    color: #000;
+  }
+
+  .site-header {
+    position: static;
+    backdrop-filter: none;
+    background: #fff;
+  }
+
+  .skip-link {
+    display: none;
+  }
+
+  .section {
+    padding: 18px 0;
+  }
+
+  .section-bg::before {
+    display: none;
+  }
+
+  .contact-form,
+  .btn,
+  .form-hint {
+    display: none;
+  }
+
+  a {
+    text-decoration: underline;
+  }
+
+  a[href^="tel:"]::after,
+  a[href^="mailto:"]::after {
+    content: " (" attr(href) ")";
+    font-size: 12px;
+    color: #000;
+  }
+
+  .hero-media,
+  .projects-media,
+  .split-media,
+  .section-break {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+}
+
 /* Responsywność */
 @media (max-width: 900px) {
   .hero-grid {
@@ -455,5 +638,14 @@ img {
   .projects-grid,
   .contact-grid {
     grid-template-columns: 1fr;
+  }
+
+  .split {
+    grid-template-columns: 1fr;
+  }
+
+  .split--reverse .split-text,
+  .split--reverse .split-media {
+    order: initial;
   }
 }
