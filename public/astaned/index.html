@@ -476,14 +476,20 @@
 
             <div class="contact-card" aria-label="Formularz kontaktowy">
               <h3>Formularz</h3>
-              <!--
-                Formularz bez backendu (zgodnie z wymaganiem).
-                Po integracji można podpiąć np. wysyłkę e-mail lub endpoint API.
-              -->
-              <form class="contact-form" action="#" method="post">
+              <form
+                class="contact-form"
+                action="https://formspree.io/f/REPLACE_WITH_YOUR_FORM_ID"
+                method="POST"
+                data-formspree
+              >
+                <input type="hidden" name="_subject" value="Wiadomość ze strony AstaNed" />
+                <label class="hp" aria-hidden="true">
+                  Nie wypełniaj tego pola
+                  <input type="text" name="_gotcha" tabindex="-1" autocomplete="off" />
+                </label>
                 <label>
                   Imię i nazwisko
-                  <input type="text" name="name" autocomplete="name" />
+                  <input type="text" name="name" autocomplete="name" required />
                 </label>
                 <label>
                   Telefon (opcjonalnie)
@@ -497,15 +503,29 @@
                   Wiadomość
                   <textarea name="message" rows="5" required></textarea>
                 </label>
-                <button type="submit" class="btn" disabled aria-disabled="true">
-                  Wyślij (wymaga backendu)
-                </button>
-                <p class="form-hint">
-                  Ten formularz jest statyczny (bez wysyłki). Jeśli chcesz, podepnę wysyłkę w kolejnym kroku.
-                </p>
+                <button type="submit" class="btn">Wyślij wiadomość</button>
+                <p class="form-status" role="status" aria-live="polite"></p>
               </form>
             </div>
           </div>
+
+          <section class="map-block" aria-labelledby="map-title">
+            <h3 id="map-title" class="map-title">Lokalizacja siedziby firmy</h3>
+            <div class="map-container">
+              <iframe
+                title="Mapa Google — STANISŁAW ŚLUSARCZYK ASTANED, Seniorów Lotnictwa 10 lok. 55, Kraków"
+                src="https://www.google.com/maps?q=Senior%C3%B3w%20Lotnictwa%2010%20lok.%2055%2C%2031-455%20Krak%C3%B3w%2C%20Polska&output=embed"
+                loading="lazy"
+                referrerpolicy="no-referrer-when-downgrade"
+                allowfullscreen
+              ></iframe>
+            </div>
+            <address class="map-address">
+              Seniorów Lotnictwa 10 lok. 55<br />
+              31-455 Kraków<br />
+              Polska
+            </address>
+          </section>
 
           <figure class="section-break" aria-label="Zdjęcie dokumentacyjne">
             <img
@@ -537,5 +557,6 @@
     </footer>
 
     <script src="/astaned/js/accordion.js" defer></script>
+    <script src="/astaned/js/formspree.js" defer></script>
   </body>
 </html>
