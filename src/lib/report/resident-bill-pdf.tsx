@@ -1,24 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Document, Font, Page, Text, View, StyleSheet, pdf, Link, Svg, Rect, Line, Path } from "@react-pdf/renderer";
+import { Document, Page, Text, View, StyleSheet, pdf, Link, Svg, Rect, Line, Path } from "@react-pdf/renderer";
 import type { ResidentReportInput, ResidentReportResult } from "@/lib/report/types";
-import { PdfFooter } from "./components/PdfFooter";
-
-const PDF_FONT_FAMILY = "Roboto";
-
-try {
-  Font.register({
-    family: PDF_FONT_FAMILY,
-    fonts: [
-      { src: "https://fonts.gstatic.com/s/roboto/v30/KFOmCnqEu92Fr1Me5WZLCzYlKw.ttf", fontWeight: 400 },
-      { src: "https://fonts.gstatic.com/s/roboto/v30/KFOlCnqEu92Fr1MmWUlvAx05IsDqlA.ttf", fontWeight: 700 },
-    ],
-  });
-} catch {
-  // ignore
-}
 
 const styles = StyleSheet.create({
-  page: { padding: 36, paddingBottom: 140, fontSize: 11, fontFamily: PDF_FONT_FAMILY },
+  page: { padding: 36, fontSize: 11 },
   h1: { fontSize: 16, fontWeight: 700, marginBottom: 8 },
   h2: { fontSize: 13, fontWeight: 600, marginTop: 14, marginBottom: 6 },
   row: { marginBottom: 4 },
@@ -28,13 +13,6 @@ const styles = StyleSheet.create({
   brandRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 },
   brand: { fontSize: 16, fontWeight: 700 },
   site: { fontSize: 11, color: "#1d4ed8", textDecoration: "none" },
-
-  pdfFooterFixed: {
-    position: "absolute",
-    left: 36,
-    right: 36,
-    bottom: 24,
-  },
 });
 
 function n(v: unknown, d = 2) {
@@ -304,10 +282,6 @@ export async function makeResidentBillPDF(
           <Text style={styles.row}>• Koszt teoretyczny = energia na m³ × cena ciepła [zł/m³].</Text>
           <Text style={styles.row}>• Strata finansowa = (cena z rachunku − koszt teoretyczny) × zużycie [zł].</Text>
           <Text style={styles.row}>• Raport wygenerowano automatycznie na podstawie wprowadzonych danych.</Text>
-        </View>
-
-        <View style={styles.pdfFooterFixed} fixed>
-          <PdfFooter />
         </View>
       </Page>
     </Document>

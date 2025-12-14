@@ -1,35 +1,13 @@
 ﻿/* eslint-disable @typescript-eslint/no-explicit-any */
-import { Document, Font, Page, Text, View, StyleSheet, pdf } from "@react-pdf/renderer";
-import { PdfFooter } from "./components/PdfFooter";
-
-const PDF_FONT_FAMILY = "Roboto";
-
-try {
-  Font.register({
-    family: PDF_FONT_FAMILY,
-    fonts: [
-      { src: "https://fonts.gstatic.com/s/roboto/v30/KFOmCnqEu92Fr1Me5WZLCzYlKw.ttf", fontWeight: 400 },
-      { src: "https://fonts.gstatic.com/s/roboto/v30/KFOlCnqEu92Fr1MmWUlvAx05IsDqlA.ttf", fontWeight: 700 },
-    ],
-  });
-} catch {
-  // ignore
-}
+import { Document, Page, Text, View, StyleSheet, pdf } from "@react-pdf/renderer";
 
 const styles = StyleSheet.create({
-  page: { padding: 36, paddingBottom: 120, fontSize: 11, fontFamily: PDF_FONT_FAMILY },
+  page: { padding: 36, fontSize: 11 },
   h1: { fontSize: 16, fontWeight: 700, marginBottom: 8 },
   h2: { fontSize: 13, fontWeight: 600, marginTop: 14, marginBottom: 6 },
   row: { marginBottom: 4 },
   small: { color: "#666" },
   listItem: { marginLeft: 12, marginBottom: 2 },
-
-  pdfFooterFixed: {
-    position: "absolute",
-    left: 36,
-    right: 36,
-    bottom: 24,
-  },
 });
 
 function round(n: number, d = 3) {
@@ -85,10 +63,6 @@ export async function makeResidentPDF(
           <Text style={styles.listItem}> Rekomendacja: audyt cyrkulacji (izolacja, regulacja przepływów, czas pracy).</Text>
           <Text style={styles.listItem}> Potencjał oszczędności = redukcja strat  cena [zł/GJ].</Text>
           <Text style={styles.listItem}> Raport wygenerowano automatycznie na podstawie podanych danych.</Text>
-        </View>
-
-        <View style={styles.pdfFooterFixed} fixed>
-          <PdfFooter />
         </View>
       </Page>
     </Document>

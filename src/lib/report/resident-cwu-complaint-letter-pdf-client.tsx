@@ -1,63 +1,42 @@
-export * from "./resident-cwu-official-letter-pdf-client";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { Document, Font, Image, Link, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
 
-/*
-  Legacy/robocza wersja szablonu została wyłączona.
-  Ten plik pozostaje wyłącznie jako „stabilna ścieżka importu” (re-export),
-  aby nic nie odwoływało się do starego layoutu.
-
-  Poniżej (w komentarzu) jest wcześniejsza zawartość, żeby nie blokować builda.
-
-  (początek zakomentowanego bloku)
-
-
-// eslint-disable @typescript-eslint/no-explicit-any
-import { Document, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
+Font.register({
+  family: "Roboto",
+  fonts: [
+    { src: "/fonts/Roboto-Regular.ttf", fontWeight: 400 },
+    { src: "/fonts/Roboto-Bold.ttf", fontWeight: 700 },
+  ],
+});
 
 const styles = StyleSheet.create({
-  page: {
-    paddingTop: 48,
-    paddingBottom: 90,
-    paddingHorizontal: 48,
-    fontSize: 11,
-    lineHeight: 1.35,
-    fontFamily: "Times-Roman",
-    color: "#111",
-  },
-
-  headerRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: 18 },
-  headerColLeft: { width: "52%" },
-  headerColRight: { width: "45%", alignItems: "flex-end" },
-  blockTitle: { fontSize: 10, fontWeight: 700, marginBottom: 3 },
-  monoSmall: { fontSize: 10, color: "#444" },
+  page: { padding: 48, fontSize: 12, lineHeight: 1.4, fontFamily: "Roboto" },
+  header: { marginBottom: 18 },
+  h1: { fontSize: 16, fontWeight: 700, marginBottom: 6 },
+  h2: { fontSize: 13, fontWeight: 700, marginTop: 16, marginBottom: 8 },
+  small: { color: "#666", fontSize: 10 },
+  para: { marginBottom: 10, textAlign: "justify" },
+  row: { flexDirection: "row", justifyContent: "space-between", marginBottom: 12 },
+  box: { width: "48%" },
   bold: { fontWeight: 700 },
-  title: { fontSize: 13, fontWeight: 700, textAlign: "center", marginVertical: 14 },
-  sectionTitle: { fontSize: 12, fontWeight: 700, marginTop: 12, marginBottom: 6 },
-  para: { marginBottom: 8, textAlign: "justify" },
-  listItem: { marginLeft: 14, marginBottom: 3 },
-  reasonBox: { marginTop: 8, paddingTop: 6, borderTopWidth: 1, borderTopColor: "#ddd" },
-  reasonTitle: { fontSize: 11, fontWeight: 700, marginBottom: 4 },
-  label: { fontWeight: 700 },
-
-  table: { marginTop: 6, borderWidth: 1, borderColor: "#ddd" },
-  tableRow: { flexDirection: "row", borderBottomWidth: 1, borderBottomColor: "#ddd" },
-  tableRowLast: { flexDirection: "row" },
-  tableKey: { width: "58%", padding: 6, fontSize: 10, fontWeight: 700, backgroundColor: "#f5f5f5" },
-  tableVal: { width: "42%", padding: 6, fontSize: 10 },
-
-  footer: {
-    position: "absolute",
-    left: 48,
-    right: 48,
-    bottom: 36,
-    paddingTop: 10,
-    borderTopWidth: 1,
-    borderTopColor: "#999",
+  topRight: { alignSelf: "flex-end", marginBottom: 16 },
+  brandRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 18,
   },
-  footerRow: { flexDirection: "row", justifyContent: "space-between" },
-  signatureBox: { width: "48%" },
-  signatureLine: { marginTop: 18, borderBottomWidth: 1, borderBottomColor: "#111" },
-  footerNote: { fontSize: 9, color: "#444", marginTop: 6 },
-  pageNumber: { position: "absolute", right: 0, top: 0, fontSize: 9, color: "#444" },
+  brand: { fontSize: 18, fontWeight: 700 },
+  site: { fontSize: 12, color: "#1d4ed8", textDecoration: "none" },
+  logo: { width: 45, height: 45, marginRight: 10 },
+  brandLeft: { flexDirection: "row", alignItems: "center" },
+  highlight: { backgroundColor: "#fef3c7", padding: 8, marginVertical: 8, borderRadius: 4 },
+  listItem: { marginLeft: 16, marginBottom: 4 },
+  table: { marginVertical: 10, borderWidth: 1, borderColor: "#ddd" },
+  tableRow: { flexDirection: "row", borderBottomWidth: 1, borderColor: "#ddd" },
+  tableCell: { flex: 1, padding: 6, fontSize: 10 },
+  tableCellBold: { flex: 1, padding: 6, fontSize: 10, fontWeight: 700, backgroundColor: "#f5f5f5" },
+  sign: { marginTop: 26 },
 });
 
 function n(v: unknown, d = 2) {
@@ -65,501 +44,169 @@ function n(v: unknown, d = 2) {
   return Number.isFinite(x) ? x.toFixed(d) : "-";
 }
 
-function moneyPLN(v: unknown) {
-  const x = Number(v);
-  if (!Number.isFinite(x)) return "-";
-  return x.toLocaleString("pl-PL", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " zł";
-}
-
-function cityDatePL(city: string, createdAt: Date) {
-  const d = createdAt.toLocaleDateString("pl-PL");
-  const c = (city ?? "").trim();
-  return c ? `${c}, ${d}` : d;
-}
-
-function renderMultiline(text: string) {
-  return (text ?? "")
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .map((line, idx) => <Text key={`${idx}-${line}`}>{line}</Text>);
-}
-
 export type IssueLetterReason = {
   id: string;
   label: string;
-  title: string;
-  technicalDescription: string;
-  consequences: string[];
-  recommendedActions: string[];
 };
 
 export type ResidentCwuIssueLetterInput = {
   reasons?: IssueLetterReason[];
-  const issueProblemLabelMap: Record<ResidentCwuIssueFormSnapshot["problemType"], string> = {
-    brak_cwu: "Brak ciepłej wody",
-    niska_temp: "Zbyt niska temperatura ciepłej wody",
-    dlugi_czas: "Długi czas oczekiwania na ciepłą wodę",
-    wahania: "Duże wahania temperatury",
-    zawyzony_koszt: "Podejrzenie zawyżonych kosztów CWU",
-    inne: "Inny problem",
-  };
+  otherReason?: string;
+  description?: string;
+};
 
-  const issueGoalLabelMap: Record<ResidentCwuIssueFormSnapshot["goal"], string> = {
-    sprawdzenie: "Prośba o sprawdzenie instalacji",
-    interwencja: "Prośba o interwencję techniczną",
-    analiza_kosztow: "Prośba o analizę kosztów CWU",
-    informacja: "Informacja do administracji",
-  };
+export function ResidentCwuIssueLetterPDFDocument({
+  input,
+  result,
+  complaint,
+  createdAt = new Date(),
+}: {
+  input: any;
+  result: any;
+  complaint: ResidentCwuIssueLetterInput;
+  createdAt?: Date;
+}) {
+  const i = (input ?? {}) as Record<string, any>;
+  const r = (result ?? {}) as Record<string, any>;
 
-  const issueSymptomsPicked = (() => {
-    const s = issue?.symptoms;
-    if (!s) return [] as string[];
-    const list: Array<[boolean, string]> = [
-      [s.longFlush, "Ciepła woda pojawia się dopiero po długim spuszczaniu"],
-      [s.coolsFast, "Woda szybko stygnie"],
-      [s.unstableTemp, "Temperatura jest niestabilna"],
-      [s.specificHours, "Problem występuje tylko w określonych godzinach"],
-      [s.longTime, "Problem występuje od dłuższego czasu"],
-    ];
-    return list.filter(([v]) => v).map(([, label]) => label);
-  })();
+  const managerName = (i.managerName as string) || "";
+  const managerAddress = (i.managerAddress as string) || "";
+  const buildingAddress = (i.buildingAddress as string) || "";
+  const apartmentNumber = (i.apartmentNumber as string) || "";
+  const residentName = (i.residentName as string) || "";
+  const residentEmail = (i.residentEmail as string) || "";
+  const residentPhone = (i.residentPhone as string) || "";
+  const letterCity = (i.letterCity as string) || "";
+  const letterDate = createdAt.toLocaleDateString("pl-PL");
 
-  const senderName = issue?.fullName?.trim() || "";
-  const senderEmail = issue?.email?.trim() || "";
-  const senderPhone = issue?.phone?.trim() || "";
-  const senderAddress = issue
-    ? `${issue.street || ""} ${issue.buildingNumber || ""}${issue.apartmentNumber ? `/${issue.apartmentNumber}` : ""}`.trim()
-    : "";
+  const reasons = (complaint?.reasons ?? []).filter(Boolean);
+  const otherReason = (complaint?.otherReason ?? "").trim();
+  const description = (complaint?.description ?? "").trim();
 
-  const recipientName = issue?.managerName?.trim() || "";
-  const recipientAddress = issue?.managerAddress?.trim() || "";
-  const recipientEmail = issue?.managerEmail?.trim() || "";
-  const letterCity = issue?.letterCity?.trim() || "";
-
-  const hasAnyCostData =
-    Number.isFinite(Number(i.cwuPriceFromBill)) ||
-    Number.isFinite(Number(r.theoreticalCostPerM3)) ||
-    Number.isFinite(Number(r.lossPerM3)) ||
-    Number.isFinite(Number(r.monthlyFinancialLoss)) ||
-    Number.isFinite(Number(r.yearlyFinancialLoss));
+  const hasAddressBlock = managerName || managerAddress || buildingAddress || apartmentNumber;
+  const hasSender = residentName || residentEmail || residentPhone;
 
   return (
     <Document>
       <Page size="A4" style={styles.page}>
-        <View style={styles.headerRow}>
-          <View style={styles.headerColLeft}>
-            <Text style={styles.blockTitle}>Nadawca (mieszkaniec)</Text>
-            <Text style={styles.bold}>{senderName || "—"}</Text>
-            {senderAddress ? <Text>{senderAddress}</Text> : <Text>—</Text>}
-            {senderEmail ? <Text>E-mail: {senderEmail}</Text> : null}
-            {senderPhone ? <Text>Tel.: {senderPhone}</Text> : null}
+        <View style={styles.brandRow}>
+          <View style={styles.brandLeft}>
+            {/* eslint-disable-next-line jsx-a11y/alt-text */}
+            <Image src="/logo.png" style={styles.logo} />
+            <Text style={styles.brand}>PROFINSTAL</Text>
           </View>
-
-          <View style={styles.headerColRight}>
-            <Text style={styles.monoSmall}>{cityDatePL(letterCity, createdAt)}</Text>
-
-            <View style={{ marginTop: 10, alignItems: "flex-end" }}>
-              <Text style={styles.blockTitle}>Adresat (Zarządca/Administracja)</Text>
-              <Text style={styles.bold}>{recipientName || "—"}</Text>
-              {recipientAddress ? renderMultiline(recipientAddress) : <Text>—</Text>}
-              {recipientEmail ? <Text>E-mail: {recipientEmail}</Text> : null}
-            </View>
-          </View>
+          <Link src="https://profinstal.info" style={styles.site}>
+            profinstal.info
+          </Link>
         </View>
 
-        <Text style={styles.title}>
-          Zgłoszenie nieprawidłowości w kosztach podgrzania ciepłej wody użytkowej (CWU)
-        </Text>
+        <View style={styles.header}>
+          <Text style={styles.h1}>Zgłoszenie wysokich kosztów CWU — prośba o wyjaśnienie i weryfikację</Text>
+          <Text style={styles.small}>Data: {createdAt.toLocaleString("pl-PL")}</Text>
+        </View>
 
-        <Text style={styles.para}>Szanowni Państwo,</Text>
-        <Text style={styles.para}>
-          Zgłaszam wątpliwości dotyczące wysokości kosztów podgrzania ciepłej wody użytkowej (CWU) wykazywanych w
-          rozliczeniach oraz proszę o wyjaśnienie sposobu naliczania opłat i weryfikację techniczną pracy instalacji CWU i
-          cyrkulacji w budynku.
-        </Text>
-
-        <Text style={styles.sectionTitle}>1. Opis zgłoszenia</Text>
-        {issue ? (
-          <>
-            <Text style={styles.para}>
-              <Text style={styles.label}>Adres lokalu:</Text> {issue.street || "—"} {issue.buildingNumber || "—"}
-              {issue.apartmentNumber ? `/${issue.apartmentNumber}` : ""}
-            </Text>
-            <Text style={styles.para}>
-              <Text style={styles.label}>Rodzaj problemu:</Text> {issueProblemLabelMap[issue.problemType]}
-              {issue.problemType === "inne" && issue.otherProblem.trim() ? ` (doprecyzowanie: ${issue.otherProblem.trim()})` : ""}
-            </Text>
-
-            {issueSymptomsPicked.length ? (
-              <>
-                <Text style={styles.para}>
-                  <Text style={styles.label}>Zaobserwowane objawy:</Text>
-                </Text>
-                <View style={{ marginBottom: 6 }}>
-                  {issueSymptomsPicked.map((x) => (
-                    <Text key={x} style={styles.listItem}>
-                      • {x}
-                    </Text>
-                  ))}
-                </View>
-              </>
-            ) : null}
-
-            {issue.description.trim() ? (
-              <>
-                <Text style={styles.para}>
-                  <Text style={styles.label}>Opis sytuacji:</Text>
-                </Text>
-                <Text style={styles.para}>{issue.description.trim()}</Text>
-              </>
-            ) : null}
-
-            <Text style={styles.para}>
-              <Text style={styles.label}>Cel zgłoszenia:</Text> {issueGoalLabelMap[issue.goal]}
-            </Text>
-          </>
-        ) : (
-          <Text style={styles.para}>—</Text>
+        {(letterCity || letterDate) && (
+          <View style={styles.topRight}>
+            <Text>{[letterCity, letterDate].filter(Boolean).join(", ")}</Text>
+          </View>
         )}
 
-        {otherReason || complaintExtraDescription ? (
+        {hasAddressBlock && (
+          <View style={styles.row}>
+            <View style={styles.box}>
+              <Text style={styles.bold}>Adresat:</Text>
+              {managerName ? <Text>{managerName}</Text> : null}
+              {managerAddress ? <Text>{managerAddress}</Text> : null}
+            </View>
+            <View style={styles.box}>
+              <Text style={styles.bold}>Dotyczy:</Text>
+              {buildingAddress ? <Text>Budynek: {buildingAddress}</Text> : null}
+              {apartmentNumber ? <Text>Lokal: {apartmentNumber}</Text> : null}
+            </View>
+          </View>
+        )}
+
+        {hasSender && (
+          <View style={{ marginBottom: 12 }}>
+            <Text style={styles.bold}>Nadawca:</Text>
+            {residentName ? <Text>{residentName}</Text> : null}
+            {residentEmail ? <Text>E-mail: {residentEmail}</Text> : null}
+            {residentPhone ? <Text>Tel.: {residentPhone}</Text> : null}
+          </View>
+        )}
+
+        <Text style={styles.para}>Szanowni Państwo,</Text>
+
+        <Text style={styles.para}>
+          W związku z kosztami podgrzania ciepłej wody użytkowej (CWU) wykazywanymi w rozliczeniach,
+          zgłaszam wątpliwości co do zasadności i sposobu naliczania opłat oraz proszę o pisemne wyjaśnienie
+          podstaw kalkulacji ceny CWU i o weryfikację techniczną instalacji CWU/cyrkulacji w budynku.
+        </Text>
+
+        <Text style={styles.h2}>1. Podstawa i skrót analizy</Text>
+
+        <Text style={styles.para}>
+          Poniżej przedstawiam porównanie kosztów teoretycznych podgrzania 1 m³ wody (wynikających z
+          fizyki procesu i ceny ciepła) z kosztami faktycznie naliczanymi mieszkańcom.
+        </Text>
+
+        <View style={styles.highlight}>
+          <Text style={{ fontWeight: 700, marginBottom: 6 }}>Kluczowe wartości (z kalkulacji):</Text>
+          <Text>• Cena CWU z rachunku: {n(i.cwuPriceFromBill)} zł/m³</Text>
+          <Text>• Koszt teoretyczny: {n(r.theoreticalCostPerM3)} zł/m³</Text>
+          <Text style={{ marginTop: 6, fontWeight: 700 }}>• Różnica / nadpłata: {n(r.lossPerM3)} zł/m³</Text>
+          <Text>• Strata energii (ekwiwalent): {n(r.energyLossPerM3, 4)} GJ/m³</Text>
+          <Text>• Skutek miesięczny (lokal): {n(r.monthlyFinancialLoss)} zł</Text>
+          <Text>• Skutek roczny (lokal): {n(r.yearlyFinancialLoss)} zł</Text>
+        </View>
+
+        <Text style={styles.h2}>2. Wskazywane przyczyny / wątpliwości</Text>
+
+        {reasons.length === 0 && !otherReason && (
+          <Text style={styles.para}>
+            Na tym etapie nie wskazuję jednej przesądzającej przyczyny, natomiast oczekuję rzetelnej
+            weryfikacji parametrów pracy instalacji oraz transparentnego rozbicia składowych kosztów.
+          </Text>
+        )}
+
+        {(reasons.length > 0 || otherReason) && (
+          <View style={{ marginBottom: 10 }}>
+            {reasons.map((x) => (
+              <Text key={x.id} style={styles.listItem}>
+                • {x.label}
+              </Text>
+            ))}
+            {otherReason ? <Text style={styles.listItem}>• Inne: {otherReason}</Text> : null}
+          </View>
+        )}
+
+        {description ? (
           <>
-            <Text style={styles.para}>
-              <Text style={styles.label}>Dodatkowe uwagi:</Text>
-            </Text>
-            {otherReason ? <Text style={styles.para}>Inne: {otherReason}</Text> : null}
-            {complaintExtraDescription ? <Text style={styles.para}>{complaintExtraDescription}</Text> : null}
+            <Text style={styles.h2}>3. Opis sytuacji</Text>
+            <Text style={styles.para}>{description}</Text>
           </>
         ) : null}
 
-        <Text style={styles.sectionTitle}>2. Potencjalne przyczyny techniczne i rekomendowane działania</Text>
-        {reasons.length ? (
-          <>
-            {reasons.map((reason) => (
-              <View key={reason.id} style={styles.reasonBox}>
-                <Text style={styles.reasonTitle}>{reason.title || reason.label}</Text>
-                <Text style={styles.para}>
-                  <Text style={styles.label}>Opis techniczny:</Text> {reason.technicalDescription}
-                </Text>
+        <Text style={styles.h2}>4. Wnioski i żądania</Text>
 
-                {reason.consequences?.length ? (
-                  <>
-                    <Text style={styles.para}>
-                      <Text style={styles.label}>Konsekwencje:</Text>
-                    </Text>
-                    {reason.consequences.map((c) => (
-                      <Text key={c} style={styles.listItem}>
-                        • {c}
-                      </Text>
-                    ))}
-                  </>
-                ) : null}
-
-                {reason.recommendedActions?.length ? (
-                  <>
-                    <Text style={[styles.para, { marginTop: 6 }]}>
-                      <Text style={styles.label}>Rekomendowane działania:</Text>
-                    </Text>
-                    {reason.recommendedActions.map((a) => (
-                      <Text key={a} style={styles.listItem}>
-                        • {a}
-                      </Text>
-                    ))}
-                  </>
-                ) : null}
-              </View>
-            ))}
-          </>
-        ) : (
-          <Text style={styles.para}>Nie wskazano przyczyn technicznych w formularzu.</Text>
-        )}
-
-        <Text style={styles.sectionTitle}>3. Podsumowanie kosztowe (na podstawie danych wprowadzonych do kalkulatora)</Text>
-        {hasAnyCostData ? (
-          <View style={styles.table}>
-            <View style={styles.tableRow}>
-              <Text style={styles.tableKey}>Cena CWU z rachunku</Text>
-              <Text style={styles.tableVal}>{moneyPLN(i.cwuPriceFromBill)} / m³</Text>
-            </View>
-            <View style={styles.tableRow}>
-              <Text style={styles.tableKey}>Koszt teoretyczny (podgrzanie 1 m³)</Text>
-              <Text style={styles.tableVal}>{moneyPLN(r.theoreticalCostPerM3)} / m³</Text>
-            </View>
-            <View style={styles.tableRow}>
-              <Text style={styles.tableKey}>Różnica (nadpłata) na 1 m³</Text>
-              <Text style={styles.tableVal}>{moneyPLN(r.lossPerM3)} / m³</Text>
-            </View>
-            <View style={styles.tableRow}>
-              <Text style={styles.tableKey}>Zużycie miesięczne (z danych mieszkańca)</Text>
-              <Text style={styles.tableVal}>{n(i.monthlyConsumption, 2)} m³/mies.</Text>
-            </View>
-            <View style={styles.tableRow}>
-              <Text style={styles.tableKey}>Szacowana nadpłata miesięczna</Text>
-              <Text style={styles.tableVal}>{moneyPLN(r.monthlyFinancialLoss)} / mies.</Text>
-            </View>
-            <View style={styles.tableRowLast}>
-              <Text style={styles.tableKey}>Szacowana nadpłata roczna</Text>
-              <Text style={styles.tableVal}>{moneyPLN(r.yearlyFinancialLoss)} / rok</Text>
-            </View>
-          </View>
-        ) : (
-          <Text style={styles.para}>Brak wystarczających danych do podsumowania kosztowego.</Text>
-        )}
-
-        <Text style={styles.sectionTitle}>4. Prośba o działania naprawcze i wyjaśnienie rozliczeń</Text>
-        <Text style={styles.para}>Wnoszę o:</Text>
-        <Text style={styles.listItem}>• Pisemne wyjaśnienie metody naliczania opłat CWU oraz składowych ceny CWU.</Text>
-        <Text style={styles.listItem}>
-          • Weryfikację techniczną parametrów pracy instalacji CWU i cyrkulacji (m.in. nastawy, czasy pracy, regulacja,
-          izolacja).
-        </Text>
-        <Text style={styles.listItem}>• Informację o planowanych działaniach i przewidywanym terminie realizacji.</Text>
-
-        <Text style={[styles.para, { marginTop: 10 }]}>
-          Warto rozważyć wykonanie kompleksowego audytu instalacji CWU, który pozwoli precyzyjnie określić źródła strat
-          oraz zaplanować najbardziej opłacalny wariant modernizacji.
-        </Text>
-
-        <Text style={[styles.para, { marginTop: 8 }]}>Z poważaniem,</Text>
-        <Text style={styles.bold}>{senderName || "(podpis mieszkańca)"}</Text>
-
-        <View style={styles.footer} fixed>
-          <Text
-            style={styles.pageNumber}
-            render={({ pageNumber, totalPages }) => `Strona ${pageNumber} / ${totalPages}`}
-            fixed
-          />
-          <View style={styles.footerRow}>
-            <View style={styles.signatureBox}>
-              <Text style={styles.blockTitle}>Podpis mieszkańca</Text>
-              <View style={styles.signatureLine} />
-              {senderName ? <Text style={styles.footerNote}>{senderName}</Text> : null}
-            </View>
-            <View style={styles.signatureBox}>
-              <Text style={styles.blockTitle}>Podpis / potwierdzenie Zarządcy</Text>
-              <View style={styles.signatureLine} />
-              <Text style={styles.footerNote}>Data i podpis</Text>
-            </View>
-          </View>
+        <Text style={styles.para}>Proszę o:</Text>
+        <View style={{ marginBottom: 10 }}>
+          <Text style={styles.listItem}>• przedstawienie sposobu kalkulacji ceny CWU (w tym opłat stałych i zmiennych),</Text>
+          <Text style={styles.listItem}>• wskazanie parametrów pracy instalacji CWU/cyrkulacji i sposobu sterowania pompami,</Text>
+          <Text style={styles.listItem}>• przedstawienie działań ograniczających straty (izolacja, regulacja hydrauliczna, nastawy),</Text>
+          <Text style={styles.listItem}>
+            • wykonanie rzetelnego przeglądu efektywności instalacji CWU (pomiary temperatur, przepływów i bilansu energii)
+            oraz przedstawienie planu działań naprawczych.
+          </Text>
         </View>
-      </Page>
-    </Document>
-  );
 
-        const recipientName = issue?.managerName?.trim() || "";
-        const recipientAddress = issue?.managerAddress?.trim() || "";
-        const recipientEmail = issue?.managerEmail?.trim() || "";
-        const letterCity = issue?.letterCity?.trim() || "";
+        <Text style={styles.para}>
+          Z uwagi na wskazaną skalę rozbieżności proszę o odpowiedź w formie pisemnej oraz o wskazanie
+          terminu planowanej weryfikacji technicznej.
+        </Text>
 
-        const hasAnyCostData =
-          Number.isFinite(Number(i.cwuPriceFromBill)) ||
-          Number.isFinite(Number(r.theoreticalCostPerM3)) ||
-          Number.isFinite(Number(r.lossPerM3)) ||
-          Number.isFinite(Number(r.monthlyFinancialLoss)) ||
-          Number.isFinite(Number(r.yearlyFinancialLoss));
-        [issueSymptoms.unstableTemp, "Temperatura jest niestabilna"],
-        [issueSymptoms.specificHours, "Problem występuje tylko w określonych godzinach"],
-        [issueSymptoms.longTime, "Problem występuje od dłuższego czasu"],
-      ]
-              <View style={styles.headerRow}>
-                <View style={styles.headerColLeft}>
-                  <Text style={styles.blockTitle}>Nadawca (mieszkaniec)</Text>
-                  <Text style={styles.bold}>{senderName || "—"}</Text>
-                  {senderAddress ? <Text>{senderAddress}</Text> : <Text>—</Text>}
-                  {senderEmail ? <Text>E-mail: {senderEmail}</Text> : null}
-                  {senderPhone ? <Text>Tel.: {senderPhone}</Text> : null}
-                </View>
-
-                <View style={styles.headerColRight}>
-                  <Text style={styles.monoSmall}>{cityDatePL(letterCity, createdAt)}</Text>
-
-                  <View style={{ marginTop: 10, alignItems: "flex-end" }}>
-                    <Text style={styles.blockTitle}>Adresat (Zarządca/Administracja)</Text>
-                    <Text style={styles.bold}>{recipientName || "—"}</Text>
-                    {recipientAddress ? renderMultiline(recipientAddress) : <Text>—</Text>}
-                    {recipientEmail ? <Text>E-mail: {recipientEmail}</Text> : null}
-                  </View>
-                </View>
-              </View>
-
-              <Text style={styles.title}>
-                Zgłoszenie nieprawidłowości w kosztach podgrzania ciepłej wody użytkowej (CWU)
-              </Text>
-
-              <Text style={styles.para}>Szanowni Państwo,</Text>
-              <Text style={styles.para}>
-                Zgłaszam wątpliwości dotyczące wysokości kosztów podgrzania ciepłej wody użytkowej (CWU) wykazywanych w
-                rozliczeniach oraz proszę o wyjaśnienie sposobu naliczania opłat i weryfikację techniczną pracy instalacji CWU i
-                cyrkulacji w budynku.
-              </Text>
-
-              <Text style={styles.sectionTitle}>1. Opis zgłoszenia</Text>
-              {issue ? (
-                <>
-                  <Text style={styles.para}>
-                    <Text style={styles.label}>Adres lokalu:</Text> {issue.street || "—"} {issue.buildingNumber || "—"}
-                    {issue.apartmentNumber ? `/${issue.apartmentNumber}` : ""}
-                  </Text>
-                  <Text style={styles.para}>
-                    <Text style={styles.label}>Rodzaj problemu:</Text> {issueProblemLabelMap[issue.problemType]}
-                    {issue.problemType === "inne" && issue.otherProblem.trim() ? ` (doprecyzowanie: ${issue.otherProblem.trim()})` : ""}
-                  </Text>
-
-                  {issueSymptomsPicked.length ? (
-                    <>
-                      <Text style={styles.para}>
-                        <Text style={styles.label}>Zaobserwowane objawy:</Text>
-                      </Text>
-                      <View style={{ marginBottom: 6 }}>
-                        {issueSymptomsPicked.map((x) => (
-                          <Text key={x} style={styles.listItem}>
-                            • {x}
-                          </Text>
-                        ))}
-                      </View>
-                    </>
-                  ) : null}
-
-                  {issue.description.trim() ? (
-                    <>
-                      <Text style={styles.para}>
-                        <Text style={styles.label}>Opis sytuacji:</Text>
-                      </Text>
-                      <Text style={styles.para}>{issue.description.trim()}</Text>
-                    </>
-                  ) : null}
-
-                  <Text style={styles.para}>
-                    <Text style={styles.label}>Cel zgłoszenia:</Text> {issueGoalLabelMap[issue.goal]}
-                  </Text>
-                </>
-              ) : (
-                <Text style={styles.para}>—</Text>
-              )}
-
-              {otherReason || complaintExtraDescription ? (
-                <>
-                  <Text style={styles.para}>
-                    <Text style={styles.label}>Dodatkowe uwagi:</Text>
-                  </Text>
-                  {otherReason ? <Text style={styles.para}>Inne: {otherReason}</Text> : null}
-                  {complaintExtraDescription ? <Text style={styles.para}>{complaintExtraDescription}</Text> : null}
-                </>
-              ) : null}
-
-              <Text style={styles.sectionTitle}>2. Potencjalne przyczyny techniczne i rekomendowane działania</Text>
-              {reasons.length ? (
-                <>
-                  {reasons.map((reason) => (
-                    <View key={reason.id} style={styles.reasonBox}>
-                      <Text style={styles.reasonTitle}>{reason.title || reason.label}</Text>
-                      <Text style={styles.para}>
-                        <Text style={styles.label}>Opis techniczny:</Text> {reason.technicalDescription}
-                      </Text>
-
-                      {reason.consequences?.length ? (
-                        <>
-                          <Text style={styles.para}>
-                            <Text style={styles.label}>Konsekwencje:</Text>
-                          </Text>
-                          {reason.consequences.map((c) => (
-                            <Text key={c} style={styles.listItem}>
-                              • {c}
-                            </Text>
-                          ))}
-                        </>
-                      ) : null}
-
-                      {reason.recommendedActions?.length ? (
-                        <>
-                          <Text style={[styles.para, { marginTop: 6 }]}>
-                            <Text style={styles.label}>Rekomendowane działania:</Text>
-                          </Text>
-                          {reason.recommendedActions.map((a) => (
-                            <Text key={a} style={styles.listItem}>
-                              • {a}
-                            </Text>
-                          ))}
-                        </>
-                      ) : null}
-                    </View>
-                  ))}
-                </>
-              ) : (
-                <Text style={styles.para}>Nie wskazano przyczyn technicznych w formularzu.</Text>
-              )}
-
-              <Text style={styles.sectionTitle}>3. Podsumowanie kosztowe (na podstawie danych wprowadzonych do kalkulatora)</Text>
-              {hasAnyCostData ? (
-                <View style={styles.table}>
-                  <View style={styles.tableRow}>
-                    <Text style={styles.tableKey}>Cena CWU z rachunku</Text>
-                    <Text style={styles.tableVal}>{moneyPLN(i.cwuPriceFromBill)} / m³</Text>
-                  </View>
-                  <View style={styles.tableRow}>
-                    <Text style={styles.tableKey}>Koszt teoretyczny (podgrzanie 1 m³)</Text>
-                    <Text style={styles.tableVal}>{moneyPLN(r.theoreticalCostPerM3)} / m³</Text>
-                  </View>
-                  <View style={styles.tableRow}>
-                    <Text style={styles.tableKey}>Różnica (nadpłata) na 1 m³</Text>
-                    <Text style={styles.tableVal}>{moneyPLN(r.lossPerM3)} / m³</Text>
-                  </View>
-                  <View style={styles.tableRow}>
-                    <Text style={styles.tableKey}>Zużycie miesięczne (z danych mieszkańca)</Text>
-                    <Text style={styles.tableVal}>{n(i.monthlyConsumption, 2)} m³/mies.</Text>
-                  </View>
-                  <View style={styles.tableRow}>
-                    <Text style={styles.tableKey}>Szacowana nadpłata miesięczna</Text>
-                    <Text style={styles.tableVal}>{moneyPLN(r.monthlyFinancialLoss)} / mies.</Text>
-                  </View>
-                  <View style={styles.tableRowLast}>
-                    <Text style={styles.tableKey}>Szacowana nadpłata roczna</Text>
-                    <Text style={styles.tableVal}>{moneyPLN(r.yearlyFinancialLoss)} / rok</Text>
-                  </View>
-                </View>
-              ) : (
-                <Text style={styles.para}>
-                  Brak wystarczających danych do podsumowania kosztowego.
-                </Text>
-              )}
-
-              <Text style={styles.sectionTitle}>4. Prośba o działania naprawcze i wyjaśnienie rozliczeń</Text>
-              <Text style={styles.para}>Wnoszę o:</Text>
-              <Text style={styles.listItem}>• Pisemne wyjaśnienie metody naliczania opłat CWU oraz składowych ceny CWU.</Text>
-              <Text style={styles.listItem}>
-                • Weryfikację techniczną parametrów pracy instalacji CWU i cyrkulacji (m.in. nastawy, czasy pracy, regulacja,
-                izolacja).
-              </Text>
-              <Text style={styles.listItem}>• Informację o planowanych działaniach i przewidywanym terminie realizacji.</Text>
-
-              <Text style={[styles.para, { marginTop: 10 }]}>
-                Warto rozważyć wykonanie kompleksowego audytu instalacji CWU, który pozwoli precyzyjnie określić źródła strat
-                oraz zaplanować najbardziej opłacalny wariant modernizacji.
-              </Text>
-
-              <Text style={[styles.para, { marginTop: 8 }]}>Z poważaniem,</Text>
-              <Text style={styles.bold}>{senderName || "(podpis mieszkańca)"}</Text>
-
-              <View style={styles.footer} fixed>
-                <Text
-                  style={styles.pageNumber}
-                  render={({ pageNumber, totalPages }) => `Strona ${pageNumber} / ${totalPages}`}
-                  fixed
-                />
-                <View style={styles.footerRow}>
-                  <View style={styles.signatureBox}>
-                    <Text style={styles.blockTitle}>Podpis mieszkańca</Text>
-                    <View style={styles.signatureLine} />
-                    {senderName ? <Text style={styles.footerNote}>{senderName}</Text> : null}
-                  </View>
-                  <View style={styles.signatureBox}>
-                    <Text style={styles.blockTitle}>Podpis / potwierdzenie Zarządcy</Text>
-                    <View style={styles.signatureLine} />
-                    <Text style={styles.footerNote}>Data i podpis</Text>
-                  </View>
-                </View>
-              </View>
+        <Text style={styles.h2}>Załączniki</Text>
+        <View style={{ marginBottom: 10 }}>
           <Text style={styles.listItem}>• wynik kalkulacji kosztów i strat CWU (wydruk / PDF),</Text>
           <Text style={styles.listItem}>• kopia fragmentu rachunku z ceną CWU i zużyciem (jeśli dostępna).</Text>
         </View>
@@ -577,5 +224,3 @@ export type ResidentCwuIssueLetterInput = {
     </Document>
   );
 }
-
-*/
