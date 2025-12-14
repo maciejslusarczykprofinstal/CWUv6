@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { KatexFormula } from "@/components/ui/katex-formula";
 import { toast } from "sonner";
+import { ResidentCwuIssueForm } from "./ResidentCwuIssueForm";
 
 type Result = {
   energyLossPerM3: number;
@@ -761,6 +762,8 @@ export default function MieszkancyPage() {
                 </div>
               </CardContent>
             </Card>
+
+            <ResidentCwuIssueForm calcInputs={inputs} calcResult={res} />
           </div>
         )}
       </div>
