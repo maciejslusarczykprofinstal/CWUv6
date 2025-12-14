@@ -1,12 +1,12 @@
 "use client";
 
 import { useState, useEffect, type ReactNode } from "react";
-import { Home, Calculator, TrendingDown, Info as InfoIcon } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Home, Calculator, ArrowDown, Info as InfoIcon } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { KatexFormula } from "@/components/ui/katex-formula";
 import { toast } from "sonner";
 import { ResidentCwuIssueForm } from "./ResidentCwuIssueForm";
+import { ResidentCwuComplaintLetterSection } from "./ResidentCwuComplaintLetterSection";
 
 type Result = {
   energyLossPerM3: number;
@@ -27,16 +27,6 @@ type Inputs = {
   coldTempC: number;
   hotTempC: number;
   heatPriceFromCity: number;
-  // Dane do pisma (opcjonalne)
-  useLetterData?: boolean;
-  managerName?: string;
-  managerAddress?: string;
-  buildingAddress?: string;
-  apartmentNumber?: string;
-  residentName?: string;
-  letterCity?: string;
-  residentEmail?: string;
-  residentPhone?: string;
 };
 
 export default function MieszkancyPage() {
@@ -47,9 +37,7 @@ export default function MieszkancyPage() {
     coldTempC: 10,
     hotTempC: 55,
     heatPriceFromCity: 90,
-    useLetterData: false,
   });
-  const [showBreakdown, setShowBreakdown] = useState(false);
 
   // Automatyczna kalkulacja przy zmianie inputów
   function calculateResults(inp: Inputs) {
@@ -121,32 +109,6 @@ export default function MieszkancyPage() {
     } catch (e) {
       toast.error("Nie udało się wygenerować PDF", { description: String(e) });
     }
-  }
-
-  async function onDownloadReport() {
-    if (!res || !inputs) return;
-    const { ResidentBillPDFDocument } = await import("@/lib/report/resident-bill-pdf-client");
-    const doc = <ResidentBillPDFDocument input={inputs} result={res} />;
-    void generatePdfClient(doc, "raport-mieszkancy.pdf");
-  }
-
-  async function onDownloadLetter() {
-    if (!res || !inputs) return;
-    const { ResidentLetterPDFDocument } = await import("@/lib/report/resident-letter-pdf-client");
-    // Jeśli checkbox nie jest zaznaczony, przekaż puste dane
-    const letterInput = inputs.useLetterData ? inputs : { 
-      ...inputs, 
-      managerName: '', 
-      managerAddress: '', 
-      buildingAddress: '', 
-      apartmentNumber: '', 
-      residentName: '', 
-      letterCity: '', 
-      residentEmail: '', 
-      residentPhone: '' 
-    };
-    const doc = <ResidentLetterPDFDocument input={letterInput} result={res} />;
-    void generatePdfClient(doc, "pismo-do-zarzadcy.pdf");
   }
 
   return (
@@ -348,7 +310,7 @@ export default function MieszkancyPage() {
                       </p>
                     </div>
                     <div className="p-3 bg-orange-500 rounded-xl shadow-lg">
-                      <TrendingDown className="w-6 h-6 text-white" />
+                      <ArrowDown className="w-6 h-6 text-white" />
                     </div>
                   </div>
                 </CardContent>
@@ -366,7 +328,7 @@ export default function MieszkancyPage() {
                       </p>
                     </div>
                     <div className="p-3 bg-red-500 rounded-xl shadow-lg">
-                      <TrendingDown className="w-6 h-6 text-white" />
+                      <ArrowDown className="w-6 h-6 text-white" />
                     </div>
                   </div>
                 </CardContent>
@@ -430,287 +392,6 @@ export default function MieszkancyPage() {
 
             {/* ...przyciski PDF przeniesione na koniec strony... */}
 
-            {/* Breakdown Analysis zawsze widoczny */}
-            {inputs && (
-              <Card className="backdrop-blur-sm bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-950/30 dark:to-green-950/30 border-2 border-emerald-200 dark:border-emerald-800 shadow-2xl">
-                <CardHeader>
-                  <CardTitle className="text-2xl text-emerald-800 dark:text-emerald-200 flex items-center gap-3">
-                    <div className="p-2 bg-gradient-to-br from-emerald-500 to-green-500 rounded-xl shadow-lg">
-                      <TrendingDown className="w-6 h-6 text-white" />
-                    </div>
-                    Szczegółowa analiza podziału strat energii
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-8">
-                  {/* Summary */}
-                  <div className="bg-white dark:bg-slate-900 rounded-xl p-6 shadow-lg border border-emerald-200 dark:border-emerald-800">
-                    <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200 mb-4">Podział energii na m³ CWU:</h3>
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg">
-                        <span className="font-semibold text-blue-800 dark:text-blue-300">
-                          ✅ Ciepło faktycznie dostarczone do wody w kranie
-                        </span>
-                        <span className="text-xl font-bold text-blue-900 dark:text-blue-100">
-                          {res.energyPerM3.toFixed(3)} GJ/m³
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between p-4 bg-red-50 dark:bg-red-950/30 rounded-lg">
-                        <span className="font-semibold text-red-800 dark:text-red-300">
-                          ❌ Straty wewnątrz budynku (dystrybucja + cyrkulacja + inne)
-                        </span>
-                        <span className="text-xl font-bold text-red-900 dark:text-red-100">
-                          ~{res.energyLossPerM3.toFixed(3)} GJ/m³
-                        </span>
-                      </div>
-                    </div>
-                    
-                    {/* Percentages */}
-                    <div className="mt-6 p-5 bg-gradient-to-r from-slate-100 to-slate-50 dark:from-slate-800 dark:to-slate-900 rounded-xl border border-slate-300 dark:border-slate-700">
-                      <h4 className="font-bold text-slate-800 dark:text-slate-200 mb-3">Udziały procentowe:</h4>
-                      <div className="grid md:grid-cols-2 gap-4">
-                        <div className="text-center p-4 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                          <div className="text-3xl font-bold text-blue-800 dark:text-blue-200">
-                            {((res.energyPerM3 / (res.energyPerM3 + res.energyLossPerM3)) * 100).toFixed(0)}%
-                          </div>
-                          <div className="text-sm text-blue-700 dark:text-blue-300 mt-1">Energia użyteczna</div>
-                        </div>
-                        <div className="text-center p-4 bg-red-100 dark:bg-red-900/30 rounded-lg">
-                          <div className="text-3xl font-bold text-red-800 dark:text-red-200">
-                            {((res.energyLossPerM3 / (res.energyPerM3 + res.energyLossPerM3)) * 100).toFixed(0)}%
-                          </div>
-                          <div className="text-sm text-red-700 dark:text-red-300 mt-1">Straty</div>
-                        </div>
-                      </div>
-                      <p className="text-center mt-4 text-slate-600 dark:text-slate-400 font-medium">
-                        ≈ {(res.energyLossPerM3 / res.energyPerM3).toFixed(1)}× ponad czystą teorię
-                      </p>
-                    </div>
-
-                    <div className="mt-6 p-4 bg-yellow-50 dark:bg-yellow-950/20 border-l-4 border-yellow-500 rounded">
-                      <p className="text-yellow-800 dark:text-yellow-300 font-medium">
-                        <strong>⚠️ To bardzo dużo!</strong> Typowo w blokach po modernizacji da się zejść do 0.22–0.35 GJ/m³ energii całkowitej (czyli straty 15–40%, nie {((res.energyLossPerM3 / (res.energyPerM3 + res.energyLossPerM3)) * 100).toFixed(0)}%).
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Where losses occur */}
-                  <div className="bg-white dark:bg-slate-900 rounded-xl p-6 shadow-lg border border-blue-200 dark:border-blue-800">
-                    <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200 mb-4">
-                      🔍 Gdzie najczęściej ginie te ~{res.energyLossPerM3.toFixed(3)} GJ/m³?
-                    </h3>
-                    
-                    <div className="space-y-4">
-                      <LossItem 
-                        percentage="30–50%"
-                        title="Cyrkulacja CWU (zbyt duży przepływ + zbyt małe ΔT na pętli)"
-                        symptom="Wysoka temp. powrotu (np. 52–55°C), brak 'schłodzenia' rurociągów"
-                        energyRange={`${(res.energyLossPerM3 * 0.30).toFixed(3)}–${(res.energyLossPerM3 * 0.50).toFixed(3)} GJ/m³`}
-                        costRange={`${(res.lossPerM3 * 0.30).toFixed(2)}–${(res.lossPerM3 * 0.50).toFixed(2)} zł/m³`}
-                        color="blue"
-                      />
-                      
-                      <LossItem 
-                        percentage="10–25%"
-                        title="Słaba izolacja pionów/gałązek i węzła"
-                        symptom="Piwnice 'grzeją' za darmo"
-                        energyRange={`${(res.energyLossPerM3 * 0.10).toFixed(3)}–${(res.energyLossPerM3 * 0.25).toFixed(3)} GJ/m³`}
-                        costRange={`${(res.lossPerM3 * 0.10).toFixed(2)}–${(res.lossPerM3 * 0.25).toFixed(2)} zł/m³`}
-                        color="blue"
-                      />
-                      
-                      <LossItem 
-                        percentage="5–15%"
-                        title="Ciągła praca pomp 24/7 bez sterowania temp./nocą"
-                        symptom="Pompy pracują non-stop bez optymalizacji"
-                        energyRange={`${(res.energyLossPerM3 * 0.05).toFixed(3)}–${(res.energyLossPerM3 * 0.15).toFixed(3)} GJ/m³`}
-                        costRange={`${(res.lossPerM3 * 0.05).toFixed(2)}–${(res.lossPerM3 * 0.15).toFixed(2)} zł/m³`}
-                        color="blue"
-                      />
-                      
-                      <LossItem 
-                        percentage="5–15%"
-                        title="Zawory zwrotne nieszczelne/przewiązki → mieszanie CWU z zimną"
-                        symptom="'Pseudo-cyrkulacja' i mieszanie temperatur"
-                        energyRange={`${(res.energyLossPerM3 * 0.05).toFixed(3)}–${(res.energyLossPerM3 * 0.15).toFixed(3)} GJ/m³`}
-                        costRange={`${(res.lossPerM3 * 0.05).toFixed(2)}–${(res.lossPerM3 * 0.15).toFixed(2)} zł/m³`}
-                        color="blue"
-                      />
-                      
-                      <LossItem 
-                        percentage="5–10%"
-                        title="Za wysoka nastawa mieszacza + antylegionella robiona 'za szeroko'"
-                        symptom="Temperatura 60–62°C non stop zamiast 55°C"
-                        energyRange={`${(res.energyLossPerM3 * 0.05).toFixed(3)}–${(res.energyLossPerM3 * 0.10).toFixed(3)} GJ/m³`}
-                        costRange={`${(res.lossPerM3 * 0.05).toFixed(2)}–${(res.lossPerM3 * 0.10).toFixed(2)} zł/m³`}
-                        color="blue"
-                      />
-                      
-                      <LossItem 
-                        percentage="5–10%"
-                        title="Brak równoważenia pętli cyrkulacyjnej"
-                        symptom="Część pętli przegrzana, część niedogrzana"
-                        energyRange={`${(res.energyLossPerM3 * 0.05).toFixed(3)}–${(res.energyLossPerM3 * 0.10).toFixed(3)} GJ/m³`}
-                        costRange={`${(res.lossPerM3 * 0.05).toFixed(2)}–${(res.lossPerM3 * 0.10).toFixed(2)} zł/m³`}
-                        color="blue"
-                      />
-                      
-                      <LossItem 
-                        percentage="5–10%"
-                        title="Rzeczywiste ΔT zimnej wody zimą większe niż w obliczeniach"
-                        symptom="Zimna woda wchodzi z inną temperaturą niż założono"
-                        energyRange={`${(res.energyLossPerM3 * 0.05).toFixed(3)}–${(res.energyLossPerM3 * 0.10).toFixed(3)} GJ/m³`}
-                        costRange={`${(res.lossPerM3 * 0.05).toFixed(2)}–${(res.lossPerM3 * 0.10).toFixed(2)} zł/m³`}
-                        color="blue"
-                      />
-                    </div>
-
-                    <div className="mt-6 p-4 bg-slate-100 dark:bg-slate-800 rounded-lg">
-                      <p className="text-sm text-slate-600 dark:text-slate-400 italic">
-                        <strong>Uwaga:</strong> Procenty są poglądowe i zależą od stanu technicznego instalacji. 
-                        W różnych budynkach dominują różne przyczyny strat. Suma nie zawsze wynosi dokładnie 100%, 
-                        ponieważ niektóre czynniki się nakładają lub występują jednocześnie.
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-            {/* Dane do pisma (opcjonalne) - przeniesione na koniec strony */}
-            <div className="max-w-6xl mx-auto mt-16 mb-8">
-        {/* Przyciski PDF przeniesione na koniec strony */}
-        {res && (
-          <div className="flex flex-col md:flex-row items-stretch md:items-center justify-center gap-6 mb-12">
-            <Button 
-              onClick={onDownloadReport} 
-              className="px-10 py-7 text-xl font-extrabold bg-gradient-to-r from-blue-700 to-cyan-500 hover:from-blue-800 hover:to-cyan-600 text-white rounded-2xl shadow-2xl hover:shadow-blue-400/40 transition-all hover:scale-105 border-4 border-blue-400 dark:border-blue-700"
-            >
-              📄 Pobierz raport PDF
-            </Button>
-            <Button 
-              onClick={onDownloadLetter} 
-              className="px-10 py-7 text-xl font-extrabold bg-gradient-to-r from-purple-700 to-pink-500 hover:from-purple-800 hover:to-pink-600 text-white rounded-2xl shadow-2xl hover:shadow-pink-400/40 transition-all hover:scale-105 border-4 border-pink-400 dark:border-pink-700"
-            >
-              ✉️ Pismo do Zarządcy (PDF)
-            </Button>
-          </div>
-        )}
-              <div className="space-y-6">
-                <div className="flex items-center justify-between mb-6">
-                  <div className="flex items-center gap-3">
-                    <div className="w-1 h-8 bg-gradient-to-b from-purple-500 to-fuchsia-500 rounded-full"></div>
-                    <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200">
-                      Dane do pisma (opcjonalne)
-                    </h3>
-                  </div>
-                  <label className="flex items-center gap-3 cursor-pointer px-4 py-2 bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800 rounded-xl hover:bg-purple-100 dark:hover:bg-purple-900/40 transition-all">
-                    <input
-                      type="checkbox"
-                      checked={inputs.useLetterData || false}
-                      onChange={(e) => handleInputChange('useLetterData', e.target.checked)}
-                      className="w-5 h-5 text-purple-600 bg-white dark:bg-slate-800 border-purple-300 dark:border-purple-700 rounded focus:ring-2 focus:ring-purple-500 cursor-pointer"
-                    />
-                    <span className="text-sm font-semibold text-purple-800 dark:text-purple-300">
-                      ✓ Wykorzystaj w piśmie do zarządcy
-                    </span>
-                  </label>
-                </div>
-                
-                {/* Układ dwukolumnowy: Nadawca (lewa) | Odbiorca (prawa) */}
-                <div className="grid md:grid-cols-2 gap-8">
-                  {/* Lewa kolumna - Nadawca (Mieszkaniec) */}
-                  <div className="space-y-6">
-                    <div className="flex items-center gap-2 mb-4">
-                      <div className="w-1 h-6 bg-gradient-to-b from-blue-500 to-cyan-500 rounded-full"></div>
-                      <h4 className="text-md font-semibold text-slate-700 dark:text-slate-300">
-                        Nadawca (Mieszkaniec)
-                      </h4>
-                    </div>
-                    <Field label="Imię i nazwisko" optional>
-                      <input
-                        type="text"
-                        placeholder="np. Jan Kowalski"
-                        value={inputs.residentName || ''}
-                        onChange={(e) => handleInputChange('residentName', e.target.value)}
-                        className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-[#101828] text-[#101828] dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-400"
-                      />
-                    </Field>
-                    <Field label="Numer lokalu" optional>
-                      <input
-                        type="text"
-                        placeholder="np. 12"
-                        value={inputs.apartmentNumber || ''}
-                        onChange={(e) => handleInputChange('apartmentNumber', e.target.value)}
-                        className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-[#101828] text-[#101828] dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-400"
-                      />
-                    </Field>
-                    <Field label="E-mail" optional>
-                      <input
-                        type="email"
-                        placeholder="np. jan.kowalski@example.com"
-                        value={inputs.residentEmail || ''}
-                        onChange={(e) => handleInputChange('residentEmail', e.target.value)}
-                        className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-[#101828] text-[#101828] dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-400"
-                      />
-                    </Field>
-                    <Field label="Telefon" optional>
-                      <input
-                        type="tel"
-                        placeholder="np. 600 000 000"
-                        value={inputs.residentPhone || ''}
-                        onChange={(e) => handleInputChange('residentPhone', e.target.value)}
-                        className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-[#101828] text-[#101828] dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-400"
-                      />
-                    </Field>
-                    <Field label="Miejscowość" optional>
-                      <input
-                        type="text"
-                        placeholder="np. Kraków"
-                        value={inputs.letterCity || ''}
-                        onChange={(e) => handleInputChange('letterCity', e.target.value)}
-                        className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-[#101828] text-[#101828] dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-400"
-                      />
-                    </Field>
-                  </div>
-
-                  {/* Prawa kolumna - Odbiorca (Zarządca) */}
-                  <div className="space-y-6">
-                    <div className="flex items-center gap-2 mb-4">
-                      <div className="w-1 h-6 bg-gradient-to-b from-purple-500 to-fuchsia-500 rounded-full"></div>
-                      <h4 className="text-md font-semibold text-slate-700 dark:text-slate-300">
-                        Odbiorca (Zarządca)
-                      </h4>
-                    </div>
-                    <Field label="Nazwa zarządcy" optional>
-                      <input
-                        type="text"
-                        placeholder="np. ABC Zarządzanie Nieruchomościami Sp. z o.o."
-                        value={inputs.managerName || ''}
-                        onChange={(e) => handleInputChange('managerName', e.target.value)}
-                        className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-[#101828] text-[#101828] dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-400"
-                      />
-                    </Field>
-                    <Field label="Adres zarządcy" optional>
-                      <input
-                        type="text"
-                        placeholder="np. ul. Długa 10, 00-001 Warszawa"
-                        value={inputs.managerAddress || ''}
-                        onChange={(e) => handleInputChange('managerAddress', e.target.value)}
-                        className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
-                      />
-                    </Field>
-                    <Field label="Adres budynku" optional>
-                      <input
-                        type="text"
-                        placeholder="np. ul. Kwiatowa 5, 30-000 Kraków"
-                        value={inputs.buildingAddress || ''}
-                        onChange={(e) => handleInputChange('buildingAddress', e.target.value)}
-                        className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
-                      />
-                    </Field>
-                  </div>
-                </div>
-              </div>
-            </div>
 
             {/* Energy Loss Analysis */}
             <Card className="backdrop-blur-sm bg-white/70 dark:bg-slate-900/70 border-0 shadow-xl">
@@ -762,6 +443,12 @@ export default function MieszkancyPage() {
                 </div>
               </CardContent>
             </Card>
+
+            <ResidentCwuComplaintLetterSection
+              inputs={inputs}
+              result={res}
+              generatePdf={generatePdfClient}
+            />
 
             <ResidentCwuIssueForm calcInputs={inputs} calcResult={res} />
           </div>
@@ -859,58 +546,6 @@ function Info({ label, value, formula, substitution, unitsNote, symbolsExplanati
           </div>
         </details>
       )}
-    </div>
-  );
-}
-
-function LossItem({ percentage, title, symptom, energyRange, costRange, color }: { 
-  percentage: string; 
-  title: string; 
-  symptom: string;
-  energyRange?: string;
-  costRange?: string;
-  color: string;
-}) {
-  const colorClasses: Record<string, { bg: string; border: string; text: string; badge: string }> = {
-    blue: { bg: 'bg-blue-50 dark:bg-blue-950/20', border: 'border-blue-200 dark:border-blue-800', text: 'text-blue-800 dark:text-blue-300', badge: 'bg-blue-500 text-white' },
-    red: { bg: 'bg-red-50 dark:bg-red-950/20', border: 'border-red-200 dark:border-red-800', text: 'text-red-800 dark:text-red-300', badge: 'bg-red-500 text-white' },
-    orange: { bg: 'bg-orange-50 dark:bg-orange-950/20', border: 'border-orange-200 dark:border-orange-800', text: 'text-orange-800 dark:text-orange-300', badge: 'bg-orange-500 text-white' },
-    amber: { bg: 'bg-amber-50 dark:bg-amber-950/20', border: 'border-amber-200 dark:border-amber-800', text: 'text-amber-800 dark:text-amber-300', badge: 'bg-amber-500 text-white' },
-    yellow: { bg: 'bg-yellow-50 dark:bg-yellow-950/20', border: 'border-yellow-200 dark:border-yellow-800', text: 'text-yellow-800 dark:text-yellow-300', badge: 'bg-yellow-500 text-white' },
-    lime: { bg: 'bg-lime-50 dark:bg-lime-950/20', border: 'border-lime-200 dark:border-lime-800', text: 'text-lime-800 dark:text-lime-300', badge: 'bg-lime-500 text-white' },
-    green: { bg: 'bg-green-50 dark:bg-green-950/20', border: 'border-green-200 dark:border-green-800', text: 'text-green-800 dark:text-green-300', badge: 'bg-green-500 text-white' },
-    emerald: { bg: 'bg-emerald-50 dark:bg-emerald-950/20', border: 'border-emerald-200 dark:border-emerald-800', text: 'text-emerald-800 dark:text-emerald-300', badge: 'bg-emerald-500 text-white' },
-  };
-  
-  const colors = colorClasses[color] || colorClasses.red;
-  
-  return (
-    <div className={`p-4 rounded-lg border ${colors.bg} ${colors.border}`}>
-      <div className="flex items-start gap-3">
-        <span className={`inline-block px-3 py-1 rounded-full text-sm font-bold ${colors.badge} shrink-0`}>
-          {percentage}
-        </span>
-        <div className="flex-1">
-          <h4 className={`font-semibold ${colors.text} mb-1`}>{title}</h4>
-          <p className="text-sm text-slate-600 dark:text-slate-400 italic mb-2">
-            <strong>Objaw:</strong> {symptom}
-          </p>
-          {(energyRange || costRange) && (
-            <div className="text-xs text-slate-500 dark:text-slate-400 space-y-0.5 mt-2 bg-white/50 dark:bg-slate-800/50 p-2 rounded">
-              {energyRange && (
-                <div>
-                  <strong>Energia:</strong> {energyRange}
-                </div>
-              )}
-              {costRange && (
-                <div>
-                  <strong>Koszt:</strong> {costRange}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
     </div>
   );
 }
