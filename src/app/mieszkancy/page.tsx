@@ -43,6 +43,9 @@ export default function MieszkancyPage() {
   const [auditOrder, setAuditOrder] = useState<"REQUESTED" | null>(null);
   const [roiModelInterest, setRoiModelInterest] = useState<"EXPRESSED" | null>(null);
   const [auditorToken, setAuditorToken] = useState<string | null>(null);
+  const [auditInterestChecked, setAuditInterestChecked] = useState(false);
+  const [auditInterestSaved, setAuditInterestSaved] = useState(false);
+  const [auditInterestSavedAtMs, setAuditInterestSavedAtMs] = useState<number | null>(null);
   const [inputs, setInputs] = useState<Inputs>({
     cwuPriceFromBill: 65,
     monthlyConsumption: 8.6,
@@ -70,12 +73,31 @@ export default function MieszkancyPage() {
 
       const token = (window.localStorage.getItem("residentCwuAuditToken") ?? "").trim();
       setAuditorToken(token.length > 0 ? token : null);
+
+      const interestRaw = window.localStorage.getItem("residentCwuAuditInterest");
+      if (interestRaw) {
+        try {
+          const parsed = JSON.parse(interestRaw) as { interested?: unknown; timestamp?: unknown };
+          const interested = parsed?.interested === true;
+          const timestamp = typeof parsed?.timestamp === "number" && Number.isFinite(parsed.timestamp) ? parsed.timestamp : null;
+          if (interested) {
+            setAuditInterestChecked(true);
+            setAuditInterestSaved(true);
+            setAuditInterestSavedAtMs(timestamp);
+          }
+        } catch {
+          // pomijamy
+        }
+      }
     } catch {
       setAuditStatus(null);
       setAuditRequest(null);
       setAuditOrder(null);
       setRoiModelInterest(null);
       setAuditorToken(null);
+      setAuditInterestChecked(false);
+      setAuditInterestSaved(false);
+      setAuditInterestSavedAtMs(null);
     }
   }, []);
 
@@ -105,6 +127,49 @@ export default function MieszkancyPage() {
       return created;
     } catch {
       return null;
+    }
+  }
+
+  function buildAuditorPath(token: string): string {
+    return `/audytor?auditToken=${encodeURIComponent(token)}`;
+  }
+
+  function buildAuditorUrl(token: string): string {
+    if (typeof window === "undefined") return buildAuditorPath(token);
+    return `${window.location.origin}${buildAuditorPath(token)}`;
+  }
+
+  async function copyToClipboard(text: string) {
+    if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return;
+    }
+
+    if (typeof document === "undefined") throw new Error("Clipboard API niedostępne");
+    const textarea = document.createElement("textarea");
+    textarea.value = text;
+    textarea.setAttribute("readonly", "true");
+    textarea.style.position = "fixed";
+    textarea.style.left = "-9999px";
+    document.body.appendChild(textarea);
+    textarea.select();
+    const ok = document.execCommand("copy");
+    textarea.remove();
+    if (!ok) throw new Error("Nie udało się skopiować");
+  }
+
+  async function handleCopyAuditorLink() {
+    const token = auditorToken ?? ensureAuditorToken();
+    if (!token) {
+      toast.error("Nie udało się wygenerować linku", { description: "localStorage może być niedostępny." });
+      return;
+    }
+
+    try {
+      await copyToClipboard(buildAuditorUrl(token));
+      toast.success("Link skopiowany");
+    } catch (e) {
+      toast.error("Nie udało się skopiować linku", { description: String(e) });
     }
   }
 
@@ -282,30 +347,51 @@ export default function MieszkancyPage() {
         <Card className="bg-white/80 dark:bg-slate-900/60 border border-slate-200/30 dark:border-slate-700/50 shadow-xl rounded-3xl backdrop-blur">
           <CardHeader className="pb-2">
             <CardTitle className="text-2xl font-extrabold text-slate-900 dark:text-slate-100">
-              Najważniejsze w skrócie
+              TL;DR
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-0">
-            <ul className="space-y-3 text-lg text-slate-800 dark:text-slate-200">
-              <li className="flex items-start gap-3">
-                <span className="text-2xl leading-none" aria-hidden>
-                  💸
-                </span>
-                <span>Sprawdzasz, ile pieniędzy tracisz na ciepłej wodzie użytkowej.</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <span className="text-2xl leading-none" aria-hidden>
-                  🔥
-                </span>
-                <span>W wielu blokach nawet 20–60% opłat za CWU to straty w instalacji.</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <span className="text-2xl leading-none" aria-hidden>
-                  📄
-                </span>
-                <span>Wynik możesz zgłosić do zarządcy, aby uruchomić dalsze działania.</span>
-              </li>
-            </ul>
+            <p className="text-lg text-slate-800 dark:text-slate-200">
+              Policz, ile z Twojej opłaty za CWU może być stratą w instalacji budynku.
+            </p>
+
+            <div className="mt-4 grid gap-3 text-base text-slate-700 dark:text-slate-300">
+              <div className="flex items-start gap-3">
+                <div className="mt-0.5 rounded-lg bg-slate-900/5 dark:bg-white/10 p-2">
+                  <Calculator className="h-4 w-4 text-slate-700 dark:text-slate-200" />
+                </div>
+                <div>
+                  <span className="font-semibold text-slate-900 dark:text-slate-100">Wpisz dane z rachunku</span>
+                  <span className="text-slate-500 dark:text-slate-400"> → </span>
+                  <span>podaj cenę CWU i swoje zużycie.</span>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="mt-0.5 rounded-lg bg-slate-900/5 dark:bg-white/10 p-2">
+                  <ArrowDown className="h-4 w-4 text-slate-700 dark:text-slate-200" />
+                </div>
+                <div>
+                  <span className="font-semibold text-slate-900 dark:text-slate-100">Zobacz wynik</span>
+                  <span className="text-slate-500 dark:text-slate-400"> → </span>
+                  <span>ile płacisz „w kranie”, a ile może być stratą.</span>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="mt-0.5 rounded-lg bg-slate-900/5 dark:bg-white/10 p-2">
+                  <Home className="h-4 w-4 text-slate-700 dark:text-slate-200" />
+                </div>
+                <div>
+                  <span className="font-semibold text-slate-900 dark:text-slate-100">Przygotuj zgłoszenie do zarządcy</span>
+                  <span className="text-slate-500 dark:text-slate-400"> → </span>
+                  <span>na bazie wygenerowanego pisma lub formularza.</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-4 flex items-start gap-2 text-sm text-slate-600 dark:text-slate-400">
+              <InfoIcon className="mt-0.5 h-4 w-4" />
+              <span>Wynik orientacyjny, do weryfikacji audytorem.</span>
+            </div>
           </CardContent>
         </Card>
 
@@ -315,14 +401,9 @@ export default function MieszkancyPage() {
             Mieszkańcy Analiza strat CWU
           </h1>
           <p className="text-lg md:text-xl text-blue-100 max-w-2xl mx-auto mt-4">
-            Płacisz za ciepło, którego nawet nie używasz. Serio.<br />
-            W wielu blokach nawet 2/3 kosztów ogrzewania wody znika w ścianach, piwnicach i źle ustawionej cyrkulacji. A Ty dostajesz tylko jedno: coraz wyższe rachunki. Podwyżki? Będą. Bo jeśli instalacja marnuje energię, to ktoś za to musi zapłacić — i zwykle są to mieszkańcy.<br /><br />
-            A teraz najlepsze: te straty da się ograniczyć. I to nie kosmetycznie.<br />
-            Dobrze przeprowadzona termomodernizacja, regulacja przepływów i modernizacja instalacji CWU potrafią obniżyć koszty nawet o 20–60%. To realne pieniądze, które mogą zostać w Twojej kieszeni zamiast uciekać do sieci ciepłowniczej.<br /><br />
-            Co więcej — zarządcy i spółdzielnie mają obowiązek dbać o efektywność instalacji i minimalizację strat. Prawo jest tu jasne. Jeśli budynek przepłaca, to nie jest „naturalny koszt ciepła”, tylko brak działań po stronie administracji.<br /><br />
-            Jeśli chcesz wiedzieć, ile Twój blok traci i ile można odzyskać, sprawdzimy to za Ciebie.<br />
-            Konkretnie, szybko i technicznie — ale w sposób zrozumiały dla mieszkańców.<br /><br />
-            Zatrzymaj straty. Zatrzymaj podwyżki. Zacznij oszczędzać.
+            Ten kalkulator szacuje, jaka część Twojej opłaty za CWU może wynikać ze strat ciepła w instalacji budynku (np. cyrkulacja, izolacja, regulacja).<br />
+            Na podstawie danych z rachunku i prostych parametrów zobaczysz orientacyjny wynik: koszt „teoretyczny” podgrzania 1 m³, różnicę (potencjalną stratę) oraz skalę miesięczną i roczną.<br /><br />
+            Jeśli wynik wygląda niepokojąco, kolejnym krokiem jest zgłoszenie do zarządcy lub weryfikacja przez audytora technicznego, który potwierdzi przyczynę strat i wskaże działania naprawcze.
           </p>
           <p className="text-lg text-slate-300 max-w-2xl mx-auto">
             {/* usunięto drugi opis zgodnie z nową wersją tekstu */}
@@ -763,6 +844,62 @@ export default function MieszkancyPage() {
               </CardContent>
             </Card>
 
+            <Card className="backdrop-blur-sm bg-white/70 dark:bg-slate-900/70 border-0 shadow-xl">
+              <CardHeader>
+                <CardTitle className="text-xl text-slate-800 dark:text-slate-200">Deklaracja zainteresowania audytem CWU</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4 text-slate-700 dark:text-slate-300">
+                <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400">
+                  Na podstawie orientacyjnych danych dotyczących strat energii CWU, deklaruję zainteresowanie otrzymaniem oferty audytu technicznego instalacji.
+                </p>
+
+                {auditInterestSaved ? (
+                  <div className="space-y-1">
+                    <div className="text-sm font-semibold">Deklaracja zapisana. Audytor widzi zainteresowanie.</div>
+                    {auditInterestSavedAtMs !== null ? (
+                      <div className="text-xs text-slate-600 dark:text-slate-400">
+                        Zapisano: {new Date(auditInterestSavedAtMs).toLocaleString("pl-PL")}
+                      </div>
+                    ) : null}
+                  </div>
+                ) : (
+                  <>
+                    <label className="flex items-start gap-3 text-sm">
+                      <input
+                        type="checkbox"
+                        className="mt-1 h-4 w-4 accent-slate-900 dark:accent-slate-100"
+                        checked={auditInterestChecked}
+                        onChange={(e) => setAuditInterestChecked(e.target.checked)}
+                      />
+                      <span>Wyrażam wstępne zainteresowanie wykonaniem audytu CWU</span>
+                    </label>
+
+                    <div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        disabled={!auditInterestChecked}
+                        onClick={() => {
+                          try {
+                            if (typeof window !== "undefined") {
+                              const payload = { interested: true, timestamp: Date.now() };
+                              window.localStorage.setItem("residentCwuAuditInterest", JSON.stringify(payload));
+                              setAuditInterestSavedAtMs(payload.timestamp);
+                            }
+                            setAuditInterestSaved(true);
+                          } catch {
+                            toast.error("Nie udało się zapisać deklaracji", { description: "localStorage może być niedostępny." });
+                          }
+                        }}
+                      >
+                        Zapisz deklarację
+                      </Button>
+                    </div>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+
             <ResidentCwuComplaintLetterSection
               inputs={inputs}
               result={res}
@@ -775,32 +912,26 @@ export default function MieszkancyPage() {
               onAuditStatusChange={(status) => setAuditStatus(status)}
             />
 
-            {auditRequest === "REQUESTED" || auditStatus === "AUDIT_REQUESTED" ? (
+            {res ? (
               <Card className="backdrop-blur-sm bg-white/70 dark:bg-slate-900/70 border-0 shadow-xl">
                 <CardHeader>
                   <CardTitle className="text-xl text-slate-800 dark:text-slate-200">Przekaż do audytu</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3 text-slate-700 dark:text-slate-300">
                   <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400">
-                    Audyt techniczny przygotowany – możesz przekazać link audytorowi.
+                    Skopiuj link do audytora, aby ktoś technicznie zweryfikował wynik i kontekst obliczeń.
                   </p>
                   <div className="space-y-2">
                     <div className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Link dla audytora</div>
                     <div className="text-xs rounded-xl border border-slate-200/60 dark:border-slate-700/60 bg-slate-50/60 dark:bg-slate-950/30 p-3 break-all">
-                      {auditorToken ? `/audytor?auditToken=${auditorToken}` : "—"}
+                      {auditorToken ? buildAuditorPath(auditorToken) : "—"}
                     </div>
                   </div>
                   <div className="pt-1">
-                    {auditorToken ? (
-                      <Button asChild variant="outline">
-                        <Link href={`/audytor?auditToken=${encodeURIComponent(auditorToken)}`}>Otwórz widok audytora</Link>
-                      </Button>
-                    ) : (
-                      <div className="text-sm text-slate-600 dark:text-slate-400">Nie udało się wygenerować linku audytora (localStorage niedostępny).</div>
-                    )}
+                    <Button onClick={handleCopyAuditorLink}>Skopiuj link do audytora</Button>
                   </div>
                   <p className="text-xs leading-relaxed text-slate-600 dark:text-slate-400">
-                    Ten link może zostać przekazany audytorowi lub zarządcy.
+                    Token jest generowany po stronie przeglądarki i zapisywany lokalnie.
                   </p>
                 </CardContent>
               </Card>

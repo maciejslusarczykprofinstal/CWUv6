@@ -33,6 +33,9 @@ const STORAGE_KEY_AUDIT_AGREEMENT = "residentCwuAuditAgreement";
 const STORAGE_KEY_ROI_MODEL_INTEREST = "residentCwuRoiModelInterest";
 const STORAGE_KEY_AUDIT_TOKEN = "residentCwuAuditToken";
 const STORAGE_KEY_AUDIT_CONTACT_STAGE = "residentCwuAuditContactStage";
+const STORAGE_KEY_AUDIT_PACKAGE = "residentCwuAuditPackage";
+const STORAGE_KEY_AUDIT_INTEREST = "residentCwuAuditInterest";
+const STORAGE_KEY_AUDITOR_PRIVATE_NOTES = "residentCwuAuditorPrivateNotes";
 
 type RiskLevel = "niska" | "srednia" | "wysoka";
 
@@ -48,6 +51,40 @@ type AuditAgreementStatus = "ACCEPTED";
 type RoiModelInterestStatus = "EXPRESSED";
 
 type AuditContactStage = "NEW" | "CONTACTED" | "TALK_DONE" | "OFFER_SENT";
+
+type AuditPackage = "BASIC" | "PRO" | "PREMIUM";
+
+type AuditInterest = { interested: true; timestamp: number };
+
+const AUDIT_PACKAGES: Record<AuditPackage, { title: string; pricePLN: number; scope: string[] }> = {
+  BASIC: {
+    title: "BASIC",
+    pricePLN: 490,
+    scope: [
+      "analiza zgłoszenia + weryfikacja spójności danych",
+      "krótka lista rekomendowanych działań",
+      "podsumowanie do przekazania zarządcy",
+    ],
+  },
+  PRO: {
+    title: "PRO",
+    pricePLN: 990,
+    scope: [
+      "wszystko z BASIC",
+      "rozszerzony raport (warianty A/B/C + ROI opisowe)",
+      "rekomendacje pomiarów i kryteriów odbioru",
+    ],
+  },
+  PREMIUM: {
+    title: "PREMIUM",
+    pricePLN: 1490,
+    scope: [
+      "wszystko z PRO",
+      "warsztat z zarządcą (zdalnie) – omówienie ROI i ryzyk",
+      "przygotowanie wytycznych pod zapytanie ofertowe",
+    ],
+  },
+};
 
 type AuditDecisionStage = "CONTACTED" | "OFFER_SENT" | "DECISION_PENDING" | "ACCEPTED" | "REJECTED";
 
@@ -131,6 +168,20 @@ type LeadCrmFilter = "ALL" | "NOWE" | "GOTOWE" | "ROI";
 
 type LeadPriority = "Niski" | "Średni" | "Wysoki";
 type LeadPrioritySortKey = 1 | 2 | 3;
+
+type CrmLead = {
+  id: string;
+  createdAtMs: number;
+  status: LeadStatusCode;
+  contactStage: AuditContactStage;
+  decisionStage: AuditDecisionStage | null;
+  yearlyLoss: number | null;
+  lossPercent: number | null;
+  yearlySavingsMin: number | null;
+  yearlySavingsMax: number | null;
+  priority: { label: LeadPriority; sortKey: LeadPrioritySortKey; variant: "outline" | "secondary" | "warning" };
+  isDemo?: boolean;
+};
 
 function leadPriority(params: { yearlyLoss: number | null; lossPercent: number | null }): {
   label: LeadPriority;
@@ -253,6 +304,50 @@ const DEFAULT_VARIANTS: AuditVariantsState = {
   C: {
     key: "C",
     scopeDescription: "",
+    costLevel: "wysoki",
+    lossReductionPotential: "40-60",
+  },
+};
+
+const DEMO_CONTEXT: ResidentCwuAuditContext = {
+  inputs: {
+    cwuPriceFromBill: 35.8,
+    monthlyConsumption: 4.2,
+    coldTempC: 10,
+    hotTempC: 55,
+    heatPriceFromCity: 98,
+    letterCity: "DEMO",
+  },
+  result: {
+    energyPerM3: 0.11,
+    energyLossPerM3: 0.09,
+    lossPerM3: 18.6,
+    monthlyFinancialLoss: 78,
+    monthlyEnergyLoss: 0.38,
+    yearlyFinancialLoss: 936,
+    yearlyEnergyLoss: 4.56,
+    theoreticalCostPerM3: 17.2,
+    theoreticalMonthlyPayment: 72,
+    actualMonthlyPayment: 150,
+  },
+};
+
+const DEMO_VARIANTS: AuditVariantsState = {
+  A: {
+    key: "A",
+    scopeDescription: "DEMO: regulacja cyrkulacji + korekta nastaw.",
+    costLevel: "niski",
+    lossReductionPotential: "10-20",
+  },
+  B: {
+    key: "B",
+    scopeDescription: "DEMO: dodatkowe pomiary + równoważenie instalacji.",
+    costLevel: "sredni",
+    lossReductionPotential: "20-40",
+  },
+  C: {
+    key: "C",
+    scopeDescription: "DEMO: modernizacja elementów + docieplenie.",
     costLevel: "wysoki",
     lossReductionPotential: "40-60",
   },
@@ -520,6 +615,7 @@ function AudytorPageInner() {
   const searchParams = useSearchParams();
   const auditTokenParam = (searchParams?.get("auditToken") ?? "").trim() || null;
   const [isAuditorMode, setIsAuditorMode] = useState(false);
+  const isDemoMode = !isAuditorMode;
 
   const [ctx, setCtx] = useState<ResidentCwuAuditContext | null>(null);
   const [auditRequestStatus, setAuditRequestStatus] = useState<AuditRequestStatus | null>(null);
@@ -533,6 +629,11 @@ function AudytorPageInner() {
   const [hasVariantsInStorage, setHasVariantsInStorage] = useState(false);
   const [contactStage, setContactStage] = useState<AuditContactStage>("NEW");
   const [decisionStage, setDecisionStage] = useState<AuditDecisionStage | null>(null);
+  const [auditPackage, setAuditPackage] = useState<AuditPackage | null>(null);
+  const [auditInterest, setAuditInterest] = useState<AuditInterest | null>(null);
+  const [auditorPrivateNotes, setAuditorPrivateNotes] = useState<string>("");
+  const [managerMessageCopied, setManagerMessageCopied] = useState(false);
+  const [auditOfferCopied, setAuditOfferCopied] = useState(false);
 
   const [auditAgreementAccepted, setAuditAgreementAccepted] = useState(false);
   const [assessment, setAssessment] = useState<TechnicalAssessment>(DEFAULT_TECH_ASSESSMENT);
@@ -544,6 +645,16 @@ function AudytorPageInner() {
   const [variantsSavedAtISO, setVariantsSavedAtISO] = useState<string | null>(null);
 
   const [managerReportOpen, setManagerReportOpen] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const raw = window.localStorage.getItem(STORAGE_KEY_AUDITOR_PRIVATE_NOTES);
+      setAuditorPrivateNotes(typeof raw === "string" ? raw : "");
+    } catch {
+      setAuditorPrivateNotes("");
+    }
+  }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -568,6 +679,8 @@ function AudytorPageInner() {
       setRoiModelInterestStatus(null);
       setContactStage("NEW");
       setDecisionStage(null);
+      setAuditPackage(null);
+      setAuditInterest(null);
       return;
     }
 
@@ -619,7 +732,40 @@ function AudytorPageInner() {
     } catch {
       setContactStage("NEW");
     }
+
+    try {
+      const rawPkg = (window.localStorage.getItem(STORAGE_KEY_AUDIT_PACKAGE) ?? "").trim();
+      const parsedPkg: AuditPackage | null = rawPkg === "BASIC" || rawPkg === "PRO" || rawPkg === "PREMIUM" ? rawPkg : null;
+      setAuditPackage(parsedPkg);
+    } catch {
+      setAuditPackage(null);
+    }
+
+    try {
+      const raw = window.localStorage.getItem(STORAGE_KEY_AUDIT_INTEREST);
+      if (!raw) {
+        setAuditInterest(null);
+      } else {
+        const parsed = JSON.parse(raw) as { interested?: unknown; timestamp?: unknown };
+        const interested = parsed?.interested === true;
+        const timestamp = typeof parsed?.timestamp === "number" && Number.isFinite(parsed.timestamp) ? parsed.timestamp : null;
+        setAuditInterest(interested && timestamp !== null ? { interested: true, timestamp } : null);
+      }
+    } catch {
+      setAuditInterest(null);
+    }
   }, [isAuditorMode]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!isAuditorMode) return;
+    if (!auditPackage) return;
+    try {
+      window.localStorage.setItem(STORAGE_KEY_AUDIT_PACKAGE, auditPackage);
+    } catch {
+      // UI-only
+    }
+  }, [auditPackage, isAuditorMode]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -663,19 +809,38 @@ function AudytorPageInner() {
     setAuditAgreementAccepted(false);
   }, [auditOrderStatus]);
 
-  const crmLeads = useMemo(() => {
-    if (!isAuditorMode) return [] as Array<{
-      id: string;
-      createdAtMs: number;
-      status: LeadStatusCode;
-      contactStage: AuditContactStage;
-      decisionStage: AuditDecisionStage | null;
-      yearlyLoss: number | null;
-      lossPercent: number | null;
-      yearlySavingsMin: number | null;
-      yearlySavingsMax: number | null;
-      priority: { label: LeadPriority; sortKey: LeadPrioritySortKey; variant: "outline" | "secondary" | "warning" };
-    }>;
+  const crmLeads = useMemo<CrmLead[]>(() => {
+    if (!isAuditorMode) {
+      const demoCtx = DEMO_CONTEXT;
+      const yearlyLoss = Math.max(0, Number(demoCtx.result.yearlyFinancialLoss) || 0);
+      const lossGJ = Math.max(0, Number(demoCtx.result.energyLossPerM3) || 0);
+      const usefulGJ = Math.max(0, Number(demoCtx.result.energyPerM3) || 0);
+      const total = lossGJ + usefulGJ;
+      const lossPercent = total > 0 ? Math.max(0, Math.min(100, (lossGJ / total) * 100)) : null;
+
+      const selected = DEMO_VARIANTS.B;
+      const { minPct, maxPct } = reductionRange(selected.lossReductionPotential);
+      const yearlySavingsMin = Math.max(0, Math.round(yearlyLoss * minPct));
+      const yearlySavingsMax = Math.max(0, Math.round(yearlyLoss * maxPct));
+
+      const priority = leadPriority({ yearlyLoss, lossPercent });
+
+      return [
+        {
+          id: "demo",
+          createdAtMs: leadCreatedAtFallback - 86_400_000,
+          status: "READY_FOR_AUDIT",
+          contactStage: "CONTACTED",
+          decisionStage: "DECISION_PENDING",
+          yearlyLoss,
+          lossPercent,
+          yearlySavingsMin,
+          yearlySavingsMax,
+          priority,
+          isDemo: true,
+        },
+      ];
+    }
 
     // Źródła: tylko residentCwuAuditContext / residentCwuAuditStatus / residentCwuAuditRequest / cwuAuditVariants
     const hasContext = Boolean(ctx);
@@ -795,9 +960,9 @@ function AudytorPageInner() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (!isAuditorMode) {
-      setVariants(DEFAULT_VARIANTS);
+      setVariants(DEMO_VARIANTS);
       setVariantsHydrated(false);
-      setHasVariantsInStorage(false);
+      setHasVariantsInStorage(true);
       return;
     }
 
@@ -842,22 +1007,23 @@ function AudytorPageInner() {
   }
 
   const view = useMemo(() => {
-    if (!ctx) return null;
+    const ctxForView = isAuditorMode ? ctx : DEMO_CONTEXT;
+    if (!ctxForView) return null;
 
-    const bill = Number(ctx.inputs.cwuPriceFromBill) || 0;
-    const lossPerM3 = Math.max(0, Number(ctx.result.lossPerM3) || 0);
+    const bill = Number(ctxForView.inputs.cwuPriceFromBill) || 0;
+    const lossPerM3 = Math.max(0, Number(ctxForView.result.lossPerM3) || 0);
     const lossPercentRaw = bill > 0 ? (lossPerM3 / bill) * 100 : 0;
     const lossPercent = Math.min(100, Math.max(0, lossPercentRaw));
 
     return {
-      source: "Zgłoszenie mieszkańca – analiza CWU",
-      monthlyConsumption: ctx.inputs.monthlyConsumption,
-      cwuPriceFromBill: ctx.inputs.cwuPriceFromBill,
-      theoreticalCostPerM3: ctx.result.theoreticalCostPerM3,
+      source: isAuditorMode ? "Zgłoszenie mieszkańca – analiza CWU" : "DEMO — Zgłoszenie mieszkańca – analiza CWU",
+      monthlyConsumption: ctxForView.inputs.monthlyConsumption,
+      cwuPriceFromBill: ctxForView.inputs.cwuPriceFromBill,
+      theoreticalCostPerM3: ctxForView.result.theoreticalCostPerM3,
       lossPercent,
-      yearlyFinancialLoss: ctx.result.yearlyFinancialLoss,
+      yearlyFinancialLoss: ctxForView.result.yearlyFinancialLoss,
     };
-  }, [ctx]);
+  }, [ctx, isAuditorMode]);
 
   const effectsView = useMemo(() => {
     if (!view) return null;
@@ -922,6 +1088,199 @@ function AudytorPageInner() {
       recommendation,
     };
   }, [variants, view]);
+
+  const yearlySavingsForPackages = useMemo((): number | null => {
+    if (profitabilityView?.yearlySavings && Number.isFinite(profitabilityView.yearlySavings) && profitabilityView.yearlySavings > 0) {
+      return profitabilityView.yearlySavings;
+    }
+
+    const lead = crmLeads?.[0];
+    if (!lead) return null;
+    if (lead.yearlySavingsMin === null || lead.yearlySavingsMax === null) return null;
+    const minSafe = Math.min(lead.yearlySavingsMin, lead.yearlySavingsMax);
+    const maxSafe = Math.max(lead.yearlySavingsMin, lead.yearlySavingsMax);
+    const mid = Math.round((minSafe + maxSafe) / 2);
+    return Number.isFinite(mid) && mid > 0 ? mid : null;
+  }, [crmLeads, profitabilityView]);
+
+  const decisionReadinessView = useMemo(() => {
+    const pkg = auditPackage;
+    const pricePLN: number | null = pkg ? AUDIT_PACKAGES[pkg].pricePLN : null;
+
+    const yearlySavings = yearlySavingsForPackages;
+
+    const verdict: "Ekonomicznie uzasadnione" | "Graniczna opłacalność" | "Nieopłacalne przy obecnych danych" | "—" = (() => {
+      if (pricePLN === null) return "—";
+      if (yearlySavings === null) return "—";
+      if (!Number.isFinite(yearlySavings) || yearlySavings <= 0) return "—";
+
+      if (yearlySavings >= 2 * pricePLN) return "Ekonomicznie uzasadnione";
+      if (yearlySavings >= pricePLN) return "Graniczna opłacalność";
+      return "Nieopłacalne przy obecnych danych";
+    })();
+
+    const isEconomicallyJustified = verdict === "Ekonomicznie uzasadnione";
+    const ctaText = isEconomicallyJustified ? "Klient gotowy do kontaktu ofertowego" : "Wymaga omówienia wariantów";
+
+    return {
+      pkg,
+      pricePLN,
+      yearlySavings,
+      verdict,
+      isEconomicallyJustified,
+      ctaText,
+    };
+  }, [auditPackage, yearlySavingsForPackages]);
+
+  const auditOfferView = useMemo(() => {
+    const pkg = decisionReadinessView.pkg;
+    const canShow = Boolean(pkg) && decisionReadinessView.isEconomicallyJustified;
+
+    if (!canShow || !pkg) {
+      return {
+        isAvailable: false,
+        text: "Oferta dostępna po wyborze pakietu i potwierdzeniu zasadności ekonomicznej.",
+      };
+    }
+
+    const def = AUDIT_PACKAGES[pkg];
+    const yearlySavings = decisionReadinessView.yearlySavings;
+    const savingsLabel = yearlySavings !== null ? `~${formatPLN(yearlySavings)} zł` : "~— zł";
+
+    const lossPctLabel = (() => {
+      if (!view) return "—%";
+      const raw = Number((view as any).lossPercent);
+      if (!Number.isFinite(raw)) return "—%";
+      return `${formatPL(Math.min(100, Math.max(0, raw)), 0)}%`;
+    })();
+
+    const yearlyLossLabel = view ? `~${formatPLN(Math.max(0, Number(view.yearlyFinancialLoss) || 0))} zł` : "~— zł";
+
+    const scopeLines = def.scope.map((s) => `– ${s}`).join("\n");
+
+    const text =
+      `Oferta wykonania audytu instalacji CWU\n\n` +
+      `Na podstawie przeprowadzonej analizy danych eksploatacyjnych\n` +
+      `stwierdzono zasadność wykonania audytu technicznego instalacji\n` +
+      `ciepłej wody użytkowej w budynku.\n\n` +
+      `Skala strat: ${yearlyLossLabel} rocznie (ok. ${lossPctLabel} energii na CWU).\n\n` +
+      `Zakres audytu obejmuje:\n` +
+      `${scopeLines}\n\n` +
+      `Cena audytu: ${formatPLN(def.pricePLN)} zł brutto.\n` +
+      `Szacowana roczna oszczędność: ${savingsLabel}.\n\n` +
+      `Audyt ma charakter decyzyjny i nie zobowiązuje\n` +
+      `do realizacji robót modernizacyjnych.`;
+
+    return { isAvailable: true, text };
+  }, [decisionReadinessView, view]);
+
+  const managerMessageView = useMemo(() => {
+    if (isDemoMode) {
+      return {
+        isAvailable: false,
+        text: "Komunikat dostępny po przygotowaniu audytu.",
+      };
+    }
+
+    const yearlyLoss = view ? Math.max(0, Number(view.yearlyFinancialLoss) || 0) : null;
+    const lossPercentRaw = view ? Number((view as any).lossPercent) : NaN;
+    const lossPercent = Number.isFinite(lossPercentRaw) ? Math.min(100, Math.max(0, lossPercentRaw)) : null;
+
+    if (yearlyLoss === null || !Number.isFinite(yearlyLoss) || yearlyLoss <= 0) {
+      return {
+        isAvailable: false,
+        text: "Komunikat dostępny po przygotowaniu audytu.",
+      };
+    }
+
+    const packageLine =
+      decisionReadinessView.pkg && decisionReadinessView.pricePLN !== null
+        ? `\n\nWybrany pakiet audytu: ${decisionReadinessView.pkg} (${formatPLN(decisionReadinessView.pricePLN)} zł).\nOcena opłacalności: ${decisionReadinessView.verdict}.`
+        : "";
+
+    const economicsParagraph =
+      decisionReadinessView.verdict === "Ekonomicznie uzasadnione"
+        ? "Koszt audytu jest niewielki w relacji do potencjalnych\noszczędności rocznych i pozwala ograniczyć ryzyko\nnietrafionych decyzji inwestycyjnych."
+        : "Audyt pozwala zweryfikować potencjał ograniczenia strat\noraz porównać warianty modernizacji przed poniesieniem\nwiększych nakładów inwestycyjnych.";
+
+    const pctLabel = lossPercent !== null ? `${formatPL(lossPercent, 0)}%` : "—%";
+
+    const text =
+      `Na podstawie analizy danych zużycia CWU w budynku\n` +
+      `oszacowano straty energii na poziomie około ${formatPLN(yearlyLoss)} zł rocznie,\n` +
+      `co stanowi około ${pctLabel} zużycia energii na potrzeby CWU.\n\n` +
+      `Analiza wskazuje zasadność wykonania audytu technicznego,\n` +
+      `którego celem jest weryfikacja możliwości ograniczenia strat\n` +
+      `oraz porównanie wariantów modernizacji instalacji.\n\n` +
+      `${economicsParagraph}\n\n` +
+      `Decyzja o audycie umożliwia świadome porównanie wariantów\n` +
+      `modernizacji i ograniczenie ryzyka nietrafionych inwestycji.` +
+      packageLine;
+
+    return { isAvailable: true, text };
+  }, [decisionReadinessView, isDemoMode, view]);
+
+  const copyManagerMessageToClipboard = async () => {
+    const text = managerMessageView.text;
+    if (!managerMessageView.isAvailable) return;
+    try {
+      await navigator.clipboard.writeText(text);
+      setManagerMessageCopied(true);
+      setTimeout(() => setManagerMessageCopied(false), 1200);
+      return;
+    } catch {
+      // fallback
+    }
+
+    try {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.setAttribute("readonly", "true");
+      ta.style.position = "fixed";
+      ta.style.left = "-9999px";
+      ta.style.top = "0";
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+      setManagerMessageCopied(true);
+      setTimeout(() => setManagerMessageCopied(false), 1200);
+    } catch {
+      // pomijamy
+    }
+  };
+
+  const copyAuditOfferToClipboard = async () => {
+    const text = auditOfferView.text;
+    if (!auditOfferView.isAvailable) return;
+    try {
+      await navigator.clipboard.writeText(text);
+      setAuditOfferCopied(true);
+      setTimeout(() => setAuditOfferCopied(false), 1200);
+      return;
+    } catch {
+      // fallback
+    }
+
+    try {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.setAttribute("readonly", "true");
+      ta.style.position = "fixed";
+      ta.style.left = "-9999px";
+      ta.style.top = "0";
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+      setAuditOfferCopied(true);
+      setTimeout(() => setAuditOfferCopied(false), 1200);
+    } catch {
+      // pomijamy
+    }
+  };
 
   const managerSummaryView = useMemo(() => {
     if (!view) return null;
@@ -1041,7 +1400,28 @@ function AudytorPageInner() {
   }, [variants, view]);
 
   const efficiencyView = useMemo(() => {
-    if (!isAuditorMode) return null;
+    if (!isAuditorMode) {
+      const totalCount = 1;
+      const totalYearlyLoss = Math.max(0, Math.round(Number(DEMO_CONTEXT.result.yearlyFinancialLoss) || 0));
+
+      const savingsMin = Math.max(0, Math.round(totalYearlyLoss * 0.1));
+      const savingsMax = Math.max(0, Math.round(totalYearlyLoss * 0.4));
+      const savingsMinSafe = Math.min(savingsMin, savingsMax);
+      const savingsMaxSafe = Math.max(savingsMin, savingsMax);
+
+      return {
+        totalCount,
+        readyCount: 1,
+        auditsDoneCount: 0,
+        offersSentCount: 0,
+        positiveCount: 0,
+        totalYearlyLoss,
+        savingsMin: savingsMinSafe,
+        savingsMax: savingsMaxSafe,
+        offersRatePct: 0,
+        decisionWinRatePct: 0,
+      };
+    }
 
     const contexts = (() => {
       try {
@@ -1107,9 +1487,28 @@ function AudytorPageInner() {
               Widok roboczy (read-only). Prezentuje kontekst zgłoszenia i dane wejściowe, bez edycji i bez ponownych obliczeń.
             </p>
           ) : (
-            <p className="text-slate-300">Widok demonstracyjny — brak danych zgłoszeń.</p>
+            <p className="text-slate-300">Widok demonstracyjny — dane przykładowe (DEMO).</p>
           )}
         </div>
+
+        {isDemoMode ? (
+          <Card className="backdrop-blur-sm bg-white/70 dark:bg-slate-900/70 border-0 shadow-xl">
+            <CardHeader>
+              <div className="flex items-center justify-between gap-3">
+                <CardTitle className="text-xl text-slate-800 dark:text-slate-200">Tryb DEMO</CardTitle>
+                <Badge
+                  variant="outline"
+                  className="border-slate-300/60 text-slate-700 dark:border-slate-600/60 dark:text-slate-200"
+                >
+                  DEMO
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent className="text-slate-700 dark:text-slate-300">
+              <p className="text-sm">Aby zobaczyć realne zgłoszenie, wejdź linkiem z /mieszkancy</p>
+            </CardContent>
+          </Card>
+        ) : null}
 
         <Card className="backdrop-blur-sm bg-white/70 dark:bg-slate-900/70 border-0 shadow-xl">
           <CardHeader>
@@ -1148,9 +1547,7 @@ function AudytorPageInner() {
             </div>
           </CardHeader>
           <CardContent className="space-y-3">
-            {!isAuditorMode ? (
-              <div className="text-sm text-slate-600 dark:text-slate-400">Tryb DEMO nie prezentuje leadów z localStorage.</div>
-            ) : crmLeadsSorted.length === 0 ? (
+            {crmLeadsSorted.length === 0 ? (
               <div className="text-sm text-slate-600 dark:text-slate-400">
                 Brak danych do priorytetyzacji (wymaga co najmniej residentCwuAuditContext).
               </div>
@@ -1188,7 +1585,28 @@ function AudytorPageInner() {
                           className="border-t border-slate-200/60 dark:border-slate-700/60"
                         >
                           <td className="px-3 py-3">
-                            <Badge variant={leadStatusBadgeVariant(lead.status)}>{lead.status}</Badge>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <Badge variant={leadStatusBadgeVariant(lead.status)}>{lead.status}</Badge>
+                              {lead.isDemo ? (
+                                <Badge variant="outline" className="text-muted-foreground">
+                                  DEMO
+                                </Badge>
+                              ) : null}
+                              {isAuditorMode && !lead.isDemo && auditPackage ? (
+                                <Badge variant="success">Pakiet wybrany</Badge>
+                              ) : null}
+                              {isAuditorMode && !lead.isDemo && auditPackage && decisionReadinessView.isEconomicallyJustified ? (
+                                <Badge variant="success">GOTOWY</Badge>
+                              ) : null}
+                            </div>
+
+                            {isAuditorMode && !lead.isDemo && decisionReadinessView.isEconomicallyJustified ? (
+                              <div className="mt-1 text-xs text-slate-600 dark:text-slate-400">Silne uzasadnienie ekonomiczne</div>
+                            ) : null}
+
+                            {isAuditorMode && !lead.isDemo && auditInterest?.interested ? (
+                              <div className="mt-1 text-xs text-slate-600 dark:text-slate-400">Zainteresowanie zadeklarowane</div>
+                            ) : null}
                           </td>
                           <td className="px-3 py-3">
                             <div className="space-y-1">
@@ -1502,18 +1920,6 @@ function AudytorPageInner() {
           </CardContent>
         </Card>
 
-        {!isAuditorMode ? (
-          <Card className="backdrop-blur-sm bg-white/70 dark:bg-slate-900/70 border-0 shadow-xl">
-            <CardHeader>
-              <CardTitle className="text-xl text-slate-800 dark:text-slate-200">Widok demonstracyjny — brak danych zgłoszeń</CardTitle>
-              <div className="text-sm text-slate-600 dark:text-slate-400">Tryb UI-only. W tym trybie nie odczytujemy danych z localStorage.</div>
-            </CardHeader>
-            <CardContent className="text-slate-700 dark:text-slate-300">
-              <p className="text-sm">Pełny widok jest dostępny wyłącznie z tokenem przekazanym w linku wygenerowanym po stronie mieszkańca.</p>
-            </CardContent>
-          </Card>
-        ) : null}
-
         <Card className="backdrop-blur-sm bg-white/70 dark:bg-slate-900/70 border-0 shadow-xl">
           <CardHeader>
             <CardTitle className="text-xl text-slate-800 dark:text-slate-200">Kontekst zgłoszenia</CardTitle>
@@ -1589,12 +1995,7 @@ function AudytorPageInner() {
             <div className="text-sm text-slate-600 dark:text-slate-400">Dane wejściowe (tylko do odczytu) + wyliczenia orientacyjne (UI)</div>
           </CardHeader>
           <CardContent className="space-y-6">
-            {!isAuditorMode ? (
-              <div className="text-slate-700 dark:text-slate-300">
-                <p className="font-semibold">Sekcja zablokowana w trybie DEMO.</p>
-                <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">Tryb DEMO nie korzysta z danych zgłoszenia i nie prezentuje kosztów/efektów.</p>
-              </div>
-            ) : !effectsView ? (
+            {!effectsView ? (
               <div className="text-slate-700 dark:text-slate-300">
                 <p className="font-semibold">Brak danych do oszacowań.</p>
                 <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
@@ -1603,6 +2004,9 @@ function AudytorPageInner() {
               </div>
             ) : (
               <>
+                {isDemoMode ? (
+                  <div className="text-xs text-slate-600 dark:text-slate-400">DEMO: wartości przykładowe (mock).</div>
+                ) : null}
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="p-4 rounded-2xl border border-slate-200/60 dark:border-slate-700/60 bg-slate-50/60 dark:bg-slate-950/30">
                     <div className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Aktualna roczna strata finansowa CWU</div>
@@ -1995,12 +2399,7 @@ function AudytorPageInner() {
             <div className="text-sm text-slate-600 dark:text-slate-400">Orientacyjna prezentacja (UI-only), bez backendu i bez ROI liczbowego</div>
           </CardHeader>
           <CardContent>
-            {!isAuditorMode ? (
-              <div className="text-slate-700 dark:text-slate-300">
-                <p className="font-semibold">Sekcja zablokowana w trybie DEMO.</p>
-                <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">Tryb demonstracyjny nie prezentuje opłacalności ani oszczędności.</p>
-              </div>
-            ) : !profitabilityView ? (
+            {!profitabilityView ? (
               <div className="text-slate-700 dark:text-slate-300">
                 <p className="font-semibold">Brak danych do oceny opłacalności.</p>
                 <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
@@ -2009,6 +2408,9 @@ function AudytorPageInner() {
               </div>
             ) : (
               <div className="space-y-3">
+                {isDemoMode ? (
+                  <div className="text-xs text-slate-600 dark:text-slate-400">DEMO: wartości przykładowe (mock).</div>
+                ) : null}
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-1 md:gap-4">
                   <div className="text-sm font-semibold text-slate-700 dark:text-slate-300">Szacowana oszczędność roczna</div>
                   <div className="text-base font-extrabold text-slate-900 dark:text-slate-100">~{formatPLN(profitabilityView.yearlySavings)} zł/rok</div>
@@ -2036,12 +2438,7 @@ function AudytorPageInner() {
             <div className="text-sm text-slate-600 dark:text-slate-400">Treść raportowa (UI-only), bez backendu</div>
           </CardHeader>
           <CardContent>
-            {!isAuditorMode ? (
-              <div className="text-slate-700 dark:text-slate-300">
-                <p className="font-semibold">Sekcja zablokowana w trybie DEMO.</p>
-                <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">Tryb demonstracyjny nie generuje podsumowania i raportu.</p>
-              </div>
-            ) : !managerSummaryView ? (
+            {!managerSummaryView ? (
               <div className="text-slate-700 dark:text-slate-300">
                 <p className="font-semibold">Brak danych do wygenerowania podsumowania.</p>
                 <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
@@ -2049,11 +2446,16 @@ function AudytorPageInner() {
                 </p>
               </div>
             ) : (
-              <ul className="list-disc pl-5 space-y-2 text-slate-700 dark:text-slate-300">
-                {managerSummaryView.bullets.map((b, idx) => (
-                  <li key={idx}>{b}</li>
-                ))}
-              </ul>
+              <>
+                {isDemoMode ? (
+                  <div className="mb-3 text-xs text-slate-600 dark:text-slate-400">DEMO: wartości przykładowe (mock).</div>
+                ) : null}
+                <ul className="list-disc pl-5 space-y-2 text-slate-700 dark:text-slate-300">
+                  {managerSummaryView.bullets.map((b, idx) => (
+                    <li key={idx}>{b}</li>
+                  ))}
+                </ul>
+              </>
             )}
 
             {isAuditorMode ? (
@@ -2280,6 +2682,524 @@ function AudytorPageInner() {
             ) : null}
           </CardContent>
         </Card>
+
+        <Card className="backdrop-blur-sm bg-white/70 dark:bg-slate-900/70 border-0 shadow-xl">
+          <CardHeader>
+            <CardTitle className="text-xl text-slate-800 dark:text-slate-200">Pakiety audytu CWU</CardTitle>
+            <div className="text-sm text-slate-600 dark:text-slate-400">UI-only: wybór pakietu zapisuje się w localStorage</div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {!isAuditorMode ? (
+              <div className="text-sm text-slate-600 dark:text-slate-400">
+                Tryb DEMO: aby zapisać wybór pakietu, wejdź linkiem z tokenem z /mieszkancy.
+              </div>
+            ) : null}
+
+            <div className="grid md:grid-cols-3 gap-4">
+              {(["BASIC", "PRO", "PREMIUM"] as const).map((key) => {
+                const p = { key, ...AUDIT_PACKAGES[key] };
+                const threshold = p.pricePLN;
+                const paybackMonths =
+                  yearlySavingsForPackages !== null ? Math.max(1, Math.round((p.pricePLN / yearlySavingsForPackages) * 12)) : null;
+                const meetsThreshold = yearlySavingsForPackages !== null ? yearlySavingsForPackages > threshold : null;
+                const isSelected = auditPackage === p.key;
+
+                return (
+                  <div
+                    key={p.key}
+                    className="rounded-2xl border border-slate-200/60 dark:border-slate-700/60 bg-slate-50/60 dark:bg-slate-950/30 p-4 space-y-3"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <div className="text-base font-extrabold tracking-tight text-slate-900 dark:text-slate-100">{p.title}</div>
+                        <div className="text-sm font-semibold text-slate-700 dark:text-slate-300">{formatPLN(p.pricePLN)} zł</div>
+                      </div>
+                      {isSelected ? <Badge variant="success">Wybrano</Badge> : <Badge variant="outline">Pakiet</Badge>}
+                    </div>
+
+                    <ul className="list-disc pl-5 space-y-1 text-sm text-slate-700 dark:text-slate-300">
+                      {p.scope.map((s) => (
+                        <li key={s}>{s}</li>
+                      ))}
+                    </ul>
+
+                    <div className="text-xs text-slate-600 dark:text-slate-400 space-y-1">
+                      <div>
+                        Próg (zwrot ≤ 12 mies.): zwraca się przy oszczędności &gt; <span className="font-semibold">{formatPLN(threshold)} zł/rok</span>.
+                      </div>
+                      {yearlySavingsForPackages !== null ? (
+                        <div>
+                          Szacunek z raportu: ~<span className="font-semibold">{formatPLN(yearlySavingsForPackages)} zł/rok</span>
+                          {typeof meetsThreshold === "boolean" ? (meetsThreshold ? " (spełnia próg)" : " (poniżej progu)") : ""}
+                          {paybackMonths !== null ? `, zwrot ~${paybackMonths} mies.` : ""}
+                        </div>
+                      ) : (
+                        <div>Próg i zwrot: wymaga danych o rocznej oszczędności (z wariantów/raportu).</div>
+                      )}
+                    </div>
+
+                    <div className="pt-1">
+                      <Button
+                        type="button"
+                        variant={isSelected ? "secondary" : "outline"}
+                        disabled={!isAuditorMode}
+                        onClick={() => {
+                          setAuditPackage(p.key);
+                          try {
+                            if (typeof window !== "undefined") {
+                              window.localStorage.setItem(STORAGE_KEY_AUDIT_PACKAGE, p.key);
+                            }
+                          } catch {
+                            // UI-only
+                          }
+                        }}
+                      >
+                        {isSelected ? "Pakiet wybrany" : "Wybierz pakiet"}
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="backdrop-blur-sm bg-white/70 dark:bg-slate-900/70 border-0 shadow-xl">
+          <CardHeader>
+            <CardTitle className="text-xl text-slate-800 dark:text-slate-200">Gotowość do decyzji</CardTitle>
+            <div className="text-sm text-slate-600 dark:text-slate-400">Sygnał UI-only: pakiet + sens finansowy + czy warto dzwonić</div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid md:grid-cols-2 gap-3 text-sm">
+              <div className="flex items-center justify-between gap-3">
+                <div className="font-semibold text-slate-700 dark:text-slate-300">Pakiet</div>
+                <div className="font-semibold text-slate-900 dark:text-slate-100">{decisionReadinessView.pkg ?? "—"}</div>
+              </div>
+              <div className="flex items-center justify-between gap-3">
+                <div className="font-semibold text-slate-700 dark:text-slate-300">Cena pakietu</div>
+                <div className="font-semibold text-slate-900 dark:text-slate-100">
+                  {decisionReadinessView.pricePLN !== null ? `${formatPLN(decisionReadinessView.pricePLN)} zł` : "—"}
+                </div>
+              </div>
+              <div className="flex items-center justify-between gap-3">
+                <div className="font-semibold text-slate-700 dark:text-slate-300">Roczna oszczędność</div>
+                <div className="font-semibold text-slate-900 dark:text-slate-100">
+                  {decisionReadinessView.yearlySavings !== null ? `~${formatPLN(decisionReadinessView.yearlySavings)} zł/rok` : "—"}
+                </div>
+              </div>
+              <div className="flex items-center justify-between gap-3">
+                <div className="font-semibold text-slate-700 dark:text-slate-300">Werdykt</div>
+                <div className="font-semibold text-slate-900 dark:text-slate-100">{decisionReadinessView.verdict}</div>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200/60 dark:border-slate-700/60 bg-slate-50/60 dark:bg-slate-950/30 p-4">
+              <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">{decisionReadinessView.ctaText}</div>
+              {isAuditorMode && decisionReadinessView.isEconomicallyJustified ? (
+                <div className="mt-2">
+                  <Badge variant="success">GOTOWY</Badge>
+                  <span className="ml-2 text-xs text-slate-600 dark:text-slate-400">Spełnione: oszczędność ≥ 2× cena pakietu</span>
+                </div>
+              ) : null}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="backdrop-blur-sm bg-white/70 dark:bg-slate-900/70 border-0 shadow-xl">
+          <CardHeader>
+            <CardTitle className="text-xl text-slate-800 dark:text-slate-200">Argumenty do rozmowy z zarządcą</CardTitle>
+            <div className="text-sm text-slate-600 dark:text-slate-400">Krótko, technicznie, decyzyjnie (UI-only)</div>
+          </CardHeader>
+          <CardContent className="space-y-4 text-slate-700 dark:text-slate-300">
+            <div className="space-y-1">
+              <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">Skala problemu</div>
+              <div className="text-sm">
+                {view ? (
+                  <>
+                    Instalacja CWU generuje stratę rzędu ~{formatPLN(Math.max(0, Number(view.yearlyFinancialLoss) || 0))} zł rocznie,
+                    co stanowi około {formatPL(Math.min(100, Math.max(0, Number(view.lossPercent) || 0)), 0)}% całkowitego zużycia energii na CWU.
+                  </>
+                ) : (
+                  <>Instalacja CWU generuje stratę rzędu ~— zł rocznie, co stanowi około —% całkowitego zużycia energii na CWU.</>
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">Sens ekonomiczny</div>
+              <div className="text-sm">
+                {decisionReadinessView.verdict === "Ekonomicznie uzasadnione" ? (
+                  <>Koszt audytu zwraca się w czasie krótszym niż 12 miesięcy przy obecnych parametrach zużycia.</>
+                ) : (
+                  <>Audyt pozwala zweryfikować, czy możliwa jest redukcja strat bez kosztownych modernizacji.</>
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">Decyzja zarządcza</div>
+              <div className="text-sm">
+                Decyzja o audycie umożliwia świadome porównanie wariantów modernizacji i ograniczenie ryzyka nietrafionych inwestycji.
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="backdrop-blur-sm bg-white/70 dark:bg-slate-900/70 border-0 shadow-xl">
+          <CardHeader>
+            <CardTitle className="text-xl text-slate-800 dark:text-slate-200">Komunikat do zarządcy (do wysłania)</CardTitle>
+            <div className="text-sm text-slate-600 dark:text-slate-400">Gotowy blok tekstu do skopiowania (UI-only)</div>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <textarea
+              readOnly
+              value={managerMessageView.text}
+              className="w-full min-h-[220px] px-4 py-3 rounded-2xl border border-slate-200/70 dark:border-slate-700/70 bg-white dark:bg-slate-950/30 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-600"
+            />
+
+            <div className="flex items-center gap-3">
+              <Button type="button" variant="outline" disabled={!managerMessageView.isAvailable} onClick={copyManagerMessageToClipboard}>
+                Kopiuj do schowka
+              </Button>
+              {managerMessageCopied ? (
+                <div className="text-sm text-slate-700 dark:text-slate-300">Skopiowano</div>
+              ) : null}
+              {!managerMessageView.isAvailable ? (
+                <div className="text-sm text-slate-600 dark:text-slate-400">Komunikat dostępny po przygotowaniu audytu.</div>
+              ) : null}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="backdrop-blur-sm bg-white/70 dark:bg-slate-900/70 border-0 shadow-xl">
+          <CardHeader>
+            <CardTitle className="text-xl text-slate-800 dark:text-slate-200">Oferta audytu CWU – do przekazania zarządcy</CardTitle>
+            <div className="text-sm text-slate-600 dark:text-slate-400">Dokument handlowo-techniczny (UI-only, bez wysyłki)</div>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {auditOfferView.isAvailable ? (
+              <>
+                <textarea
+                  readOnly
+                  value={auditOfferView.text}
+                  className="w-full min-h-[240px] px-4 py-3 rounded-2xl border border-slate-200/70 dark:border-slate-700/70 bg-white dark:bg-slate-950/30 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-600"
+                />
+
+                <div className="flex items-center gap-3">
+                  <Button type="button" variant="outline" onClick={copyAuditOfferToClipboard}>
+                    Kopiuj ofertę
+                  </Button>
+                  {auditOfferCopied ? <div className="text-sm text-slate-700 dark:text-slate-300">Skopiowano ofertę</div> : null}
+                </div>
+              </>
+            ) : (
+              <div className="text-sm text-slate-600 dark:text-slate-400">
+                Oferta dostępna po wyborze pakietu i potwierdzeniu zasadności ekonomicznej.
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="backdrop-blur-sm bg-white/70 dark:bg-slate-900/70 border-0 shadow-xl">
+          <CardHeader>
+            <CardTitle className="text-xl text-slate-800 dark:text-slate-200">Model współpracy – warunki techniczne i finansowe</CardTitle>
+            <div className="text-sm text-slate-600 dark:text-slate-400">Warstwa komunikacyjna (UI-only)</div>
+          </CardHeader>
+          <CardContent className="space-y-4 text-slate-700 dark:text-slate-300">
+            <div className="space-y-2">
+              <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">Zakres audytu</div>
+              <ul className="list-disc pl-5 space-y-1 text-sm">
+                <li>analiza instalacji CWU</li>
+                <li>identyfikacja strat</li>
+                <li>warianty techniczne</li>
+                <li>rekomendacje modernizacji</li>
+                <li>materiał do decyzji zarządu</li>
+              </ul>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-3 text-sm">
+              <div className="flex items-center justify-between gap-3">
+                <div className="font-semibold text-slate-700 dark:text-slate-300">Koszt audytu (pakiet)</div>
+                <div className="font-semibold text-slate-900 dark:text-slate-100">
+                  {decisionReadinessView.pkg ? `${formatPLN(AUDIT_PACKAGES[decisionReadinessView.pkg].pricePLN)} zł` : "—"}
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between gap-3">
+                <div className="font-semibold text-slate-700 dark:text-slate-300">Relacja koszt → strata</div>
+                <div className="font-semibold text-slate-900 dark:text-slate-100">
+                  {(() => {
+                    const pkg = decisionReadinessView.pkg;
+                    if (!pkg) return "—";
+                    const price = AUDIT_PACKAGES[pkg].pricePLN;
+                    const yearlyLoss = view ? Math.max(0, Number(view.yearlyFinancialLoss) || 0) : 0;
+                    if (!Number.isFinite(yearlyLoss) || yearlyLoss <= 0) return "—";
+                    const pct = Math.max(0, (price / yearlyLoss) * 100);
+                    return `ok. ${formatPL(pct, 1)}%`;
+                  })()}
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200/60 dark:border-slate-700/60 bg-slate-50/60 dark:bg-slate-950/30 p-4 text-sm">
+              {(() => {
+                const pkg = decisionReadinessView.pkg;
+                if (!pkg) return "Audyt wymaga omówienia wariantów technicznych.";
+                const price = AUDIT_PACKAGES[pkg].pricePLN;
+                const yearlyLoss = view ? Math.max(0, Number(view.yearlyFinancialLoss) || 0) : 0;
+                if (!Number.isFinite(yearlyLoss) || yearlyLoss <= 0) return "Audyt wymaga omówienia wariantów technicznych.";
+                return yearlyLoss >= 5 * price
+                  ? "Koszt audytu jest marginalny względem strat"
+                  : "Audyt wymaga omówienia wariantów technicznych";
+              })()}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="backdrop-blur-sm bg-white/70 dark:bg-slate-900/70 border-0 shadow-xl">
+          <CardHeader>
+            <CardTitle className="text-xl text-slate-800 dark:text-slate-200">Scenariusz działań po audycie CWU</CardTitle>
+            <div className="text-sm text-slate-600 dark:text-slate-400">Mapa procesu (UI-only, bez zapisu)</div>
+          </CardHeader>
+          <CardContent className="space-y-4 text-slate-700 dark:text-slate-300">
+            {(() => {
+              const lossPercent = view ? Math.max(0, Number(view.lossPercent) || 0) : 0;
+              const yearlyLoss = view ? Math.max(0, Number(view.yearlyFinancialLoss) || 0) : 0;
+              const HIGH_LOSS_PLN = 50_000;
+
+              const highlight: "A" | "B" | "C" =
+                lossPercent > 60 || yearlyLoss > HIGH_LOSS_PLN ? "C" : lossPercent >= 30 ? "B" : "A";
+
+              const aPotential = lossPercent < 30 ? "niski" : "średni";
+              const bPotential = yearlyLoss >= HIGH_LOSS_PLN ? "wysoki" : "średni";
+
+              const baseBlock =
+                "rounded-2xl border border-slate-200/60 dark:border-slate-700/60 bg-slate-50/60 dark:bg-slate-950/30 p-4";
+              const highlightedBlock =
+                "rounded-2xl border border-slate-300 dark:border-slate-500 bg-white/70 dark:bg-slate-950/40 p-4";
+
+              return (
+                <div className="grid md:grid-cols-3 gap-3">
+                  <div className={highlight === "A" ? highlightedBlock : baseBlock}>
+                    <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">A) Działania niskokosztowe</div>
+                    <ul className="mt-2 list-disc pl-5 space-y-1 text-sm">
+                      <li>regulacja</li>
+                      <li>korekty nastaw</li>
+                      <li>drobne modernizacje</li>
+                    </ul>
+                    <div className="mt-3 text-sm text-slate-700 dark:text-slate-300">
+                      Potencjał redukcji: <span className="font-semibold text-slate-900 dark:text-slate-100">{aPotential}</span>
+                    </div>
+                  </div>
+
+                  <div className={highlight === "B" ? highlightedBlock : baseBlock}>
+                    <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">B) Modernizacja instalacji</div>
+                    <ul className="mt-2 list-disc pl-5 space-y-1 text-sm">
+                      <li>wymiana elementów</li>
+                      <li>przebudowa układu</li>
+                      <li>poprawa izolacji</li>
+                    </ul>
+                    <div className="mt-3 text-sm text-slate-700 dark:text-slate-300">
+                      Potencjał redukcji: <span className="font-semibold text-slate-900 dark:text-slate-100">{bPotential}</span>
+                    </div>
+                  </div>
+
+                  <div className={highlight === "C" ? highlightedBlock : baseBlock}>
+                    <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">C) Projekt + nadzór</div>
+                    <ul className="mt-2 list-disc pl-5 space-y-1 text-sm">
+                      <li>dokumentacja techniczna</li>
+                      <li>wariantowanie</li>
+                      <li>nadzór inwestorski</li>
+                    </ul>
+                    <div className="mt-3 text-sm text-slate-700 dark:text-slate-300">
+                      Uzasadnione przy <span className="font-semibold text-slate-900 dark:text-slate-100">wysokich stratach</span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+          </CardContent>
+        </Card>
+
+        <Card className="backdrop-blur-sm bg-white/70 dark:bg-slate-900/70 border-0 shadow-xl">
+          <CardHeader>
+            <CardTitle className="text-xl text-slate-800 dark:text-slate-200">Kiedy audyt przechodzi w usługę płatną</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4 text-slate-700 dark:text-slate-300 text-sm">
+            <div className="space-y-2">
+              <div className="font-semibold text-slate-900 dark:text-slate-100">Warunki</div>
+              <ul className="list-disc pl-5 space-y-2">
+                <li>
+                  <span className="font-semibold text-slate-900 dark:text-slate-100">warunek ekonomiczny</span>
+                  <div className="text-slate-700 dark:text-slate-300">
+                    Analiza wykazała ekonomiczne uzasadnienie działań (straty CWU istotne względem kosztów audytu)
+                  </div>
+                </li>
+                <li>
+                  <span className="font-semibold text-slate-900 dark:text-slate-100">warunek decyzyjny</span>
+                  <div className="text-slate-700 dark:text-slate-300">
+                    Zarząd otrzymał uporządkowane warianty A/B/C i rozumie konsekwencje techniczne oraz finansowe
+                  </div>
+                </li>
+                <li>
+                  <span className="font-semibold text-slate-900 dark:text-slate-100">warunek zakresu</span>
+                  <div className="text-slate-700 dark:text-slate-300">
+                    Zakres audytu został jasno określony (bez projektowania i bez sprzedaży rozwiązań)
+                  </div>
+                </li>
+              </ul>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200/60 dark:border-slate-700/60 bg-slate-50/60 dark:bg-slate-950/30 p-4 space-y-2">
+              <div className="font-semibold text-slate-900 dark:text-slate-100">Czego ten etap NIE oznacza</div>
+              <ul className="list-disc pl-5 space-y-1">
+                <li>nie jest zamówieniem</li>
+                <li>nie jest umową</li>
+                <li>nie jest zobowiązaniem</li>
+              </ul>
+            </div>
+
+            <div className="text-xs text-slate-600 dark:text-slate-400">
+              Decyzja o realizacji zapada poza aplikacją, po rozmowie technicznej.
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="backdrop-blur-sm bg-white/70 dark:bg-slate-900/70 border-0 shadow-xl">
+          <CardHeader>
+            <CardTitle className="text-xl text-slate-800 dark:text-slate-200">Notatki audytora (prywatne)</CardTitle>
+            <div className="text-xs text-slate-600 dark:text-slate-400">
+              Robocze uwagi do rozmowy. Widoczne tylko lokalnie, nie są częścią raportu ani oferty.
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <textarea
+              value={auditorPrivateNotes}
+              onChange={(e) => {
+                const value = e.target.value;
+                setAuditorPrivateNotes(value);
+                try {
+                  if (typeof window !== "undefined") {
+                    window.localStorage.setItem(STORAGE_KEY_AUDITOR_PRIVATE_NOTES, value);
+                  }
+                } catch {
+                  // UI-only: jeśli localStorage jest niedostępny, pomijamy
+                }
+              }}
+              placeholder={
+                "Np. wątpliwości zarządu, opór techniczny,\nistotne ograniczenia budynku, polityka decyzji…"
+              }
+              className="w-full min-h-[180px] px-4 py-3 rounded-2xl border border-slate-200/70 dark:border-slate-700/70 bg-white dark:bg-slate-950/30 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-600"
+            />
+            <div className="text-xs text-slate-600 dark:text-slate-400">Notatki nie są zapisywane na serwerze ani wysyłane.</div>
+          </CardContent>
+        </Card>
+
+        <Card className="backdrop-blur-sm bg-white/70 dark:bg-slate-900/70 border-0 shadow-xl">
+          <CardHeader>
+            <CardTitle className="text-xl text-slate-800 dark:text-slate-200">Historia decyzji (automatyczna)</CardTitle>
+            <div className="text-xs text-slate-600 dark:text-slate-400">
+              Podsumowanie kolejnych etapów analizy – generowane automatycznie na podstawie danych.
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-3 text-slate-700 dark:text-slate-300 text-sm">
+            {(() => {
+              const items: string[] = [];
+
+              const yearlyLoss = view ? Math.max(0, Number(view.yearlyFinancialLoss) || 0) : 0;
+              const lossPercent = view ? Math.max(0, Number(view.lossPercent) || 0) : 0;
+
+              if (Number.isFinite(yearlyLoss) && yearlyLoss > 0) {
+                items.push(
+                  `Zidentyfikowano istotne straty CWU (${formatPLN(yearlyLoss)} zł/rok, ${formatPL(lossPercent, 1)}%).`
+                );
+              }
+
+              if (decisionReadinessView.verdict === "Ekonomicznie uzasadnione") {
+                items.push("Analiza ekonomiczna wskazała zasadność dalszych działań.");
+              }
+
+              if (decisionReadinessView.pkg) {
+                items.push(`Wybrano pakiet audytu: ${decisionReadinessView.pkg}.`);
+              }
+
+              if (auditInterest?.interested === true) {
+                items.push("Zarząd zadeklarował wstępne zainteresowanie audytem.");
+              }
+
+              const isReady = Boolean(decisionReadinessView.isEconomicallyJustified && decisionReadinessView.pkg);
+              if (isReady) {
+                items.push("Audyt przeszedł w etap przygotowania do realizacji.");
+              }
+
+              const clipped = items.slice(0, 5);
+
+              if (clipped.length === 0) {
+                return <div className="text-sm text-slate-600 dark:text-slate-400">Brak danych do podsumowania.</div>;
+              }
+
+              return (
+                <ul className="list-disc pl-5 space-y-2">
+                  {clipped.map((txt) => (
+                    <li key={txt}>{txt}</li>
+                  ))}
+                </ul>
+              );
+            })()}
+          </CardContent>
+        </Card>
+
+        {decisionReadinessView.isEconomicallyJustified && decisionReadinessView.pkg ? (
+          <Card className="backdrop-blur-sm bg-white/70 dark:bg-slate-900/70 border-0 shadow-xl">
+            <CardHeader>
+              <CardTitle className="text-xl text-slate-800 dark:text-slate-200">Pakiet do przekazania do realizacji</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4 text-slate-700 dark:text-slate-300 text-sm">
+              <div className="space-y-2">
+                <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">Stan na dziś</div>
+                {(() => {
+                  const yearlyLoss = view ? Math.max(0, Number(view.yearlyFinancialLoss) || 0) : 0;
+                  const lossPercent = view ? Math.max(0, Number(view.lossPercent) || 0) : 0;
+
+                  return (
+                    <div className="space-y-1">
+                      <div>Roczna strata CWU: {formatPLN(yearlyLoss)} zł / rok</div>
+                      <div>Skala strat: {formatPL(lossPercent, 1)} %</div>
+                      <div>Werdykt ekonomiczny: Ekonomicznie uzasadnione</div>
+                      <div>
+                        Wybrany pakiet audytu: <span className="font-semibold text-slate-900 dark:text-slate-100">{decisionReadinessView.pkg}</span>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+
+              <div className="space-y-2">
+                <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">Co jest gotowe</div>
+                <ul className="list-disc pl-5 space-y-1">
+                  <li>Analiza strat CWU</li>
+                  <li>Warianty działań technicznych</li>
+                  <li>Uzasadnienie ekonomiczne</li>
+                  <li>Rekomendowana ścieżka dalszych prac</li>
+                </ul>
+              </div>
+
+              <div className="space-y-2">
+                <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">Czego ten pakiet NIE zawiera</div>
+                <ul className="list-disc pl-5 space-y-1">
+                  <li>Projektu wykonawczego</li>
+                  <li>Harmonogramu robót</li>
+                  <li>Wyceny realizacji</li>
+                  <li>Umowy</li>
+                </ul>
+              </div>
+
+              <div className="text-xs text-slate-600 dark:text-slate-400">
+                Ten zestaw danych stanowi podstawę do dalszych ustaleń technicznych i organizacyjnych poza aplikacją.
+              </div>
+            </CardContent>
+          </Card>
+        ) : null}
 
         <Card className="backdrop-blur-sm bg-white/70 dark:bg-slate-900/70 border-0 shadow-xl">
           <CardHeader>
@@ -2528,12 +3448,13 @@ function AudytorPageInner() {
             </div>
           </CardHeader>
           <CardContent>
-            {!isAuditorMode ? (
-              <div className="text-sm text-slate-600 dark:text-slate-400">Tryb DEMO nie prezentuje metryk z localStorage.</div>
-            ) : !efficiencyView ? (
+            {!efficiencyView ? (
               <div className="text-sm text-slate-600 dark:text-slate-400">Brak danych do podsumowania.</div>
             ) : (
               <div className="space-y-4">
+                {isDemoMode ? (
+                  <div className="text-xs text-slate-600 dark:text-slate-400">DEMO: wartości przykładowe (mock).</div>
+                ) : null}
                 <div className="space-y-2 text-sm">
                   <div className="flex items-center justify-between gap-4">
                     <div className="text-slate-600 dark:text-slate-400">Liczba zgłoszeń ogółem</div>
@@ -2660,6 +3581,128 @@ function AudytorPageInner() {
 
             <div className="text-xs text-slate-600 dark:text-slate-400">
               Informacja robocza (UI-only). Wartości zwrotu są szacunkowe i służą rozmowie techniczno-decyzyjnej, nie stanowią oferty handlowej.
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="backdrop-blur-sm bg-white/70 dark:bg-slate-900/70 border-0 shadow-xl">
+          <CardHeader>
+            <CardTitle className="text-xl text-slate-800 dark:text-slate-200">Następny krok – kontakt i realizacja</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4 text-slate-700 dark:text-slate-300 text-sm">
+            {!decisionReadinessView.isEconomicallyJustified || !decisionReadinessView.pkg ? (
+              <div className="text-sm text-slate-600 dark:text-slate-400">Kontakt możliwy po zakończeniu analizy</div>
+            ) : (
+              <>
+                <div className="space-y-1">
+                  <div>Audyt CWU został oceniony jako ekonomicznie uzasadniony</div>
+                  <div>
+                    Wybrany pakiet: <span className="font-semibold text-slate-900 dark:text-slate-100">{decisionReadinessView.pkg}</span>
+                  </div>
+                  <div>Kolejny etap to kontakt techniczny i ustalenie harmonogramu</div>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="font-semibold text-slate-900 dark:text-slate-100">Instrukcja dla audytora</div>
+                  <ul className="list-disc pl-5 space-y-1">
+                    <li>Skontaktuj się z zarządcą / wspólnotą</li>
+                    <li>Przekaż podsumowanie audytu i ofertę</li>
+                    <li>Ustal zakres techniczny i termin realizacji</li>
+                    <li>Rozpocznij etap wykonawczy (poza aplikacją)</li>
+                  </ul>
+                </div>
+
+                <div className="rounded-2xl border border-slate-200/60 dark:border-slate-700/60 bg-slate-50/60 dark:bg-slate-950/30 p-4">
+                  Po stronie wykonawcy nastąpi kontakt techniczny w celu omówienia zakresu i dalszych działań.
+                </div>
+              </>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="backdrop-blur-sm bg-white/70 dark:bg-slate-900/70 border-0 shadow-xl">
+          <CardHeader>
+            <CardTitle className="text-xl text-slate-800 dark:text-slate-200">Status sprawy – gotowość do działań zewnętrznych</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 text-slate-700 dark:text-slate-300 text-sm">
+            {(() => {
+              const isEconomicallyJustified = decisionReadinessView.isEconomicallyJustified === true;
+              const hasPkg = Boolean(decisionReadinessView.pkg);
+              const interest = auditInterest?.interested === true;
+              const yearlyLoss = view ? Math.max(0, Number(view.yearlyFinancialLoss) || 0) : 0;
+
+              if (isEconomicallyJustified && hasPkg && interest) {
+                return (
+                  <div className="space-y-2">
+                    <div className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">GOTOWA DO REALIZACJI</div>
+                    <div className="rounded-2xl border border-slate-200/60 dark:border-slate-700/60 bg-slate-50/60 dark:bg-slate-950/30 p-4">
+                      Analiza zakończona, decyzje wstępne potwierdzone, możliwe przejście do działań operacyjnych poza aplikacją.
+                    </div>
+                    {Number.isFinite(yearlyLoss) && yearlyLoss > 0 ? (
+                      <div className="text-xs text-slate-600 dark:text-slate-400">Skala strat (orientacyjnie): ~{formatPLN(yearlyLoss)} zł/rok.</div>
+                    ) : null}
+                  </div>
+                );
+              }
+
+              if (isEconomicallyJustified && hasPkg && !interest) {
+                return (
+                  <div className="space-y-2">
+                    <div className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">WYMAGA DECYZJI ZARZĄDCY</div>
+                    <div className="rounded-2xl border border-slate-200/60 dark:border-slate-700/60 bg-slate-50/60 dark:bg-slate-950/30 p-4">
+                      Ekonomicznie uzasadnione, wybrany wariant, oczekiwana decyzja organizacyjna.
+                    </div>
+                    {Number.isFinite(yearlyLoss) && yearlyLoss > 0 ? (
+                      <div className="text-xs text-slate-600 dark:text-slate-400">Skala strat (orientacyjnie): ~{formatPLN(yearlyLoss)} zł/rok.</div>
+                    ) : null}
+                  </div>
+                );
+              }
+
+              return (
+                <div className="space-y-2">
+                  <div className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">NIEGOTOWA</div>
+                  <div className="rounded-2xl border border-slate-200/60 dark:border-slate-700/60 bg-slate-50/60 dark:bg-slate-950/30 p-4">
+                    Brak spełnionych warunków do przejścia do etapu realizacyjnego.
+                  </div>
+                </div>
+              );
+            })()}
+          </CardContent>
+        </Card>
+
+        <Card className="backdrop-blur-sm bg-white/70 dark:bg-slate-900/70 border-0 shadow-xl">
+          <CardHeader>
+            <CardTitle className="text-xl text-slate-800 dark:text-slate-200">Zakres dalszej współpracy (po audycie)</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4 text-slate-700 dark:text-slate-300 text-sm">
+            <div className="space-y-2">
+              <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">Co kończy audyt CWU</div>
+              <ul className="list-disc pl-5 space-y-1">
+                <li>analiza strat</li>
+                <li>rekomendowane scenariusze</li>
+                <li>uporządkowanie decyzji</li>
+              </ul>
+            </div>
+
+            <div className="space-y-2">
+              <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">Co NIE jest częścią audytu</div>
+              <ul className="list-disc pl-5 space-y-1">
+                <li>projektowanie</li>
+                <li>nadzór</li>
+                <li>realizacja robót</li>
+                <li>negocjacje z wykonawcami</li>
+              </ul>
+            </div>
+
+            <div className="space-y-2">
+              <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">Możliwe formy dalszej współpracy</div>
+              <ul className="list-disc pl-5 space-y-1">
+                <li>wsparcie techniczne</li>
+                <li>projekt / modernizacja</li>
+                <li>nadzór inwestorski</li>
+                <li>doradztwo energetyczne</li>
+              </ul>
             </div>
           </CardContent>
         </Card>
