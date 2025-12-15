@@ -3,10 +3,12 @@
 import { useState, useEffect, type ReactNode } from "react";
 import { Home, Calculator, ArrowDown, Info as InfoIcon } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { KatexFormula } from "@/components/ui/katex-formula";
 import { toast } from "sonner";
 import { ResidentCwuIssueForm } from "./ResidentCwuIssueForm";
 import { ResidentCwuComplaintLetterSection } from "./ResidentCwuComplaintLetterSection";
+import { EnergyPieChart } from "./components/EnergyPieChart";
 
 type Result = {
   energyLossPerM3: number;
@@ -81,6 +83,25 @@ export default function MieszkancyPage() {
     calculateResults(inputs);
   }, [inputs]);
 
+  // Udostępnij kontekst dla Panelu Audytora (read-only) przez localStorage
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!res) return;
+
+    try {
+      window.localStorage.setItem(
+        "residentCwuAuditContext",
+        JSON.stringify({
+          inputs,
+          result: res,
+        })
+      );
+    } catch (e) {
+      // localStorage może być zablokowane (tryb prywatny / ustawienia przeglądarki)
+      console.warn("Nie udało się zapisać residentCwuAuditContext do localStorage", e);
+    }
+  }, [inputs, res]);
+
   function handleInputChange(field: keyof Inputs, value: number | string | boolean) {
     setInputs(prev => ({ ...prev, [field]: value }));
   }
@@ -117,6 +138,37 @@ export default function MieszkancyPage() {
       <div className="absolute -top-32 -left-32 w-[420px] h-[420px] bg-gradient-to-br from-blue-800/40 via-cyan-700/20 to-slate-900/0 rounded-full blur-3xl pointer-events-none z-0" />
       <div className="absolute top-1/2 right-0 w-[320px] h-[320px] bg-gradient-to-br from-cyan-900/20 via-blue-900/10 to-slate-900/0 rounded-full blur-2xl pointer-events-none z-0" />
       <div className="max-w-5xl mx-auto px-4 py-12 space-y-12 relative z-10">
+        {/* TL;DR */}
+        <Card className="bg-white/80 dark:bg-slate-900/60 border border-slate-200/30 dark:border-slate-700/50 shadow-xl rounded-3xl backdrop-blur">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-2xl font-extrabold text-slate-900 dark:text-slate-100">
+              Najważniejsze w skrócie
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <ul className="space-y-3 text-lg text-slate-800 dark:text-slate-200">
+              <li className="flex items-start gap-3">
+                <span className="text-2xl leading-none" aria-hidden>
+                  💸
+                </span>
+                <span>Sprawdzasz, ile pieniędzy tracisz na ciepłej wodzie użytkowej.</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="text-2xl leading-none" aria-hidden>
+                  🔥
+                </span>
+                <span>W wielu blokach nawet 20–60% opłat za CWU to straty w instalacji.</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="text-2xl leading-none" aria-hidden>
+                  📄
+                </span>
+                <span>Wynik możesz zgłosić do zarządcy, aby uruchomić dalsze działania.</span>
+              </li>
+            </ul>
+          </CardContent>
+        </Card>
+
         {/* Hero Section */}
         <div className="text-center space-y-4 mb-12">
           <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight bg-gradient-to-r from-cyan-400 via-blue-300 to-blue-600 bg-clip-text text-transparent drop-shadow-xl">
@@ -265,6 +317,49 @@ export default function MieszkancyPage() {
         {/* Results */}
         {res && (
           <div className="space-y-8">
+            {/* Summary / Alert (pierwszy element wyników) */}
+            {(() => {
+              const bill = Number(inputs.cwuPriceFromBill) || 0;
+              const lossPerM3 = Math.max(0, Number(res.lossPerM3) || 0);
+              const lossPercentRaw = bill > 0 ? (lossPerM3 / bill) * 100 : 0;
+              const lossPercent = Math.min(100, Math.max(0, lossPercentRaw));
+              const annualLossPLN = Math.max(0, Number(res.yearlyFinancialLoss) || 0);
+
+              if (!Number.isFinite(lossPercent) || !Number.isFinite(annualLossPLN)) return null;
+
+              const lossPercentLabel = Math.round(lossPercent);
+              const annualLossLabel = annualLossPLN.toLocaleString("pl-PL", {
+                maximumFractionDigits: 0,
+              });
+
+              return (
+                <Alert
+                  className="border-red-200/70 bg-red-50/80 text-slate-900 dark:border-red-800/60 dark:bg-red-950/30 dark:text-slate-100"
+                >
+                  <InfoIcon className="h-5 w-5 text-red-600 dark:text-red-300" />
+                  <div>
+                    <AlertTitle className="text-lg font-extrabold">Wniosek wprost</AlertTitle>
+                    <AlertDescription className="text-base">
+                      <p className="leading-relaxed">
+                        W Twoim przypadku około{" "}
+                        <span className="font-extrabold text-red-700 dark:text-red-300">
+                          {lossPercentLabel}%
+                        </span>{" "}
+                        opłat za ciepłą wodę użytkową nie dociera do kranu.
+                      </p>
+                      <p className="mt-2 text-sm leading-relaxed text-slate-700 dark:text-slate-300">
+                        To oznacza około{" "}
+                        <span className="font-bold text-red-700 dark:text-red-300">
+                          {annualLossLabel} zł
+                        </span>{" "}
+                        straty rocznie na jedno mieszkanie.
+                      </p>
+                    </AlertDescription>
+                  </div>
+                </Alert>
+              );
+            })()}
+
             <div className="text-center space-y-4">
               <h2 className="text-3xl font-bold text-slate-800 dark:text-slate-200">
                 <span className="bg-gradient-to-r from-cyan-400 via-blue-300 to-blue-600 bg-clip-text text-transparent drop-shadow-xl text-4xl font-extrabold tracking-tight">
@@ -277,6 +372,27 @@ export default function MieszkancyPage() {
                 </span>
               </p>
             </div>
+
+            {/* Pie chart: Straty energii vs energia użyteczna */}
+            {(() => {
+              const lossGJ = Math.max(0, Number(res.energyLossPerM3) || 0);
+              const usefulGJ = Math.max(0, Number(res.energyPerM3) || 0);
+              const total = lossGJ + usefulGJ;
+
+              if (total <= 0) return null;
+
+              const lossPercent = (lossGJ / total) * 100;
+              const usefulEnergyPercent = 100 - lossPercent;
+
+              return (
+                <div className="max-w-3xl mx-auto">
+                  <EnergyPieChart
+                    lossPercent={lossPercent}
+                    usefulEnergyPercent={usefulEnergyPercent}
+                  />
+                </div>
+              );
+            })()}
             
             {/* Key Metrics */}
             <div className="grid md:grid-cols-3 gap-6">
@@ -451,6 +567,29 @@ export default function MieszkancyPage() {
             />
 
             <ResidentCwuIssueForm calcInputs={inputs} calcResult={res} />
+
+            <Card className="backdrop-blur-sm bg-white/70 dark:bg-slate-900/70 border-0 shadow-xl">
+              <CardHeader>
+                <CardTitle className="text-xl text-slate-800 dark:text-slate-200">Co można zrobić dalej?</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4 text-slate-700 dark:text-slate-300">
+                <p className="text-base leading-relaxed">
+                  W wielu budynkach podobne straty CWU nie są stanem normalnym i mogą zostać znacząco ograniczone.
+                </p>
+
+                <ul className="list-disc pl-5 space-y-1 text-base">
+                  <li>regulacja cyrkulacji CWU</li>
+                  <li>korekta nastaw w węźle cieplnym</li>
+                  <li>poprawa izolacji pionów i poziomów</li>
+                  <li>modernizacja elementów instalacji</li>
+                </ul>
+
+                <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400">
+                  W praktyce takie działania pozwalały w wielu budynkach ograniczyć straty nawet o 20–60%, ale każda
+                  instalacja wymaga indywidualnej oceny.
+                </p>
+              </CardContent>
+            </Card>
           </div>
         )}
       </div>

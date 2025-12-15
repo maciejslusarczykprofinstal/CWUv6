@@ -63,6 +63,7 @@ type IssueFormState = {
   goal: "sprawdzenie" | "interwencja" | "analiza_kosztow" | "informacja";
 
   consentContact: boolean;
+  consentShareAnalysis: boolean;
   confirmTruth: boolean;
 };
 
@@ -206,6 +207,7 @@ export function ResidentCwuIssueForm(props: {
     goal: "sprawdzenie",
 
     consentContact: false,
+    consentShareAnalysis: false,
     confirmTruth: false,
   }));
 
@@ -304,9 +306,10 @@ export function ResidentCwuIssueForm(props: {
       return;
     }
 
-    if (!form.consentContact || !form.confirmTruth) {
+    if (!form.consentContact || !form.consentShareAnalysis || !form.confirmTruth) {
       toast.error("Wymagane zgody", {
-        description: "Zaznacz zgodę na kontakt oraz potwierdzenie prawdziwości danych.",
+        description:
+          "Zaznacz zgodę na kontakt, zgodę na przekazanie wyników analizy do zarządcy / spółdzielni oraz potwierdzenie prawdziwości danych.",
       });
       return;
     }
@@ -684,6 +687,16 @@ export function ResidentCwuIssueForm(props: {
               <input
                 type="checkbox"
                 className="mt-1"
+                checked={form.consentShareAnalysis}
+                onChange={(e) => update("consentShareAnalysis", e.target.checked)}
+                required
+              />
+              <span>Wyrażam zgodę na przekazanie wyników analizy CWU do zarządcy / spółdzielni w celu weryfikacji instalacji.</span>
+            </label>
+            <label className="flex items-start gap-3 text-slate-200">
+              <input
+                type="checkbox"
+                className="mt-1"
                 checked={form.confirmTruth}
                 onChange={(e) => update("confirmTruth", e.target.checked)}
                 required
@@ -692,17 +705,39 @@ export function ResidentCwuIssueForm(props: {
             </label>
           </fieldset>
 
-          <div className="flex items-center gap-3">
-            <Button type="submit" className="bg-cyan-600 hover:bg-cyan-600/90 text-white" disabled={isSubmitting}>
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-3">
+              <Button
+                type="submit"
+                className="bg-cyan-600 hover:bg-cyan-600/90 text-white"
+                disabled={isSubmitting || !form.consentShareAnalysis}
+              >
               {isSubmitting ? "Wysyłanie…" : "Wyślij zgłoszenie"}
-            </Button>
-            {!calcResult && (
-              <span className="text-sm text-amber-200">
-                Uwaga: brak wyników obliczeń — zgłoszenie dołączy je automatycznie po wykonaniu kalkulacji.
-              </span>
+              </Button>
+              {!calcResult && (
+                <span className="text-sm text-amber-200">
+                  Uwaga: brak wyników obliczeń — zgłoszenie dołączy je automatycznie po wykonaniu kalkulacji.
+                </span>
+              )}
+            </div>
+
+            {!form.consentShareAnalysis && (
+              <div className="text-sm text-slate-300">
+                Aby wysłać zgłoszenie, zaznacz zgodę na przekazanie wyników analizy CWU do zarządcy / spółdzielni.
+              </div>
             )}
           </div>
         </form>
+
+        <div className="p-4 rounded-2xl border border-blue-800 bg-blue-950/20 text-slate-100">
+          <div className="text-base font-bold">Co stanie się po zgłoszeniu?</div>
+          <ol className="mt-2 space-y-1 text-sm text-slate-200 list-decimal pl-5">
+            <li>Zarządca otrzyma analizę strat CWU z tego zgłoszenia.</li>
+            <li>Może zlecić audyt instalacji CWU w budynku.</li>
+            <li>Audytor oceni możliwe warianty napraw i oszczędności.</li>
+            <li>Mieszkańcy otrzymają informację o możliwych działaniach i efektach.</li>
+          </ol>
+        </div>
 
         {submitted && (
           <div className="space-y-4">
