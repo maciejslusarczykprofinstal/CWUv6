@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import Link from "next/link";
 import { useState, useEffect, type ReactNode } from "react";
 import { Home, Calculator, ArrowDown, Info as InfoIcon } from "lucide-react";

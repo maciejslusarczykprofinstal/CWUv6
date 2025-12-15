@@ -1,6 +1,9 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import { useEffect, useMemo, useState } from "react";
+import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -513,7 +516,7 @@ function safeParseVariants(raw: string | null): AuditVariantsState | null {
   }
 }
 
-export default function AudytorPage() {
+function AudytorPageInner() {
   const searchParams = useSearchParams();
   const auditTokenParam = (searchParams?.get("auditToken") ?? "").trim() || null;
   const [isAuditorMode, setIsAuditorMode] = useState(false);
@@ -2662,5 +2665,13 @@ export default function AudytorPage() {
         </Card>
       </div>
     </div>
+  );
+}
+
+export default function AudytorPage() {
+  return (
+    <Suspense fallback={null}>
+      <AudytorPageInner />
+    </Suspense>
   );
 }
