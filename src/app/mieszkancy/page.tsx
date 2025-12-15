@@ -1,8 +1,11 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useEffect, type ReactNode } from "react";
 import { Home, Calculator, ArrowDown, Info as InfoIcon } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { KatexFormula } from "@/components/ui/katex-formula";
 import { toast } from "sonner";
@@ -33,6 +36,11 @@ type Inputs = {
 
 export default function MieszkancyPage() {
   const [res, setRes] = useState<Result | null>(null);
+  const [auditStatus, setAuditStatus] = useState<"NEW" | "READY_FOR_AUDIT" | "AUDIT_REQUESTED" | null>(null);
+  const [auditRequest, setAuditRequest] = useState<"REQUESTED" | null>(null);
+  const [auditOrder, setAuditOrder] = useState<"REQUESTED" | null>(null);
+  const [roiModelInterest, setRoiModelInterest] = useState<"EXPRESSED" | null>(null);
+  const [auditorToken, setAuditorToken] = useState<string | null>(null);
   const [inputs, setInputs] = useState<Inputs>({
     cwuPriceFromBill: 65,
     monthlyConsumption: 8.6,
@@ -40,6 +48,136 @@ export default function MieszkancyPage() {
     hotTempC: 55,
     heatPriceFromCity: 90,
   });
+
+  useEffect(() => {
+    try {
+      if (typeof window === "undefined") return;
+      const status = window.localStorage.getItem("residentCwuAuditStatus");
+      setAuditStatus(
+        status === "NEW" || status === "READY_FOR_AUDIT" || status === "AUDIT_REQUESTED" ? status : null
+      );
+
+      const request = window.localStorage.getItem("residentCwuAuditRequest");
+      setAuditRequest(request === "REQUESTED" ? "REQUESTED" : null);
+
+      const order = window.localStorage.getItem("residentCwuAuditOrder");
+      setAuditOrder(order === "REQUESTED" ? "REQUESTED" : null);
+
+      const roiInterest = window.localStorage.getItem("residentCwuRoiModelInterest");
+      setRoiModelInterest(roiInterest === "EXPRESSED" ? "EXPRESSED" : null);
+
+      const token = (window.localStorage.getItem("residentCwuAuditToken") ?? "").trim();
+      setAuditorToken(token.length > 0 ? token : null);
+    } catch {
+      setAuditStatus(null);
+      setAuditRequest(null);
+      setAuditOrder(null);
+      setRoiModelInterest(null);
+      setAuditorToken(null);
+    }
+  }, []);
+
+  function generateAuditToken(): string {
+    try {
+      if (typeof window !== "undefined" && window.crypto && typeof window.crypto.randomUUID === "function") {
+        return window.crypto.randomUUID();
+      }
+    } catch {
+      // pomijamy
+    }
+    return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+  }
+
+  function ensureAuditorToken(): string | null {
+    if (typeof window === "undefined") return null;
+    try {
+      const existing = (window.localStorage.getItem("residentCwuAuditToken") ?? "").trim();
+      if (existing.length > 0) {
+        setAuditorToken(existing);
+        return existing;
+      }
+
+      const created = generateAuditToken();
+      window.localStorage.setItem("residentCwuAuditToken", created);
+      setAuditorToken(created);
+      return created;
+    } catch {
+      return null;
+    }
+  }
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const shouldHaveToken =
+      auditStatus === "READY_FOR_AUDIT" ||
+      auditStatus === "AUDIT_REQUESTED" ||
+      auditRequest === "REQUESTED" ||
+      auditOrder === "REQUESTED";
+    if (!shouldHaveToken) return;
+    if (auditorToken) return;
+    ensureAuditorToken();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [auditOrder, auditRequest, auditStatus]);
+
+  const pieChart = (() => {
+    if (!res) return { visible: false, lossPercent: null as number | null, usefulEnergyPercent: null as number | null };
+    const lossGJ = Math.max(0, Number(res.energyLossPerM3) || 0);
+    const usefulGJ = Math.max(0, Number(res.energyPerM3) || 0);
+    const total = lossGJ + usefulGJ;
+    if (total <= 0) return { visible: false, lossPercent: null as number | null, usefulEnergyPercent: null as number | null };
+    const lossPercent = (lossGJ / total) * 100;
+    const usefulEnergyPercent = 100 - lossPercent;
+    return {
+      visible: true,
+      lossPercent: Number.isFinite(lossPercent) ? lossPercent : null,
+      usefulEnergyPercent: Number.isFinite(usefulEnergyPercent) ? usefulEnergyPercent : null,
+    };
+  })();
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!res) return;
+
+    try {
+      let rawContext = window.localStorage.getItem("residentCwuAuditContext");
+      let hasContext = Boolean(rawContext && rawContext.trim().length > 0);
+
+      // Upewnij się, że kontekst (inputs + result) istnieje zanim ustawimy status READY_FOR_AUDIT.
+      if (!hasContext) {
+        window.localStorage.setItem(
+          "residentCwuAuditContext",
+          JSON.stringify({
+            inputs,
+            result: res,
+          })
+        );
+        rawContext = window.localStorage.getItem("residentCwuAuditContext");
+        hasContext = Boolean(rawContext && rawContext.trim().length > 0);
+      }
+
+      if (!hasContext) return;
+
+      if (!auditStatus) {
+        window.localStorage.setItem("residentCwuAuditStatus", "NEW");
+        setAuditStatus("NEW");
+      }
+
+      const yearlyLoss = Number(res.yearlyFinancialLoss);
+      const hasYearlyLoss = Number.isFinite(yearlyLoss) && yearlyLoss > 0;
+      const hasLossPercent = typeof pieChart.lossPercent === "number" && Number.isFinite(pieChart.lossPercent);
+      const shouldBeReady = hasYearlyLoss && hasLossPercent && pieChart.visible;
+
+      if (!shouldBeReady) return;
+      if (auditStatus === "AUDIT_REQUESTED") return;
+
+      if (auditStatus !== "READY_FOR_AUDIT") {
+        window.localStorage.setItem("residentCwuAuditStatus", "READY_FOR_AUDIT");
+        setAuditStatus("READY_FOR_AUDIT");
+      }
+    } catch {
+      // UI-only: jeśli localStorage jest niedostępny, pomijamy
+    }
+  }, [auditStatus, inputs, pieChart.lossPercent, pieChart.visible, res]);
 
   // Automatyczna kalkulacja przy zmianie inputów
   function calculateResults(inp: Inputs) {
@@ -374,25 +512,88 @@ export default function MieszkancyPage() {
             </div>
 
             {/* Pie chart: Straty energii vs energia użyteczna */}
-            {(() => {
-              const lossGJ = Math.max(0, Number(res.energyLossPerM3) || 0);
-              const usefulGJ = Math.max(0, Number(res.energyPerM3) || 0);
-              const total = lossGJ + usefulGJ;
+            {res && pieChart.visible && pieChart.lossPercent !== null && pieChart.usefulEnergyPercent !== null ? (
+              <div className="max-w-3xl mx-auto">
+                <EnergyPieChart lossPercent={pieChart.lossPercent} usefulEnergyPercent={pieChart.usefulEnergyPercent} />
+              </div>
+            ) : null}
 
-              if (total <= 0) return null;
+            {/* Status zgłoszenia (pod wykresem / nad formularzem) */}
+            {auditStatus ? (
+              <Card className="backdrop-blur-sm bg-white/70 dark:bg-slate-900/70 border-0 shadow-xl">
+                <CardHeader>
+                  <CardTitle className="text-xl text-slate-800 dark:text-slate-200">Status zgłoszenia CWU</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2 text-slate-700 dark:text-slate-300">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-sm text-slate-600 dark:text-slate-400">Status:</span>
+                    <Badge variant="secondary">
+                      {auditStatus === "NEW"
+                        ? "NEW – dane wprowadzone"
+                        : auditStatus === "READY_FOR_AUDIT"
+                          ? "READY_FOR_AUDIT – dane kompletne"
+                          : "AUDIT_REQUESTED – audyt zamówiony"}
+                    </Badge>
+                  </div>
+                  {auditStatus === "NEW" ? (
+                    <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400">
+                      Dane zostały wprowadzone. Gdy wynik będzie kompletny, zgłoszenie automatycznie otrzyma status gotowości do audytu.
+                    </p>
+                  ) : auditStatus === "READY_FOR_AUDIT" ? (
+                    <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400">
+                      Dane są kompletne i mogą zostać zweryfikowane przez audytora technicznego.
+                    </p>
+                  ) : (
+                    <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400">
+                      Audyt techniczny przygotowany – oczekuje na weryfikację.
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            ) : null}
 
-              const lossPercent = (lossGJ / total) * 100;
-              const usefulEnergyPercent = 100 - lossPercent;
+            {(auditStatus === "READY_FOR_AUDIT" || auditStatus === "AUDIT_REQUESTED") ? (
+              <Card className="backdrop-blur-sm bg-white/70 dark:bg-slate-900/70 border-0 shadow-xl">
+                <CardHeader>
+                  <CardTitle className="text-xl text-slate-800 dark:text-slate-200">
+                    Zgłoszenie gotowe do audytu technicznego
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3 text-slate-700 dark:text-slate-300">
+                  <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400">
+                    Dane są kompletne. Audytor może sprawdzić instalację i potwierdzić, gdzie powstają straty.
+                  </p>
 
-              return (
-                <div className="max-w-3xl mx-auto">
-                  <EnergyPieChart
-                    lossPercent={lossPercent}
-                    usefulEnergyPercent={usefulEnergyPercent}
-                  />
-                </div>
-              );
-            })()}
+                  {auditRequest === "REQUESTED" || auditStatus === "AUDIT_REQUESTED" ? (
+                    <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400">
+                      Audyt techniczny przygotowany – oczekuje na weryfikację
+                    </p>
+                  ) : (
+                    <div className="pt-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          ensureAuditorToken();
+                          try {
+                            if (typeof window !== "undefined") {
+                              window.localStorage.setItem("residentCwuAuditRequest", "REQUESTED");
+                              window.localStorage.setItem("residentCwuAuditStatus", "AUDIT_REQUESTED");
+                            }
+                          } catch {
+                            // UI-only: jeśli localStorage jest niedostępny, pomijamy
+                          }
+                          setAuditRequest("REQUESTED");
+                          setAuditStatus("AUDIT_REQUESTED");
+                        }}
+                      >
+                        Przygotuj audyt techniczny
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ) : null}
             
             {/* Key Metrics */}
             <div className="grid md:grid-cols-3 gap-6">
@@ -566,7 +767,68 @@ export default function MieszkancyPage() {
               generatePdf={generatePdfClient}
             />
 
-            <ResidentCwuIssueForm calcInputs={inputs} calcResult={res} />
+            <ResidentCwuIssueForm
+              calcInputs={inputs}
+              calcResult={res}
+              onAuditStatusChange={(status) => setAuditStatus(status)}
+            />
+
+            {auditRequest === "REQUESTED" || auditStatus === "AUDIT_REQUESTED" ? (
+              <Card className="backdrop-blur-sm bg-white/70 dark:bg-slate-900/70 border-0 shadow-xl">
+                <CardHeader>
+                  <CardTitle className="text-xl text-slate-800 dark:text-slate-200">Przekaż do audytu</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3 text-slate-700 dark:text-slate-300">
+                  <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400">
+                    Audyt techniczny przygotowany – możesz przekazać link audytorowi.
+                  </p>
+                  <div className="space-y-2">
+                    <div className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Link dla audytora</div>
+                    <div className="text-xs rounded-xl border border-slate-200/60 dark:border-slate-700/60 bg-slate-50/60 dark:bg-slate-950/30 p-3 break-all">
+                      {auditorToken ? `/audytor?auditToken=${auditorToken}` : "—"}
+                    </div>
+                  </div>
+                  <div className="pt-1">
+                    {auditorToken ? (
+                      <Button asChild variant="outline">
+                        <Link href={`/audytor?auditToken=${encodeURIComponent(auditorToken)}`}>Otwórz widok audytora</Link>
+                      </Button>
+                    ) : (
+                      <div className="text-sm text-slate-600 dark:text-slate-400">Nie udało się wygenerować linku audytora (localStorage niedostępny).</div>
+                    )}
+                  </div>
+                  <p className="text-xs leading-relaxed text-slate-600 dark:text-slate-400">
+                    Ten link może zostać przekazany audytorowi lub zarządcy.
+                  </p>
+                </CardContent>
+              </Card>
+            ) : null}
+
+            {auditOrder === "REQUESTED" ? (
+              <Card className="backdrop-blur-sm bg-white/70 dark:bg-slate-900/70 border-0 shadow-xl">
+                <CardHeader>
+                  <CardTitle className="text-xl text-slate-800 dark:text-slate-200">Status realizacji</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2 text-slate-700 dark:text-slate-300">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge variant="secondary">Audyt techniczny: zgłoszony do realizacji</Badge>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : null}
+
+            {roiModelInterest === "EXPRESSED" ? (
+              <Card className="backdrop-blur-sm bg-white/70 dark:bg-slate-900/70 border-0 shadow-xl">
+                <CardHeader>
+                  <CardTitle className="text-xl text-slate-800 dark:text-slate-200">Informacja</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2 text-slate-700 dark:text-slate-300">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge variant="secondary">Rozważany model realizacji: oparty o efekt ekonomiczny</Badge>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : null}
 
             <Card className="backdrop-blur-sm bg-white/70 dark:bg-slate-900/70 border-0 shadow-xl">
               <CardHeader>

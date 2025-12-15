@@ -176,8 +176,9 @@ function buildAdminSummary(params: {
 export function ResidentCwuIssueForm(props: {
   calcInputs: CalcInputsSnapshot;
   calcResult: CalcResultSnapshot | null;
+  onAuditStatusChange?: (status: "READY_FOR_AUDIT") => void;
 }) {
-  const { calcInputs, calcResult } = props;
+  const { calcInputs, calcResult, onAuditStatusChange } = props;
 
   const formspreeEndpoint =
     (process.env.NEXT_PUBLIC_FORMSPREE_CWU_ENDPOINT && process.env.NEXT_PUBLIC_FORMSPREE_CWU_ENDPOINT.trim()) ||
@@ -402,6 +403,15 @@ export function ResidentCwuIssueForm(props: {
       toast.success("Zgłoszenie wysłane", {
         description: `Numer zgłoszenia: ${id}. Poniżej znajdziesz podsumowanie dla administracji.`,
       });
+
+      try {
+        if (typeof window !== "undefined") {
+          window.localStorage.setItem("residentCwuAuditStatus", "READY_FOR_AUDIT");
+        }
+      } catch {
+        // UI-only: jeśli localStorage jest niedostępny, pomijamy
+      }
+      onAuditStatusChange?.("READY_FOR_AUDIT");
     } catch (err) {
       toast.error("Nie udało się wysłać zgłoszenia", {
         description: String(err),
