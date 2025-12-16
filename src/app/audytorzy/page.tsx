@@ -1,19 +1,69 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Activity, FileText, Gauge, PlayCircle, ShieldCheck, Timer } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 
 const DEFAULT_FORMSPREE_AUDYTOR_ENDPOINT = "https://formspree.io/f/mpwvbbdl";
+
+type AuditPotentialLevel = "niski" | "średni" | "wysoki";
+
+function classifyAuditPotential(input: { lossesPercent: number; lossesPlnPerYear: number }): {
+  level: AuditPotentialLevel;
+  label: string;
+  helper: string;
+  nextStep: string;
+  badgeVariant: "outline" | "warning" | "success";
+} {
+  const lossesPercent = Number.isFinite(input.lossesPercent) ? input.lossesPercent : 0;
+  const lossesPlnPerYear = Number.isFinite(input.lossesPlnPerYear) ? input.lossesPlnPerYear : 0;
+
+  const LOW_PLN_PER_YEAR = 5_000;
+  const HIGH_PLN_PER_YEAR = 20_000;
+
+  const isLow = lossesPercent < 20 || lossesPlnPerYear <= LOW_PLN_PER_YEAR;
+  const isHigh = lossesPercent > 35 || lossesPlnPerYear >= HIGH_PLN_PER_YEAR;
+
+  if (isHigh) {
+    return {
+      level: "wysoki",
+      label: "Wysoki",
+      helper: "Audyt ma sens – są pieniądze i ryzyko.",
+      nextStep: "Do natychmiastowego audytu",
+      badgeVariant: "success",
+    };
+  }
+
+  if (isLow) {
+    return {
+      level: "niski",
+      label: "Niski",
+      helper: "Raczej obserwacja niż audyt.",
+      nextStep: "Do obserwacji",
+      badgeVariant: "outline",
+    };
+  }
+
+  return {
+    level: "średni",
+    label: "Średni",
+    helper: "Warto policzyć dokładniej i przygotować argumenty.",
+    nextStep: "Do rozmowy z zarządcą",
+    badgeVariant: "warning",
+  };
+}
 
 export default function AudytorzyPage() {
   const videoUrl = (process.env.NEXT_PUBLIC_AUDYTORZY_VIDEO_URL ?? "").trim();
   const formspreeEndpoint =
     (process.env.NEXT_PUBLIC_FORMSPREE_AUDYTOR_ENDPOINT ?? "").trim() || DEFAULT_FORMSPREE_AUDYTOR_ENDPOINT;
+
+  const [buildingApartmentsCount, setBuildingApartmentsCount] = useState<number | null>(null);
 
   const [lead, setLead] = useState<{ email: string; phone: string; company: string }>({
     email: "",
@@ -23,7 +73,166 @@ export default function AudytorzyPage() {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const keys = Object.keys(window.localStorage).filter((k) => k.startsWith("residentCwuAuditContext:issue-"));
+
+      let best: { createdAtMs: number; apartmentsCount: number } | null = null;
+      for (const key of keys) {
+        const raw = window.localStorage.getItem(key);
+        if (!raw) continue;
+        let parsed: any = null;
+        try {
+          parsed = JSON.parse(raw);
+        } catch {
+          continue;
+        }
+
+        const apartmentsCountCandidate =
+          parsed?.building?.apartmentsCount ?? parsed?.payload?.building?.apartmentsCount ?? null;
+        if (typeof apartmentsCountCandidate !== "number" || !Number.isFinite(apartmentsCountCandidate)) continue;
+        if (apartmentsCountCandidate <= 0) continue;
+
+        const createdAtISO = typeof parsed?.createdAtISO === "string" ? parsed.createdAtISO : "";
+        const createdAtMs = Date.parse(createdAtISO);
+        const ms = Number.isFinite(createdAtMs) ? createdAtMs : 0;
+
+        if (!best || ms >= best.createdAtMs) {
+          best = { createdAtMs: ms, apartmentsCount: Math.round(apartmentsCountCandidate) };
+        }
+      }
+
+      setBuildingApartmentsCount(best ? best.apartmentsCount : null);
+    } catch {
+      // UI-only: jeśli localStorage jest niedostępny, pomijamy
+    }
+  }, []);
+
+  const caseStudy = useMemo(
+    () => ({
+      annualCwuPln: 120_000,
+      lossesPercent: 28,
+      lossesPlnPerYear: 33_600,
+    }),
+    [],
+  );
+
+  const auditPotential = useMemo(
+    () =>
+      classifyAuditPotential({
+        lossesPercent: caseStudy.lossesPercent,
+        lossesPlnPerYear: caseStudy.lossesPlnPerYear,
+      }),
+    [caseStudy.lossesPercent, caseStudy.lossesPlnPerYear],
+  );
+
+  const buildingScale = useMemo(() => {
+    if (!buildingApartmentsCount || buildingApartmentsCount <= 0) return null;
+
+    if (buildingApartmentsCount < 20) {
+      return {
+        label: `Liczba mieszkań w budynku: ~${buildingApartmentsCount}`,
+        interpretation: "Mały budynek – decyzja szybka, mniejsza skala finansowa.",
+      };
+    }
+
+    if (buildingApartmentsCount <= 60) {
+      return {
+        label: `Liczba mieszkań w budynku: ~${buildingApartmentsCount}`,
+        interpretation: "Średni budynek – potencjał audytu dla całej wspólnoty.",
+      };
+    }
+
+    return {
+      label: `Liczba mieszkań w budynku: ~${buildingApartmentsCount}`,
+      interpretation: "Duży budynek – istotna skala kosztowa i negocjacyjna.",
+    };
+  }, [buildingApartmentsCount]);
+
+  const argumentsForManager = useMemo(() => {
+    const money = `~${caseStudy.lossesPlnPerYear.toLocaleString("pl-PL")} zł/rok`;
+
+    if (auditPotential.level === "niski") {
+      return {
+        text:
+          "Na tym etapie audyt nie jest priorytetem. Warto obserwować koszty i wrócić do tematu, jeśli problem się utrzyma lub skala strat wzrośnie.",
+        action: "Monitoring / obserwacja",
+        accent: `Skala strat: ${money}`,
+      };
+    }
+
+    if (auditPotential.level === "średni") {
+      return {
+        text:
+          "Obecne dane wskazują na realne koszty, które warto zweryfikować. Audyt pozwoli potwierdzić skalę strat i przygotować argumenty do decyzji zarządczej.",
+        action: "Rozmowa z zarządcą + audyt wstępny",
+        accent: `Skala strat: ${money}`,
+      };
+    }
+
+    return {
+      text:
+        "Skala strat i ryzyko kosztowe są istotne. Audyt ma sens ekonomiczny i pozwala przygotować decyzję o działaniach naprawczych lub inwestycyjnych.",
+      action: "Audyt pełny – decyzja pilna",
+      accent: `Ryzyko kosztowe: ${money}`,
+    };
+  }, [auditPotential.level, caseStudy.lossesPlnPerYear]);
+
   const isEmailValid = useMemo(() => lead.email.trim().includes("@"), [lead.email]);
+
+  async function copyTextToClipboard(text: string) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch {
+      // fallback
+      try {
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.setAttribute("readonly", "true");
+        ta.style.position = "fixed";
+        ta.style.left = "-9999px";
+        document.body.appendChild(ta);
+        ta.select();
+        const ok = document.execCommand("copy");
+        document.body.removeChild(ta);
+        return ok;
+      } catch {
+        return false;
+      }
+    }
+  }
+
+  const managerCta = useMemo(() => {
+    if (auditPotential.level === "niski") {
+      return {
+        label: "Obserwuj i wróć do analizy",
+        href: "/audytorzy/analiza-finansowa",
+      };
+    }
+    if (auditPotential.level === "średni") {
+      return {
+        label: "Przygotuj rozmowę z zarządcą",
+        href: "/audytorzy/analiza-finansowa",
+      };
+    }
+    return {
+      label: "Przejdź do audytu",
+      href: "/audytor",
+    };
+  }, [auditPotential.level]);
+
+  const copyPayload = useMemo(() => {
+    return [
+      "Na podstawie obecnych danych dotyczących CWU:",
+      "",
+      argumentsForManager.text,
+      "",
+      `Sugestia działania: ${argumentsForManager.action}`,
+      argumentsForManager.accent,
+    ].join("\n");
+  }, [argumentsForManager.accent, argumentsForManager.action, argumentsForManager.text]);
 
   async function submitAuditorLead() {
     const email = lead.email.trim();
@@ -73,7 +282,7 @@ export default function AudytorzyPage() {
       <div className="max-w-5xl mx-auto px-4 py-12 space-y-12 relative z-10">
         <div className="sticky top-0 z-20 -mx-4 px-4">
           <div className="rounded-3xl border border-slate-200/30 dark:border-slate-700/50 bg-white/80 dark:bg-slate-900/70 backdrop-blur shadow-xl px-3 py-2 flex flex-wrap gap-2 items-center justify-between">
-            <div className="text-xs text-slate-600 dark:text-slate-300">Audytorzy – narzędzia + leady z /mieszkancy</div>
+            <div className="text-xs text-slate-600 dark:text-slate-300">Audytorzy – skala strat, ryzyko, priorytet, następny krok</div>
             <div className="flex flex-wrap gap-2">
               <Button asChild size="sm" variant="outline">
                 <Link href="/audytor">Zobacz demo panelu</Link>
@@ -102,6 +311,89 @@ export default function AudytorzyPage() {
             <Button asChild variant="outline">
               <Link href="/mieszkancy">Zobacz, co widzi mieszkaniec</Link>
             </Button>
+          </div>
+
+          <div className="pt-4">
+            <Card className="bg-white/80 dark:bg-slate-900/60 border border-slate-200/30 dark:border-slate-700/50 shadow-xl rounded-3xl backdrop-blur">
+              <CardContent className="p-5 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                <div className="flex items-center gap-3 flex-wrap">
+                  <Badge variant={auditPotential.badgeVariant} className="text-xs">
+                    Potencjał audytu: {auditPotential.label}
+                  </Badge>
+                  <div className="text-sm text-slate-700 dark:text-slate-300">
+                    Skala strat: <span className="font-semibold">~{caseStudy.lossesPercent}%</span> (ok.{" "}
+                    <span className="font-semibold">~{caseStudy.lossesPlnPerYear.toLocaleString("pl-PL")} zł/rok</span>)
+                  </div>
+                  <div className="text-xs text-slate-600 dark:text-slate-400">
+                    Przy tej skali budynku potencjał audytu dotyczy nie jednego lokalu, ale całej nieruchomości.
+                  </div>
+                </div>
+                <div className="text-sm text-slate-700 dark:text-slate-300">
+                  Na podstawie obecnych danych audyt ma <span className="font-semibold">{auditPotential.level}</span> sens z punktu widzenia kosztów i ryzyka. {" "}
+                  <span className="font-semibold">Kolejny krok:</span> {auditPotential.nextStep}.
+                </div>
+              </CardContent>
+            </Card>
+            <div className="mt-2 text-xs text-blue-100/90">{auditPotential.helper}</div>
+
+            <Card className="mt-4 bg-white/80 dark:bg-slate-900/60 border border-slate-200/30 dark:border-slate-700/50 shadow-xl rounded-3xl backdrop-blur">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base text-slate-900 dark:text-slate-100">Skala budynku</CardTitle>
+              </CardHeader>
+              <CardContent className="pt-0 space-y-2">
+                {buildingScale ? (
+                  <>
+                    <div className="text-sm text-slate-700 dark:text-slate-300">{buildingScale.label}</div>
+                    <div className="text-sm text-slate-700 dark:text-slate-300">{buildingScale.interpretation}</div>
+                  </>
+                ) : (
+                  <>
+                    <div className="text-sm text-slate-700 dark:text-slate-300">Liczba mieszkań w budynku: —</div>
+                    <div className="text-sm text-slate-700 dark:text-slate-300">
+                      Brak danych ze zgłoszenia mieszkańca (pole jest opcjonalne).
+                    </div>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card className="mt-4 bg-white/80 dark:bg-slate-900/60 border border-slate-200/30 dark:border-slate-700/50 shadow-xl rounded-3xl backdrop-blur">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base text-slate-900 dark:text-slate-100">Argumenty dla zarządcy</CardTitle>
+              </CardHeader>
+              <CardContent className="pt-0 space-y-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge variant={auditPotential.badgeVariant} className="text-xs">
+                    {argumentsForManager.action}
+                  </Badge>
+                  <div className="text-xs text-slate-600 dark:text-slate-400">
+                    <span className="font-semibold text-slate-900 dark:text-slate-100">{argumentsForManager.accent}</span>
+                  </div>
+                </div>
+
+                <div className="text-sm text-slate-700 dark:text-slate-300">
+                  {argumentsForManager.text}
+                </div>
+
+                <div className="pt-2 flex flex-wrap gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={async () => {
+                      const ok = await copyTextToClipboard(copyPayload);
+                      if (ok) toast.success("Skopiowano argumenty do schowka");
+                      else toast.error("Nie udało się skopiować");
+                    }}
+                  >
+                    Skopiuj argumenty do rozmowy
+                  </Button>
+
+                  <Button asChild variant="secondary">
+                    <Link href={managerCta.href}>{managerCta.label}</Link>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
 
@@ -157,17 +449,69 @@ export default function AudytorzyPage() {
               </div>
               <div className="rounded-2xl border border-slate-200/60 dark:border-slate-700/60 bg-slate-50/60 dark:bg-slate-950/30 p-4">
                 <div className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Roczne CWU</div>
-                <div className="font-semibold text-slate-900 dark:text-slate-100">120 000 zł</div>
+                <div className="font-semibold text-slate-900 dark:text-slate-100">{caseStudy.annualCwuPln.toLocaleString("pl-PL")} zł</div>
                 <div className="text-xs text-slate-600 dark:text-slate-400">z faktur / rozliczeń</div>
               </div>
               <div className="rounded-2xl border border-slate-200/60 dark:border-slate-700/60 bg-slate-50/60 dark:bg-slate-950/30 p-4">
                 <div className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Straty</div>
-                <div className="font-semibold text-slate-900 dark:text-slate-100">~28%</div>
-                <div className="text-xs text-slate-600 dark:text-slate-400">~33 600 zł/rok potencjału</div>
+                <div className="font-semibold text-slate-900 dark:text-slate-100">~{caseStudy.lossesPercent}%</div>
+                <div className="text-xs text-slate-600 dark:text-slate-400">
+                  Skala strat:{" "}
+                  <span className="font-semibold text-slate-900 dark:text-slate-100">
+                    ~{caseStudy.lossesPlnPerYear.toLocaleString("pl-PL")} zł/rok
+                  </span>
+                </div>
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  <Badge variant={auditPotential.badgeVariant}>Potencjał audytu: {auditPotential.label}</Badge>
+                  <span className="text-xs text-slate-600 dark:text-slate-400">Decyzja: {auditPotential.nextStep}</span>
+                </div>
               </div>
             </div>
             <div className="text-xs text-slate-600 dark:text-slate-400">
               Przykład pokazuje format decyzji i komunikacji, nie gwarancję wyniku. Realny efekt zależy od instalacji i danych.
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-white/80 dark:bg-slate-900/60 border border-slate-200/30 dark:border-slate-700/50 shadow-xl rounded-3xl backdrop-blur">
+          <CardHeader>
+            <CardTitle className="text-slate-900 dark:text-slate-100">Sygnał decyzyjny: potencjał audytu</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4 text-sm text-slate-700 dark:text-slate-300">
+            <div className="text-slate-700 dark:text-slate-300">
+              Łączysz <span className="font-semibold">skalę strat (zł/rok)</span> z prostą decyzją biznesową — bez sporu o detale.
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div className="rounded-2xl border border-slate-200/60 dark:border-slate-700/60 bg-slate-50/60 dark:bg-slate-950/30 p-4">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="font-semibold text-slate-900 dark:text-slate-100">Niski</div>
+                  <Badge variant="outline">Potencjał audytu</Badge>
+                </div>
+                <div className="mt-2 text-xs text-slate-600 dark:text-slate-400">
+                  Raczej obserwacja niż audyt. <span className="font-semibold">Kolejny krok:</span> do obserwacji.
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-slate-200/60 dark:border-slate-700/60 bg-slate-50/60 dark:bg-slate-950/30 p-4">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="font-semibold text-slate-900 dark:text-slate-100">Średni</div>
+                  <Badge variant="secondary">Potencjał audytu</Badge>
+                </div>
+                <div className="mt-2 text-xs text-slate-600 dark:text-slate-400">
+                  Warto policzyć dokładniej i przygotować argumenty. <span className="font-semibold">Kolejny krok:</span> do rozmowy z zarządcą.
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-slate-200/60 dark:border-slate-700/60 bg-slate-50/60 dark:bg-slate-950/30 p-4">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="font-semibold text-slate-900 dark:text-slate-100">Wysoki</div>
+                  <Badge variant="success">Potencjał audytu</Badge>
+                </div>
+                <div className="mt-2 text-xs text-slate-600 dark:text-slate-400">
+                  Audyt ma sens – są pieniądze i ryzyko. <span className="font-semibold">Kolejny krok:</span> do natychmiastowego audytu.
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -247,8 +591,64 @@ export default function AudytorzyPage() {
           </CardContent>
         </Card>
 
+        <section className="bg-white/80 dark:bg-slate-900/60 border border-slate-200/30 dark:border-slate-700/50 shadow-xl rounded-3xl backdrop-blur p-8">
+          <div className="space-y-2">
+            <h2 className="text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-slate-100">Kolejny krok</h2>
+            <div className="text-sm md:text-base text-slate-700 dark:text-slate-300">
+              Celem audytu nie jest spór techniczny, lecz decyzja finansowa i plan działania.
+            </div>
+          </div>
+
+          <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card className="bg-slate-50/60 dark:bg-slate-950/30 border border-slate-200/60 dark:border-slate-700/60 rounded-3xl">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-slate-900 dark:text-slate-100">Kiedy audyt ma sens</CardTitle>
+              </CardHeader>
+              <CardContent className="text-sm text-slate-700 dark:text-slate-300">
+                Gdy straty są istotne w skali zł/rok lub problem się powtarza
+                <br />
+                i nie da się go wyjaśnić wyłącznie sezonowością.
+              </CardContent>
+            </Card>
+
+            <Card className="bg-slate-50/60 dark:bg-slate-950/30 border border-slate-200/60 dark:border-slate-700/60 rounded-3xl">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-slate-900 dark:text-slate-100">Kiedy warto iść do zarządcy / spółdzielni</CardTitle>
+              </CardHeader>
+              <CardContent className="text-sm text-slate-700 dark:text-slate-300">
+                Gdy masz liczby, które można obronić:
+                <br />
+                szacunek strat, prostą interpretację i listę danych do potwierdzenia.
+              </CardContent>
+            </Card>
+
+            <Card className="bg-slate-50/60 dark:bg-slate-950/30 border border-slate-200/60 dark:border-slate-700/60 rounded-3xl">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-slate-900 dark:text-slate-100">Kiedy wchodzi wykonawca</CardTitle>
+              </CardHeader>
+              <CardContent className="text-sm text-slate-700 dark:text-slate-300">
+                Po audycie, gdy zakres jest porównywalny i można zebrać oferty
+                <br />
+                bez chaosu — wykonawca jest naturalnym kolejnym etapem.
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="mt-6 flex flex-wrap gap-3">
+            <Button asChild variant="outline">
+              <Link href="/metodologia-audytu-cwu">Przygotuj argumenty do rozmowy</Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link href="/audytor">Zrób szybką ocenę sensu audytu</Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link href="/audytorzy/analiza-finansowa">Przejdź do narzędzi finansowych</Link>
+            </Button>
+          </div>
+        </section>
+
         <div>
-          <div className="text-center text-lg text-slate-300 mb-4">Narzędzia (dla audytora)</div>
+          <div className="text-center text-lg text-slate-300 mb-4">Analiza finansowa CWU (narzędzia decyzyjne)</div>
           <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
             <Link
               href="/audytorzy/liczniki"

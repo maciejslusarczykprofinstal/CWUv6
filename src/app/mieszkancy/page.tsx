@@ -610,49 +610,6 @@ export default function MieszkancyPage() {
               </Card>
             ) : null}
 
-            {(auditStatus === "READY_FOR_AUDIT" || auditStatus === "AUDIT_REQUESTED") ? (
-              <Card className="backdrop-blur-sm bg-white/70 dark:bg-slate-900/70 border-0 shadow-xl">
-                <CardHeader>
-                  <CardTitle className="text-xl text-slate-800 dark:text-slate-200">
-                    Zgłoszenie gotowe do audytu technicznego
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3 text-slate-700 dark:text-slate-300">
-                  <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400">
-                    Dane są kompletne. Audytor może sprawdzić instalację i potwierdzić, gdzie powstają straty.
-                  </p>
-
-                  {auditRequest === "REQUESTED" || auditStatus === "AUDIT_REQUESTED" ? (
-                    <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400">
-                      Audyt techniczny przygotowany – oczekuje na weryfikację
-                    </p>
-                  ) : (
-                    <div className="pt-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => {
-                          ensureAuditorToken();
-                          try {
-                            if (typeof window !== "undefined") {
-                              window.localStorage.setItem("residentCwuAuditRequest", "REQUESTED");
-                              window.localStorage.setItem("residentCwuAuditStatus", "AUDIT_REQUESTED");
-                            }
-                          } catch {
-                            // UI-only: jeśli localStorage jest niedostępny, pomijamy
-                          }
-                          setAuditRequest("REQUESTED");
-                          setAuditStatus("AUDIT_REQUESTED");
-                        }}
-                      >
-                        Przygotuj audyt techniczny
-                      </Button>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            ) : null}
-            
             {/* Key Metrics */}
             <div className="grid md:grid-cols-3 gap-6">
               <Card className="bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950/30 dark:to-cyan-950/30 border-blue-200 dark:border-blue-800 backdrop-blur-sm">
@@ -874,6 +831,49 @@ export default function MieszkancyPage() {
                 )}
               </CardContent>
             </Card>
+
+            {(auditStatus === "READY_FOR_AUDIT" || auditStatus === "AUDIT_REQUESTED") ? (
+              <Card className="backdrop-blur-sm bg-white/70 dark:bg-slate-900/70 border-0 shadow-xl">
+                <CardHeader>
+                  <CardTitle className="text-xl text-slate-800 dark:text-slate-200">
+                    Zgłoszenie gotowe do audytu technicznego
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3 text-slate-700 dark:text-slate-300">
+                  <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400">
+                    Dane są kompletne. Audytor może sprawdzić instalację i potwierdzić, gdzie powstają straty.
+                  </p>
+
+                  {auditRequest === "REQUESTED" || auditStatus === "AUDIT_REQUESTED" ? (
+                    <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400">
+                      Audyt techniczny przygotowany – oczekuje na weryfikację
+                    </p>
+                  ) : (
+                    <div className="pt-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          ensureAuditorToken();
+                          try {
+                            if (typeof window !== "undefined") {
+                              window.localStorage.setItem("residentCwuAuditRequest", "REQUESTED");
+                              window.localStorage.setItem("residentCwuAuditStatus", "AUDIT_REQUESTED");
+                            }
+                          } catch {
+                            // UI-only: jeśli localStorage jest niedostępny, pomijamy
+                          }
+                          setAuditRequest("REQUESTED");
+                          setAuditStatus("AUDIT_REQUESTED");
+                        }}
+                      >
+                        Przygotuj audyt techniczny
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ) : null}
 
             <ResidentCwuIssueForm
               calcInputs={inputs}

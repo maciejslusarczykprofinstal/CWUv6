@@ -72,6 +72,7 @@ type IssueFormState = {
   street: string;
   buildingNumber: string;
   apartmentNumber: string;
+  buildingApartmentsCount: string;
 
   problemType:
     | "brak_cwu"
@@ -289,6 +290,7 @@ export function ResidentCwuIssueForm(props: {
       street: calcInputs.buildingAddress ?? "",
       buildingNumber: "",
       apartmentNumber: calcInputs.apartmentNumber ?? "",
+      buildingApartmentsCount: "",
 
       problemType: "brak_cwu",
       otherProblem: "",
@@ -320,6 +322,9 @@ export function ResidentCwuIssueForm(props: {
       street: (baseEmptyForm.street ?? "").trim() ? baseEmptyForm.street : "ul. Przykładowa",
       buildingNumber: (baseEmptyForm.buildingNumber ?? "").trim() ? baseEmptyForm.buildingNumber : "12",
       apartmentNumber: (baseEmptyForm.apartmentNumber ?? "").trim() ? baseEmptyForm.apartmentNumber : "34",
+      buildingApartmentsCount: (baseEmptyForm.buildingApartmentsCount ?? "").trim()
+        ? baseEmptyForm.buildingApartmentsCount
+        : "40",
 
       problemType: "zawyzony_koszt",
       symptoms: {
@@ -473,10 +478,21 @@ export function ResidentCwuIssueForm(props: {
     // Otwieramy okno audytora od razu (żeby ominąć blokadę popupów), a URL podstawimy po zapisie.
     const auditorWindow = typeof window !== "undefined" ? window.open("about:blank", "_blank") : null;
 
+    const buildingApartmentsCount = (() => {
+      const raw = (form.buildingApartmentsCount ?? "").trim();
+      if (!raw) return null;
+      const n = Math.round(Number(raw));
+      if (!Number.isFinite(n) || n <= 0) return null;
+      return n;
+    })();
+
     const payload = {
       id,
       createdAtISO,
       kind: "resident_cwu_issue" as const,
+      building: {
+        apartmentsCount: buildingApartmentsCount,
+      },
       resident: {
         fullName: form.fullName.trim(),
         email: form.email.trim(),
@@ -525,6 +541,7 @@ export function ResidentCwuIssueForm(props: {
             inputs: calcInputs,
             result: calcResult,
             pdf: null,
+            building: { apartmentsCount: buildingApartmentsCount },
             // Dodatkowe dane (audytor może je odczytać, jeśli potrzeba)
             adminSummary,
             payload,
@@ -590,6 +607,21 @@ export function ResidentCwuIssueForm(props: {
       </CardHeader>
       <CardContent className="space-y-8">
         <form onSubmit={onSubmit} className="space-y-8">
+          <div className="space-y-2">
+            <label className="text-sm font-semibold text-slate-200">Ile mieszkań znajduje się w Twoim budynku?</label>
+            <input
+              type="number"
+              inputMode="numeric"
+              className="w-full px-4 py-3 rounded-2xl border-2 border-blue-400 bg-white text-slate-900 focus:ring-2 focus:ring-blue-600"
+              placeholder="np. 40"
+              value={form.buildingApartmentsCount}
+              onChange={(e) => update("buildingApartmentsCount", e.target.value)}
+            />
+            <div className="text-xs text-slate-200">
+              Przybliżona liczba – pozwala ocenić skalę problemu w całym budynku.
+            </div>
+          </div>
+
           <div className="p-4 rounded-2xl border border-blue-800 bg-blue-950/20 text-slate-100">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div>
@@ -981,6 +1013,7 @@ export function ResidentCwuIssueForm(props: {
             </div>
           </div>
         )}
+
       </CardContent>
     </Card>
   );
