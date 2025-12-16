@@ -12,7 +12,6 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { KatexFormula } from "@/components/ui/katex-formula";
 import { toast } from "sonner";
 import { ResidentCwuIssueForm } from "./ResidentCwuIssueForm";
-import { ResidentCwuComplaintLetterSection } from "./ResidentCwuComplaintLetterSection";
 import { EnergyPieChart } from "./components/EnergyPieChart";
 
 type Result = {
@@ -311,31 +310,7 @@ export default function MieszkancyPage() {
     setInputs(prev => ({ ...prev, [field]: value }));
   }
 
-  async function generatePdfClient(docComponent: React.ReactElement, filename: string) {
-    if (typeof window === "undefined") return;
-    try {
-      // Dynamiczny import @react-pdf/renderer po stronie klienta
-      const { pdf } = await import("@react-pdf/renderer");
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const blob = await pdf(docComponent as any).toBlob();
-      const objectUrl = URL.createObjectURL(blob);
-      // Spróbuj otworzyć w nowej karcie
-      const w = window.open(objectUrl, "_blank");
-      if (!w) {
-        // Fallback: wymuś pobranie przez tymczasowe <a download>
-        const a = document.createElement("a");
-        a.href = objectUrl;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-      }
-      // Sprzątanie po chwili
-      setTimeout(() => URL.revokeObjectURL(objectUrl), 10_000);
-    } catch (e) {
-      toast.error("Nie udało się wygenerować PDF", { description: String(e) });
-    }
-  }
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-950 to-slate-800 relative overflow-x-hidden">
@@ -383,7 +358,7 @@ export default function MieszkancyPage() {
                 <div>
                   <span className="font-semibold text-slate-900 dark:text-slate-100">Przygotuj zgłoszenie do zarządcy</span>
                   <span className="text-slate-500 dark:text-slate-400"> → </span>
-                  <span>na bazie wygenerowanego pisma lub formularza.</span>
+                  <span>na bazie formularza.</span>
                 </div>
               </div>
             </div>
@@ -899,12 +874,6 @@ export default function MieszkancyPage() {
                 )}
               </CardContent>
             </Card>
-
-            <ResidentCwuComplaintLetterSection
-              inputs={inputs}
-              result={res}
-              generatePdf={generatePdfClient}
-            />
 
             <ResidentCwuIssueForm
               calcInputs={inputs}

@@ -5,7 +5,65 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-const DEFAULT_FORMSPREE_CWU_ENDPOINT = "https://formspree.io/f/mpwvbbdl";
+function generateAuditToken(): string {
+  try {
+    if (typeof window !== "undefined" && window.crypto && typeof window.crypto.randomUUID === "function") {
+      return window.crypto.randomUUID();
+    }
+  } catch {
+    // pomijamy
+  }
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+function ensureAuditorToken(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const existing = (window.localStorage.getItem("residentCwuAuditToken") ?? "").trim();
+    if (existing.length > 0) return existing;
+    const created = generateAuditToken();
+    window.localStorage.setItem("residentCwuAuditToken", created);
+    return created;
+  } catch {
+    return null;
+  }
+}
+
+function buildAuditorPath(token: string): string {
+  return `/audytor?auditToken=${encodeURIComponent(token)}`;
+}
+
+async function savePdfBlobToIndexedDb(params: { id: string; blob: Blob }) {
+  if (typeof indexedDB === "undefined") {
+    throw new Error("IndexedDB niedostępne");
+  }
+
+  await new Promise<void>((resolve, reject) => {
+    const req = indexedDB.open("CWUDecisionPack", 1);
+    req.onupgradeneeded = () => {
+      const db = req.result;
+      if (!db.objectStoreNames.contains("pdfs")) {
+        db.createObjectStore("pdfs");
+      }
+    };
+    req.onerror = () => reject(req.error);
+    req.onsuccess = () => {
+      const db = req.result;
+      const tx = db.transaction("pdfs", "readwrite");
+      const store = tx.objectStore("pdfs");
+      store.put(params.blob, params.id);
+      tx.oncomplete = () => {
+        db.close();
+        resolve();
+      };
+      tx.onerror = () => {
+        const err = tx.error;
+        db.close();
+        reject(err);
+      };
+    };
+  });
+}
 
 type CalcInputsSnapshot = {
   cwuPriceFromBill: number;
@@ -73,6 +131,59 @@ function formatNumberPL(value: number, digits = 2): string {
     minimumFractionDigits: digits,
     maximumFractionDigits: digits,
   });
+}
+
+function buildExampleIssueDescription(params: {
+  calcInputs: CalcInputsSnapshot;
+  calcResult: CalcResultSnapshot | null;
+}): string {
+  const { calcInputs, calcResult } = params;
+
+  const intro =
+    "Zgłaszam prośbę o sprawdzenie zasadności kosztów podgrzewania ciepłej wody użytkowej w moim lokalu. Od dłuższego czasu zauważam, że opłaty za CWU są wyraźnie wyższe niż można by się spodziewać przy normalnym użytkowaniu mieszkania (Kraków, budynek wielorodzinny).\n\n" +
+    "Dodatkowo występują problemy użytkowe, takie jak długi czas oczekiwania na ciepłą wodę oraz okresowe wahania jej temperatury. Zdarza się również, że w godzinach porannych i wieczornych dostęp do ciepłej wody jest utrudniony lub wymaga długiego spuszczania.\n\n";
+
+  const numbers = (() => {
+    if (!calcResult) {
+      return (
+        "Na podstawie dostępnych obliczeń wykonanych na tej stronie wynika, że rzeczywiste koszty podgrzewania CWU mogą odbiegać od wartości, które pojawiają się w rozliczeniach. " +
+        "Wyniki te zostały automatycznie dołączone do niniejszego zgłoszenia.\n\n"
+      );
+    }
+
+    const bill = Number(calcInputs.cwuPriceFromBill) || 0;
+    const theoretical = Number(calcResult.theoreticalCostPerM3) || 0;
+    const lossPerM3 = Number(calcResult.lossPerM3) || 0;
+    const monthlyLoss = Math.max(0, Number(calcResult.monthlyFinancialLoss) || 0);
+    const yearlyLoss = Math.max(0, Number(calcResult.yearlyFinancialLoss) || 0);
+
+    const lossPct = (() => {
+      if (!Number.isFinite(bill) || bill <= 0) return 0;
+      const pct = (lossPerM3 / bill) * 100;
+      return Number.isFinite(pct) ? Math.max(0, Math.min(100, pct)) : 0;
+    })();
+
+    const billLabel = bill > 0 ? `${formatNumberPL(bill, 2)} zł/m³` : "—";
+    const theoreticalLabel = theoretical > 0 ? `${formatNumberPL(theoretical, 2)} zł/m³` : "—";
+    const lossPerM3Label = lossPerM3 > 0 ? `${formatNumberPL(lossPerM3, 2)} zł/m³` : "—";
+    const lossPctLabel = lossPct > 0 ? `${formatNumberPL(lossPct, 0)}%` : "—";
+    const monthlyLossLabel = `${formatNumberPL(monthlyLoss, 2)} zł/mies.`;
+    const yearlyLossLabel = `${formatNumberPL(yearlyLoss, 2)} zł/rok`;
+
+    return (
+      "Na podstawie dostępnych obliczeń wykonanych na tej stronie wynika, że rzeczywiste koszty podgrzewania CWU mogą odbiegać od wartości, które pojawiają się w rozliczeniach. " +
+      `W moim przypadku koszt z rozliczeń wynosi około ${billLabel}, natomiast wartość porównawcza z obliczeń to około ${theoreticalLabel}. ` +
+      `Różnica wynosi orientacyjnie ${lossPerM3Label} na 1 m³, co przekłada się na około ${monthlyLossLabel} miesięcznie i około ${yearlyLossLabel} rocznie. ` +
+      `W ujęciu procentowym odpowiada to orientacyjnie około ${lossPctLabel} w relacji do kosztu z rozliczeń. ` +
+      "Wyniki te zostały automatycznie dołączone do niniejszego zgłoszenia.\n\n"
+    );
+  })();
+
+  const closing =
+    "Uprzejmie proszę o weryfikację działania instalacji CWU oraz sposobu rozliczania kosztów, a także o przekazanie informacji, czy występują czynniki mogące powodować zwiększone koszty energii związane z przygotowaniem ciepłej wody.\n\n" +
+    "Zależy mi na spokojnym wyjaśnieniu sytuacji i na tym, aby koszty CWU były zrozumiałe, racjonalne i przewidywalne dla mieszkańców.";
+
+  return `${intro}${numbers}${closing}`;
 }
 
 function buildAdminSummary(params: {
@@ -180,46 +291,93 @@ export function ResidentCwuIssueForm(props: {
 }) {
   const { calcInputs, calcResult, onAuditStatusChange } = props;
 
-  const formspreeEndpoint =
-    (process.env.NEXT_PUBLIC_FORMSPREE_CWU_ENDPOINT && process.env.NEXT_PUBLIC_FORMSPREE_CWU_ENDPOINT.trim()) ||
-    DEFAULT_FORMSPREE_CWU_ENDPOINT;
+  const exampleDescription = useMemo(
+    () => buildExampleIssueDescription({ calcInputs, calcResult }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [
+      calcInputs.cwuPriceFromBill,
+      calcInputs.monthlyConsumption,
+      calcInputs.coldTempC,
+      calcInputs.hotTempC,
+      calcInputs.heatPriceFromCity,
+      calcResult?.theoreticalCostPerM3,
+      calcResult?.lossPerM3,
+      calcResult?.monthlyFinancialLoss,
+      calcResult?.yearlyFinancialLoss,
+    ]
+  );
 
-  const [form, setForm] = useState<IssueFormState>(() => ({
-    fullName: calcInputs.residentName ?? "",
-    email: calcInputs.residentEmail ?? "",
-    phone: calcInputs.residentPhone ?? "",
-    street: calcInputs.buildingAddress ?? "",
-    buildingNumber: "",
-    apartmentNumber: calcInputs.apartmentNumber ?? "",
+  const baseEmptyForm = useMemo<IssueFormState>(
+    () => ({
+      fullName: calcInputs.residentName ?? "",
+      email: calcInputs.residentEmail ?? "",
+      phone: calcInputs.residentPhone ?? "",
+      street: calcInputs.buildingAddress ?? "",
+      buildingNumber: "",
+      apartmentNumber: calcInputs.apartmentNumber ?? "",
 
-    problemType: "brak_cwu",
-    otherProblem: "",
+      problemType: "brak_cwu",
+      otherProblem: "",
 
-    symptoms: {
-      longFlush: false,
-      coolsFast: false,
-      unstableTemp: false,
-      specificHours: false,
-      longTime: false,
-    },
+      symptoms: {
+        longFlush: false,
+        coolsFast: false,
+        unstableTemp: false,
+        specificHours: false,
+        longTime: false,
+      },
 
-    description: "",
+      description: "",
+      goal: "sprawdzenie",
 
-    goal: "sprawdzenie",
+      consentContact: false,
+      consentShareAnalysis: false,
+      confirmTruth: false,
+    }),
+    [calcInputs]
+  );
 
-    consentContact: false,
-    consentShareAnalysis: false,
-    confirmTruth: false,
-  }));
+  const examplePreset = useMemo<IssueFormState>(
+    () => ({
+      ...baseEmptyForm,
+      // przykładowe dane — edytowalne / usuwalne
+      fullName: (baseEmptyForm.fullName ?? "").trim() ? baseEmptyForm.fullName : "Jan Kowalski",
+      email: (baseEmptyForm.email ?? "").trim() ? baseEmptyForm.email : "jan.kowalski@example.com",
+      street: (baseEmptyForm.street ?? "").trim() ? baseEmptyForm.street : "ul. Przykładowa",
+      buildingNumber: (baseEmptyForm.buildingNumber ?? "").trim() ? baseEmptyForm.buildingNumber : "12",
+      apartmentNumber: (baseEmptyForm.apartmentNumber ?? "").trim() ? baseEmptyForm.apartmentNumber : "34",
+
+      problemType: "zawyzony_koszt",
+      symptoms: {
+        longFlush: true,
+        coolsFast: false,
+        unstableTemp: true,
+        specificHours: true,
+        longTime: true,
+      },
+      goal: "analiza_kosztow",
+      description: exampleDescription,
+
+      // zgody zawsze muszą zostać świadomie zaznaczone
+      consentContact: false,
+      consentShareAnalysis: false,
+      confirmTruth: false,
+    }),
+    [baseEmptyForm, exampleDescription]
+  );
+
+  const [form, setForm] = useState<IssueFormState>(() => examplePreset);
 
   const [submitted, setSubmitted] = useState<{
     id: string;
     createdAtISO: string;
     adminSummary: string;
     payload: unknown;
+    pdf: { id: string; filename: string };
   } | null>(null);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
 
   const technical = useMemo(() => {
     const cwuTempC = Number.isFinite(calcInputs.hotTempC) ? calcInputs.hotTempC : 0;
@@ -270,6 +428,14 @@ export function ResidentCwuIssueForm(props: {
     setForm((prev) => ({ ...prev, symptoms: { ...prev.symptoms, [key]: value } }));
   }
 
+  function applyExamplePreset() {
+    setForm(examplePreset);
+  }
+
+  function clearExamplePreset() {
+    setForm(baseEmptyForm);
+  }
+
   function downloadJson(filename: string, data: unknown) {
     try {
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
@@ -292,6 +458,198 @@ export function ResidentCwuIssueForm(props: {
       toast.success("Skopiowano podsumowanie do schowka");
     } catch {
       toast.error("Nie udało się skopiować do schowka");
+    }
+  }
+
+  async function generateIssuePdfBlob(params: {
+    id: string;
+    createdAtISO: string;
+    adminSummary: string;
+  }): Promise<{ blob: Blob; filename: string }> {
+    const { id, createdAtISO, adminSummary } = params;
+    const filename = `Zgloszenie-strat-CWU-${id}.pdf`;
+
+    const { ResidentCwuLossIssuePDFDocument } = await import(
+      "@/lib/report/resident-cwu-loss-issue-pdf-client"
+    );
+    const { pdf } = await import("@react-pdf/renderer");
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const blob = await pdf(
+      (
+        <ResidentCwuLossIssuePDFDocument id={id} createdAtISO={createdAtISO} adminSummary={adminSummary} />
+      ) as any
+    ).toBlob();
+
+    return { blob, filename };
+  }
+
+  async function generateManagerLetterPdfBlob(params: {
+    createdAtISO: string;
+    buildingLabel: string;
+    efficiencyPercent: number;
+    lossPercent: number;
+    estimatedMonthlyLossPLN: number;
+    estimatedYearlyLossPLN: number;
+    actualCostPerM3PLN: number;
+    estimatedReasonableCostPerM3PLN: number;
+    notes: {
+      issue: {
+        fullName?: string;
+        email?: string;
+        phone?: string;
+        street: string;
+        buildingNumber: string;
+        apartmentNumber: string;
+        problemType: IssueFormState["problemType"];
+        otherProblem: string;
+        symptoms: IssueFormState["symptoms"];
+        description: string;
+      };
+      flags: {
+        mentionsHighCosts: boolean;
+        mentionsLongWait: boolean;
+        mentionsTempFluctuations: boolean;
+        mentionsLowTemp: boolean;
+        mentionsNoHotWater: boolean;
+        mentionsNoBillingInfo: boolean;
+      };
+    };
+  }): Promise<{ blob: Blob; filename: string }> {
+    const { createdAtISO } = params;
+
+    const dateStamp = (() => {
+      const d = new Date(createdAtISO);
+      const iso = Number.isFinite(d.getTime()) ? d.toISOString() : new Date().toISOString();
+      return iso.slice(0, 10);
+    })();
+
+    const filename = `Zgłoszenie_wysokich_kosztów_CWU_do_Zarządcy_${dateStamp}.pdf`;
+
+    const { ResidentCwuManagerLetterPDFDocument } = await import(
+      "@/lib/report/resident-cwu-manager-letter-pdf-client"
+    );
+    const { pdf } = await import("@react-pdf/renderer");
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const blob = await pdf(
+      (
+        <ResidentCwuManagerLetterPDFDocument
+          createdAtISO={params.createdAtISO}
+          buildingLabel={params.buildingLabel}
+          efficiencyPercent={params.efficiencyPercent}
+          lossPercent={params.lossPercent}
+          estimatedMonthlyLossPLN={params.estimatedMonthlyLossPLN}
+          estimatedYearlyLossPLN={params.estimatedYearlyLossPLN}
+          actualCostPerM3PLN={params.actualCostPerM3PLN}
+          estimatedReasonableCostPerM3PLN={params.estimatedReasonableCostPerM3PLN}
+          notes={params.notes}
+        />
+      ) as any
+    ).toBlob();
+
+    return { blob, filename };
+  }
+
+  function openOrDownloadPdfBlob(params: { blob: Blob; filename: string }) {
+    if (typeof window === "undefined") return;
+    const { blob, filename } = params;
+    const objectUrl = URL.createObjectURL(blob);
+
+    const w = window.open(objectUrl, "_blank");
+    if (!w) {
+      const a = document.createElement("a");
+      a.href = objectUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    }
+
+    setTimeout(() => URL.revokeObjectURL(objectUrl), 10_000);
+  }
+
+  async function onGeneratePdfOnly() {
+    if (isGeneratingPdf || isSubmitting) return;
+
+    if (!calcResult) {
+      toast.error("Brak wyników obliczeń CWU", {
+        description: "Najpierw wykonaj obliczenia w kalkulatorze (wyniki są dołączane do PDF).",
+      });
+      return;
+    }
+
+    if (form.problemType === "inne" && !form.otherProblem.trim()) {
+      toast.error("Uzupełnij pole: Inny problem", {
+        description: "Wpisz krótko, co dokładnie chcesz ująć w PDF.",
+      });
+      return;
+    }
+
+    const createdAtISO = new Date().toISOString();
+
+    const buildingLabel = (() => {
+      const street = form.street.trim();
+      const building = form.buildingNumber.trim();
+      const apt = form.apartmentNumber.trim();
+      const parts = [street ? street : null, building ? `bud. ${building}` : null, apt ? `lok. ${apt}` : null].filter(Boolean);
+      return parts.join(", ") || "—";
+    })();
+
+    const bill = Number(calcInputs.cwuPriceFromBill) || 0;
+    const lossPerM3 = Math.max(0, Number(calcResult.lossPerM3) || 0);
+    const lossPercent = bill > 0 ? Math.min(100, Math.max(0, (lossPerM3 / bill) * 100)) : 0;
+    const efficiencyPercent = Math.min(100, Math.max(0, 100 - lossPercent));
+
+    const estimatedMonthlyLossPLN = Math.max(0, Number(calcResult.monthlyFinancialLoss) || 0);
+    const estimatedYearlyLossPLN = Math.max(0, Number(calcResult.yearlyFinancialLoss) || 0);
+    const actualCostPerM3PLN = bill;
+    const estimatedReasonableCostPerM3PLN = Math.max(0, Number(calcResult.theoreticalCostPerM3) || 0);
+
+    const flags = {
+      mentionsHighCosts: form.problemType === "zawyzony_koszt" || lossPercent >= 20,
+      mentionsLongWait: form.problemType === "dlugi_czas" || form.symptoms.longFlush,
+      mentionsTempFluctuations: form.problemType === "wahania" || form.symptoms.unstableTemp,
+      mentionsLowTemp: form.problemType === "niska_temp" || technical.cwuTempC < 50,
+      mentionsNoHotWater: form.problemType === "brak_cwu",
+      mentionsNoBillingInfo: form.problemType === "zawyzony_koszt",
+    };
+
+    const notes = {
+      issue: {
+        fullName: form.fullName,
+        email: form.email,
+        phone: form.phone,
+        street: form.street,
+        buildingNumber: form.buildingNumber,
+        apartmentNumber: form.apartmentNumber,
+        problemType: form.problemType,
+        otherProblem: form.otherProblem,
+        symptoms: form.symptoms,
+        description: form.description,
+      },
+      flags,
+    };
+
+    try {
+      setIsGeneratingPdf(true);
+      const { blob, filename } = await generateManagerLetterPdfBlob({
+        createdAtISO,
+        buildingLabel,
+        efficiencyPercent,
+        lossPercent,
+        estimatedMonthlyLossPLN,
+        estimatedYearlyLossPLN,
+        actualCostPerM3PLN,
+        estimatedReasonableCostPerM3PLN,
+        notes,
+      });
+      openOrDownloadPdfBlob({ blob, filename });
+      toast.success("Wygenerowano zgłoszenie (PDF)");
+    } catch (e) {
+      toast.error("Nie udało się wygenerować PDF", { description: String(e) });
+    } finally {
+      setIsGeneratingPdf(false);
     }
   }
 
@@ -324,6 +682,9 @@ export function ResidentCwuIssueForm(props: {
 
     const id = `CWU-${Date.now().toString(36).toUpperCase()}`;
     const createdAtISO = new Date().toISOString();
+
+    // Otwieramy okno audytora od razu (żeby ominąć blokadę popupów), a URL podstawimy po zapisie.
+    const auditorWindow = typeof window !== "undefined" ? window.open("about:blank", "_blank") : null;
 
     const payload = {
       id,
@@ -365,55 +726,63 @@ export function ResidentCwuIssueForm(props: {
     try {
       setIsSubmitting(true);
 
-      const formData = new FormData();
-      formData.set("type", "resident_cwu_issue");
-      formData.set("id", id);
-      formData.set("createdAtISO", createdAtISO);
-      formData.set("fullName", form.fullName.trim());
-      formData.set("email", form.email.trim());
-      formData.set("phone", form.phone.trim());
-      formData.set("addressStreet", form.street.trim());
-      formData.set("addressBuildingNumber", form.buildingNumber.trim());
-      formData.set("addressApartmentNumber", form.apartmentNumber.trim());
-      formData.set("problemType", form.problemType);
-      formData.set("otherProblem", form.problemType === "inne" ? form.otherProblem.trim() : "");
-      formData.set("symptoms", JSON.stringify(form.symptoms));
-      formData.set("description", form.description.trim());
-      formData.set("goal", form.goal);
-      formData.set("technical", JSON.stringify(technical));
-      formData.set("calcInputs", JSON.stringify(calcInputs));
-      formData.set("calcResult", JSON.stringify(calcResult));
-      formData.set("adminSummary", adminSummary);
-      formData.set("payloadJson", JSON.stringify(payload));
+      const pdfId = `CWU-PDF-${Date.now().toString(36).toUpperCase()}`;
+      const { blob, filename: pdfFilename } = await generateIssuePdfBlob({ id, createdAtISO, adminSummary });
+      await savePdfBlobToIndexedDb({ id: pdfId, blob });
 
-      const resp = await fetch(formspreeEndpoint, {
-        method: "POST",
-        headers: {
-          Accept: "application/json",
-        },
-        body: formData,
-      });
-
-      if (!resp.ok) {
-        const details = await resp.json().catch(() => null);
-        throw new Error(details?.error || `Formspree HTTP ${resp.status}`);
-      }
-
-      setSubmitted({ id, createdAtISO, adminSummary, payload });
-      toast.success("Zgłoszenie wysłane", {
-        description: `Numer zgłoszenia: ${id}. Poniżej znajdziesz podsumowanie dla administracji.`,
-      });
-
+      // 2) Zapisz dane + pdfId w systemie (localStorage)
       try {
         if (typeof window !== "undefined") {
+          const record = {
+            id,
+            createdAtISO,
+            inputs: calcInputs,
+            result: calcResult,
+            pdf: { id: pdfId, filename: pdfFilename },
+            // Dodatkowe dane (audytor może je odczytać, jeśli potrzeba)
+            adminSummary,
+            payload,
+          };
+          window.localStorage.setItem(`residentCwuAuditContext:issue-${id}`, JSON.stringify(record));
           window.localStorage.setItem("residentCwuAuditStatus", "READY_FOR_AUDIT");
         }
       } catch {
         // UI-only: jeśli localStorage jest niedostępny, pomijamy
       }
+
+      setSubmitted({ id, createdAtISO, adminSummary, payload, pdf: { id: pdfId, filename: pdfFilename } });
+
+      toast.success("Zgłoszenie zapisane w systemie audytowym", {
+        description: "Audytor otrzymał dostęp do danych i pliku PDF.",
+      });
+
       onAuditStatusChange?.("READY_FOR_AUDIT");
+
+      // 3) Otwórz /audytor w nowej karcie (bez przekierowania /mieszkancy)
+      try {
+        const token = ensureAuditorToken();
+        const url = (() => {
+          if (typeof window === "undefined") return token ? buildAuditorPath(token) : "/audytor";
+          const base = window.location.origin;
+          return token ? `${base}${buildAuditorPath(token)}` : `${base}/audytor`;
+        })();
+
+        if (auditorWindow) {
+          auditorWindow.location.href = url;
+        } else if (typeof window !== "undefined") {
+          window.open(url, "_blank");
+        }
+      } catch {
+        // pomijamy
+      }
     } catch (err) {
-      toast.error("Nie udało się wysłać zgłoszenia", {
+      try {
+        if (auditorWindow) auditorWindow.close();
+      } catch {
+        // pomijamy
+      }
+
+      toast.error("Nie udało się zapisać zgłoszenia", {
         description: String(err),
       });
     } finally {
@@ -433,6 +802,29 @@ export function ResidentCwuIssueForm(props: {
       </CardHeader>
       <CardContent className="space-y-8">
         <form onSubmit={onSubmit} className="space-y-8">
+          <div className="p-4 rounded-2xl border border-blue-800 bg-blue-950/20 text-slate-100">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div>
+                <div className="font-semibold">Przykład (edytowalny)</div>
+                <div className="text-sm text-slate-200">
+                  Pola poniżej są wstępnie wypełnione realistycznym przykładem zgłoszenia dotyczącego zawyżonych kosztów CWU.
+                  Możesz je dowolnie edytować lub wyczyścić.
+                </div>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Button type="button" variant="outline" onClick={applyExamplePreset}>
+                  Wstaw przykład
+                </Button>
+                <Button type="button" variant="outline" onClick={clearExamplePreset}>
+                  Wyczyść
+                </Button>
+              </div>
+            </div>
+            <div className="mt-3 text-sm text-slate-200">
+              Automatycznie dołączane do zgłoszenia: aktualne wyniki obliczeń CWU z tej strony (snapshot), dane budynku, data utworzenia.
+            </div>
+          </div>
+
           <fieldset className="space-y-4">
             <legend className="text-lg font-bold text-slate-100">1) Dane mieszkańca</legend>
             <div className="grid md:grid-cols-2 gap-4">
@@ -716,14 +1108,24 @@ export function ResidentCwuIssueForm(props: {
           </fieldset>
 
           <div className="flex flex-col gap-2">
-            <div className="flex items-center gap-3">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
               <Button
                 type="submit"
                 className="bg-cyan-600 hover:bg-cyan-600/90 text-white"
                 disabled={isSubmitting || !form.consentShareAnalysis}
               >
-              {isSubmitting ? "Wysyłanie…" : "Wyślij zgłoszenie"}
+              {isSubmitting ? "Przetwarzanie…" : "Wyślij zgłoszenie"}
               </Button>
+
+              <Button
+                type="button"
+                className="bg-cyan-600 hover:bg-cyan-600/90 text-white"
+                disabled={isSubmitting || isGeneratingPdf}
+                onClick={() => void onGeneratePdfOnly()}
+              >
+                {isGeneratingPdf ? "Generowanie…" : "Zgłoszenie PDF"}
+              </Button>
+
               {!calcResult && (
                 <span className="text-sm text-amber-200">
                   Uwaga: brak wyników obliczeń — zgłoszenie dołączy je automatycznie po wykonaniu kalkulacji.
@@ -742,10 +1144,10 @@ export function ResidentCwuIssueForm(props: {
         <div className="p-4 rounded-2xl border border-blue-800 bg-blue-950/20 text-slate-100">
           <div className="text-base font-bold">Co stanie się po zgłoszeniu?</div>
           <ol className="mt-2 space-y-1 text-sm text-slate-200 list-decimal pl-5">
-            <li>Zarządca otrzyma analizę strat CWU z tego zgłoszenia.</li>
-            <li>Może zlecić audyt instalacji CWU w budynku.</li>
-            <li>Audytor oceni możliwe warianty napraw i oszczędności.</li>
-            <li>Mieszkańcy otrzymają informację o możliwych działaniach i efektach.</li>
+            <li>Zgłoszenie zostanie zapisane w systemie audytowym.</li>
+            <li>Automatycznie zostanie wygenerowany plik PDF „Zgłoszenie strat CWU”.</li>
+            <li>Panel audytora otworzy się w nowej karcie (bez opuszczania tej strony).</li>
+            <li>Dalsze działania (kontakt z zarządcą / audyt) odbywają się poza tym formularzem.</li>
           </ol>
         </div>
 
@@ -753,8 +1155,12 @@ export function ResidentCwuIssueForm(props: {
           <div className="space-y-4">
             <div className="p-4 rounded-2xl border border-emerald-700 bg-emerald-950/30 text-slate-100">
               <div className="font-semibold">Potwierdzenie zgłoszenia</div>
+              <div className="text-sm text-slate-200">
+                Zgłoszenie zostało zapisane w systemie audytowym. Audytor otrzymał dostęp do danych i pliku PDF.
+              </div>
               <div className="text-sm text-slate-200">Numer zgłoszenia: <strong>{submitted.id}</strong></div>
               <div className="text-sm text-slate-200">Data: {new Date(submitted.createdAtISO).toLocaleString("pl-PL")}</div>
+              <div className="text-xs text-slate-300">PDF ID: {submitted.pdf.id} ({submitted.pdf.filename})</div>
             </div>
 
             <div className="space-y-2">
