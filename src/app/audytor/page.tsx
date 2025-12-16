@@ -23,6 +23,14 @@ type ResidentCwuAuditContext = {
   result: ResidentReportResult;
 };
 
+type StoredIssuePdfMeta = { id: string; filename: string | null };
+
+type StoredIssueRecord = ResidentCwuAuditContext & {
+  id: string;
+  createdAtISO: string | null;
+  pdf: StoredIssuePdfMeta | null;
+};
+
 const STORAGE_KEY = "residentCwuAuditContext";
 const STORAGE_KEY_TECH_ASSESSMENT = "residentCwuTechnicalAssessment";
 const STORAGE_KEY_VARIANTS = "cwuAuditVariants";
@@ -525,6 +533,115 @@ function safeParseContextsFromRaw(raw: string | null): ResidentCwuAuditContext[]
   }
 }
 
+function safeParseStoredIssueRecord(raw: string | null): StoredIssueRecord | null {
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    const ctx = safeParseContextObject(parsed);
+    if (!ctx) return null;
+
+    const obj = parsed as any;
+    const id = typeof obj?.id === "string" && obj.id.trim().length > 0 ? obj.id.trim() : "unknown";
+    const createdAtISO = typeof obj?.createdAtISO === "string" && obj.createdAtISO.trim().length > 0 ? obj.createdAtISO.trim() : null;
+
+    const pdfRaw = obj?.pdf;
+    const pdf: StoredIssuePdfMeta | null =
+      pdfRaw && typeof pdfRaw === "object" && typeof pdfRaw.id === "string" && pdfRaw.id.trim().length > 0
+        ? {
+            id: pdfRaw.id.trim(),
+            filename:
+              typeof pdfRaw.filename === "string" && pdfRaw.filename.trim().length > 0 ? pdfRaw.filename.trim() : null,
+          }
+        : null;
+
+    return {
+      inputs: ctx.inputs,
+      result: ctx.result,
+      id,
+      createdAtISO,
+      pdf,
+    };
+  } catch {
+    return null;
+  }
+}
+
+function collectStoredIssueRecordsFromLocalStorage(storage: Storage): StoredIssueRecord[] {
+  const keys = Object.keys(storage)
+    .filter((k) => k.startsWith(`${STORAGE_KEY}:issue-`))
+    .sort();
+
+  const out: StoredIssueRecord[] = [];
+  for (const key of keys) {
+    const raw = storage.getItem(key);
+    const parsed = safeParseStoredIssueRecord(raw);
+    if (parsed) out.push(parsed);
+  }
+
+  return out;
+}
+
+function newestIssueRecord(records: StoredIssueRecord[]): StoredIssueRecord | null {
+  if (records.length === 0) return null;
+  const withMs = records
+    .map((r) => {
+      const ms = r.createdAtISO ? Date.parse(r.createdAtISO) : NaN;
+      return { r, ms: Number.isFinite(ms) ? ms : null };
+    })
+    .sort((a, b) => {
+      const am = a.ms ?? -Infinity;
+      const bm = b.ms ?? -Infinity;
+      if (bm !== am) return bm - am;
+      // fallback: id (w praktyce zawiera timestamp base36)
+      return String(b.r.id).localeCompare(String(a.r.id));
+    });
+
+  return withMs[0]?.r ?? null;
+}
+
+async function loadPdfBlobFromIndexedDb(pdfId: string): Promise<Blob | null> {
+  if (typeof indexedDB === "undefined") throw new Error("IndexedDB niedostępne");
+
+  return await new Promise<Blob | null>((resolve, reject) => {
+    const req = indexedDB.open("CWUDecisionPack", 1);
+    req.onerror = () => reject(req.error);
+    req.onupgradeneeded = () => {
+      const db = req.result;
+      if (!db.objectStoreNames.contains("pdfs")) {
+        db.createObjectStore("pdfs");
+      }
+    };
+    req.onsuccess = () => {
+      const db = req.result;
+      const tx = db.transaction("pdfs", "readonly");
+      const store = tx.objectStore("pdfs");
+      const getReq = store.get(pdfId);
+
+      getReq.onsuccess = () => {
+        const value = getReq.result as unknown;
+        db.close();
+        resolve(value instanceof Blob ? value : null);
+      };
+      getReq.onerror = () => {
+        const err = getReq.error;
+        db.close();
+        reject(err);
+      };
+    };
+  });
+}
+
+function triggerBlobDownload(blob: Blob, filename: string) {
+  if (typeof window === "undefined") return;
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.rel = "noopener";
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 30_000);
+}
+
 function collectResidentContextsFromLocalStorage(storage: Storage): ResidentCwuAuditContext[] {
   const keys = Object.keys(storage);
   const ctxKeys = keys
@@ -618,6 +735,9 @@ function AudytorPageInner() {
   const isDemoMode = !isAuditorMode;
 
   const [ctx, setCtx] = useState<ResidentCwuAuditContext | null>(null);
+  const [selectedIssue, setSelectedIssue] = useState<StoredIssueRecord | null>(null);
+  const [issuePdfBusy, setIssuePdfBusy] = useState(false);
+  const [issuePdfError, setIssuePdfError] = useState<string | null>(null);
   const [auditRequestStatus, setAuditRequestStatus] = useState<AuditRequestStatus | null>(null);
   const [auditStatus, setAuditStatus] = useState<AuditStatus | null>(null);
   const [auditOrderStatus, setAuditOrderStatus] = useState<AuditOrderStatus | null>(null);
@@ -672,6 +792,9 @@ function AudytorPageInner() {
     if (typeof window === "undefined") return;
     if (!isAuditorMode) {
       setCtx(null);
+      setSelectedIssue(null);
+      setIssuePdfBusy(false);
+      setIssuePdfError(null);
       setAuditRequestStatus(null);
       setAuditStatus(null);
       setAuditOrderStatus(null);
@@ -684,8 +807,18 @@ function AudytorPageInner() {
       return;
     }
 
-    const fromStorage = safeParseContext(window.localStorage.getItem(STORAGE_KEY));
-    setCtx(fromStorage);
+    // Preferuj nowe zgłoszenia zapisane przez /mieszkancy: residentCwuAuditContext:issue-*
+    // Fallback: legacy klucz residentCwuAuditContext
+    const issues = collectStoredIssueRecordsFromLocalStorage(window.localStorage);
+    const newest = newestIssueRecord(issues);
+    if (newest) {
+      setSelectedIssue(newest);
+      setCtx({ inputs: newest.inputs, result: newest.result });
+    } else {
+      setSelectedIssue(null);
+      const fromStorage = safeParseContext(window.localStorage.getItem(STORAGE_KEY));
+      setCtx(fromStorage);
+    }
 
     const request = window.localStorage.getItem(STORAGE_KEY_AUDIT_REQUEST);
     setAuditRequestStatus(request === "REQUESTED" ? "REQUESTED" : null);
@@ -755,6 +888,30 @@ function AudytorPageInner() {
       setAuditInterest(null);
     }
   }, [isAuditorMode]);
+
+  async function onDownloadSelectedIssuePdf() {
+    setIssuePdfError(null);
+    if (!selectedIssue?.pdf?.id) {
+      setIssuePdfError("Brak powiązanego pliku PDF dla wybranego zgłoszenia.");
+      return;
+    }
+
+    setIssuePdfBusy(true);
+    try {
+      const blob = await loadPdfBlobFromIndexedDb(selectedIssue.pdf.id);
+      if (!blob) {
+        throw new Error("Nie znaleziono pliku PDF w IndexedDB (CWUDecisionPack/pdfs).");
+      }
+      const filename =
+        selectedIssue.pdf.filename ??
+        (selectedIssue.id && selectedIssue.id !== "unknown" ? `Zgloszenie_CWU_${selectedIssue.id}.pdf` : "Zgloszenie_CWU.pdf");
+      triggerBlobDownload(blob, filename);
+    } catch (e) {
+      setIssuePdfError(String(e));
+    } finally {
+      setIssuePdfBusy(false);
+    }
+  }
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -1345,9 +1502,12 @@ function AudytorPageInner() {
   }, [variants, view]);
 
   const auditRequestsView: AuditRequestsView = useMemo(() => {
-    if (!auditRequestStatus) return { hasAny: false };
+    const hasReadySignal =
+      auditRequestStatus === "REQUESTED" || auditStatus === "READY_FOR_AUDIT" || auditStatus === "AUDIT_REQUESTED";
 
-    // Mamy sygnał operacyjny „REQUESTED”, ale dane zgłoszenia mogą być niekompletne.
+    if (!hasReadySignal) return { hasAny: false };
+
+    // Mamy sygnał „gotowe”, ale dane zgłoszenia mogą być niekompletne.
     if (!view) {
       return {
         hasAny: true,
@@ -1373,7 +1533,7 @@ function AudytorPageInner() {
       monthlyLoss: monthlyLossSafe,
       lossPercent: lossPercentSafe,
     };
-  }, [auditRequestStatus, ctx, view]);
+  }, [auditRequestStatus, auditStatus, ctx, view]);
 
   const roiView = useMemo(() => {
     if (!view) return null;
@@ -1933,7 +2093,7 @@ function AudytorPageInner() {
                   {isAuditorMode
                     ? (
                         <>
-                          Ten widok oczekuje, że dane zostaną dostarczone w stanie aplikacji (np. przez localStorage) w kluczu: <span className="font-mono">{STORAGE_KEY}</span>.
+                          Ten widok oczekuje, że dane zostaną dostarczone przez localStorage – albo w kluczu: <span className="font-mono">{STORAGE_KEY}</span>, albo jako zgłoszenie w kluczu <span className="font-mono">{STORAGE_KEY}:issue-*</span>.
                         </>
                       )
                     : (
@@ -1944,7 +2104,32 @@ function AudytorPageInner() {
                 </p>
               </div>
             ) : (
-              <div className="grid md:grid-cols-2 gap-4">
+              <div className="space-y-4">
+                {isAuditorMode && selectedIssue?.pdf ? (
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                    <div className="text-xs text-slate-500 dark:text-slate-400">
+                      Aktywne zgłoszenie: <span className="font-mono">{selectedIssue.id}</span>
+                      {selectedIssue.createdAtISO ? (
+                        <span className="ml-2">({new Date(selectedIssue.createdAtISO).toLocaleString("pl-PL")})</span>
+                      ) : null}
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        size="sm"
+                        type="button"
+                        variant="outline"
+                        disabled={issuePdfBusy}
+                        onClick={onDownloadSelectedIssuePdf}
+                      >
+                        {issuePdfBusy ? "Pobieranie…" : "Pobierz PDF zgłoszenia"}
+                      </Button>
+                    </div>
+                  </div>
+                ) : null}
+
+                {issuePdfError ? <div className="text-sm text-red-600 dark:text-red-400">{issuePdfError}</div> : null}
+
+                <div className="grid md:grid-cols-2 gap-4">
                 <div className="p-4 rounded-2xl border border-slate-200/60 dark:border-slate-700/60 bg-slate-50/60 dark:bg-slate-950/30">
                   <div className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Źródło danych</div>
                   <div className="mt-1 text-base font-semibold text-slate-900 dark:text-slate-100">{view.source}</div>
@@ -1983,6 +2168,7 @@ function AudytorPageInner() {
                   <div className="mt-1 text-2xl font-extrabold text-slate-900 dark:text-slate-100">
                     {formatPL(view.yearlyFinancialLoss, 0)} <span className="text-base font-bold">zł/rok</span>
                   </div>
+                </div>
                 </div>
               </div>
             )}
