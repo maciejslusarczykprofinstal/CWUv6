@@ -28,12 +28,12 @@ describe("calcModernizedLossAndEnergy", () => {
   it("waliduje dane wejściowe (NaN, null, undefined)", () => {
     // x
     expect(() => calcModernizedLossAndEnergy(NaN, 50, 600)).toThrow();
-    expect(() => calcModernizedLossAndEnergy(undefined as any, 50, 600)).toThrow();
+    expect(() => calcModernizedLossAndEnergy(undefined as unknown as number, 50, 600)).toThrow();
     // reduction
     expect(() => calcModernizedLossAndEnergy(74, NaN, 600)).toThrow();
-    expect(() => calcModernizedLossAndEnergy(74, undefined as any, 600)).toThrow();
+    expect(() => calcModernizedLossAndEnergy(74, undefined as unknown as number, 600)).toThrow();
     // Edzis
     expect(() => calcModernizedLossAndEnergy(74, 50, NaN)).toThrow();
-    expect(() => calcModernizedLossAndEnergy(74, 50, undefined as any)).toThrow();
+    expect(() => calcModernizedLossAndEnergy(74, 50, undefined as unknown as number)).toThrow();
   });
 });

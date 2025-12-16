@@ -9,9 +9,6 @@ node_modules/
 .next/
 out/
 
-# typescript
-*.tsbuildinfo
-
 # editor
 .vscode/
 
@@ -25,3 +22,6 @@ yarn-error.log*
 
 # OS
 .DS_Store
+
+# TypeScript cache
+*.tsbuildinfo

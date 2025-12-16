@@ -399,6 +399,60 @@ export function ResidentCwuIssueForm(props: {
     };
   }, [calcInputs, calcResult]);
 
+  const buildingApartmentsCountNum = useMemo(() => {
+    const raw = (form.buildingApartmentsCount ?? "").trim();
+    if (!raw) return 0;
+    const n = Math.round(Number(raw));
+    if (!Number.isFinite(n) || n <= 0) return 0;
+    return n;
+  }, [form.buildingApartmentsCount]);
+
+  const annualLossPerApartment = useMemo(() => {
+    const yearly = Math.max(0, Number(calcResult?.yearlyFinancialLoss) || 0);
+    return Number.isFinite(yearly) ? yearly : 0;
+  }, [calcResult?.yearlyFinancialLoss]);
+
+  const buildingAnnualLoss = useMemo(() => {
+    if (!buildingApartmentsCountNum) return 0;
+    const total = annualLossPerApartment * buildingApartmentsCountNum;
+    return Number.isFinite(total) ? Math.max(0, total) : 0;
+  }, [annualLossPerApartment, buildingApartmentsCountNum]);
+
+  const buildingLossVariant = useMemo(() => {
+    if (buildingAnnualLoss < 10_000) return "info" as const;
+    if (buildingAnnualLoss < 50_000) return "warning" as const;
+    return "danger" as const;
+  }, [buildingAnnualLoss]);
+
+  const buildingLossUi = useMemo(() => {
+    const valueLabel = buildingAnnualLoss.toLocaleString("pl-PL", { maximumFractionDigits: 0 });
+
+    if (buildingLossVariant === "danger") {
+      return {
+        containerClass:
+          "p-4 rounded-2xl border border-red-700/60 bg-red-950/25 text-slate-100",
+        valueClass: "text-2xl font-extrabold text-red-200",
+        valueLabel,
+      };
+    }
+
+    if (buildingLossVariant === "warning") {
+      return {
+        containerClass:
+          "p-4 rounded-2xl border border-amber-700/60 bg-amber-950/20 text-slate-100",
+        valueClass: "text-2xl font-extrabold text-amber-200",
+        valueLabel,
+      };
+    }
+
+    return {
+      containerClass:
+        "p-4 rounded-2xl border border-slate-700/60 bg-slate-950/20 text-slate-100",
+      valueClass: "text-2xl font-extrabold text-slate-100",
+      valueLabel,
+    };
+  }, [buildingAnnualLoss, buildingLossVariant]);
+
   function update<K extends keyof IssueFormState>(key: K, value: IssueFormState[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
   }
@@ -621,6 +675,19 @@ export function ResidentCwuIssueForm(props: {
               Przybliżona liczba – pozwala ocenić skalę problemu w całym budynku.
             </div>
           </div>
+
+          {buildingApartmentsCountNum > 0 && calcResult ? (
+            <div className={buildingLossUi.containerClass}>
+              <h4 className="text-sm font-bold text-slate-100">Orientacyjna skala strat w całym budynku</h4>
+              <div className="mt-2 text-sm text-slate-200">
+                Przy {buildingApartmentsCountNum} mieszkaniach, łączna strata finansowa może wynosić około:
+              </div>
+              <div className={"mt-2 " + buildingLossUi.valueClass}>{buildingLossUi.valueLabel} zł / rok</div>
+              <div className="mt-2 text-xs text-slate-200">
+                To wartość orientacyjna, oparta na danych z tego formularza. Audyt techniczny pozwala potwierdzić przyczynę i rzeczywisty zakres strat.
+              </div>
+            </div>
+          ) : null}
 
           <div className="p-4 rounded-2xl border border-blue-800 bg-blue-950/20 text-slate-100">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
