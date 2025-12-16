@@ -16,6 +16,7 @@ type AuditPotentialLevel = "niski" | "średni" | "wysoki";
 
 type LeadRecommendedStep = "OBSERWACJA" | "ROZMOWA" | "AUDYT";
 type LeadStatus = "NEW" | "OBSERVATION" | "CONTACT" | "READY_FOR_AUDIT";
+type LeadPriority = "niski" | "średni" | "wysoki";
 
 function classifyLeadRecommendedStep(lossesPlnPerYearBuilding: number): LeadRecommendedStep {
   const loss = Number.isFinite(lossesPlnPerYearBuilding) ? Math.max(0, lossesPlnPerYearBuilding) : 0;
@@ -24,11 +25,30 @@ function classifyLeadRecommendedStep(lossesPlnPerYearBuilding: number): LeadReco
   return "AUDYT";
 }
 
+function classifyLeadPriority(lossesPlnPerYearBuilding: number): LeadPriority {
+  const loss = Number.isFinite(lossesPlnPerYearBuilding) ? Math.max(0, lossesPlnPerYearBuilding) : 0;
+  if (loss < 10_000) return "niski";
+  if (loss <= 30_000) return "średni";
+  return "wysoki";
+}
+
+function priorityRank(priority: LeadPriority): number {
+  if (priority === "wysoki") return 0;
+  if (priority === "średni") return 1;
+  return 2;
+}
+
+function priorityBadge(priority: LeadPriority): { label: string; variant: "outline" | "warning" | "destructive" } {
+  if (priority === "wysoki") return { label: "Wysoki", variant: "destructive" };
+  if (priority === "średni") return { label: "Średni", variant: "warning" };
+  return { label: "Niski", variant: "outline" };
+}
+
 function recommendedStepBadge(step: LeadRecommendedStep): {
   label: string;
-  variant: "success" | "warning" | "destructive";
+  variant: "outline" | "warning" | "destructive";
 } {
-  if (step === "OBSERWACJA") return { label: "Obserwacja", variant: "success" };
+  if (step === "OBSERWACJA") return { label: "Obserwacja", variant: "outline" };
   if (step === "ROZMOWA") return { label: "Rozmowa z zarządcą", variant: "warning" };
   return { label: "Audyt techniczny", variant: "destructive" };
 }
@@ -111,6 +131,8 @@ export default function AudytorzyPage() {
       residentEmail: string | null;
       apartmentsCount: number | null;
       lossesPlnPerYearBuilding: number;
+      lossesPercent: number;
+      priority: LeadPriority;
       recommendedStep: LeadRecommendedStep;
       status: LeadStatus;
     }>
@@ -136,6 +158,8 @@ export default function AudytorzyPage() {
         residentEmail: string | null;
         apartmentsCount: number | null;
         lossesPlnPerYearBuilding: number;
+        lossesPercent: number;
+        priority: LeadPriority;
         recommendedStep: LeadRecommendedStep;
         status: LeadStatus;
         createdAtMs: number;
@@ -170,11 +194,23 @@ export default function AudytorzyPage() {
             ? Math.max(0, yearlyLossPerApartmentCandidate)
             : 0;
 
+        const energyLossPerM3Candidate =
+          parsed?.result?.energyLossPerM3 ?? parsed?.payload?.calcSnapshot?.result?.energyLossPerM3 ?? null;
+        const energyPerM3Candidate = parsed?.result?.energyPerM3 ?? parsed?.payload?.calcSnapshot?.result?.energyPerM3 ?? null;
+        const energyLossPerM3 =
+          typeof energyLossPerM3Candidate === "number" && Number.isFinite(energyLossPerM3Candidate)
+            ? Math.max(0, energyLossPerM3Candidate)
+            : 0;
+        const energyPerM3 =
+          typeof energyPerM3Candidate === "number" && Number.isFinite(energyPerM3Candidate) ? Math.max(0, energyPerM3Candidate) : 0;
+        const energyTotal = energyLossPerM3 + energyPerM3;
+        const lossesPercent = energyTotal > 0 ? (energyLossPerM3 / energyTotal) * 100 : 0;
+
         const lossesPlnPerYearBuilding = apartmentsCount ? yearlyLossPerApartment * apartmentsCount : 0;
         const recommendedStep = classifyLeadRecommendedStep(lossesPlnPerYearBuilding);
+        const priority = classifyLeadPriority(lossesPlnPerYearBuilding);
 
-        const residentEmailCandidate =
-          parsed?.payload?.resident?.email ?? parsed?.inputs?.residentEmail ?? parsed?.payload?.resident?.fullName ?? null;
+        const residentEmailCandidate = parsed?.payload?.resident?.email ?? parsed?.inputs?.residentEmail ?? null;
         const residentEmail = typeof residentEmailCandidate === "string" && residentEmailCandidate.includes("@") ? residentEmailCandidate : null;
 
         loaded.push({
@@ -183,13 +219,21 @@ export default function AudytorzyPage() {
           residentEmail,
           apartmentsCount,
           lossesPlnPerYearBuilding,
+          lossesPercent: Number.isFinite(lossesPercent) ? Math.max(0, Math.min(100, lossesPercent)) : 0,
+          priority,
           recommendedStep,
           status: "NEW",
           createdAtMs,
         });
       }
 
-      loaded.sort((a, b) => b.createdAtMs - a.createdAtMs);
+      loaded.sort((a, b) => {
+        const pr = priorityRank(a.priority) - priorityRank(b.priority);
+        if (pr !== 0) return pr;
+        const loss = (b.lossesPlnPerYearBuilding || 0) - (a.lossesPlnPerYearBuilding || 0);
+        if (loss !== 0) return loss;
+        return b.createdAtMs - a.createdAtMs;
+      });
       setLeads(
         loaded.map(({ createdAtMs, ...rest }) => rest),
       );
@@ -414,12 +458,26 @@ export default function AudytorzyPage() {
           <div className="pt-4">
             <Card className="bg-white/80 dark:bg-slate-900/60 border border-slate-200/30 dark:border-slate-700/50 shadow-xl rounded-3xl backdrop-blur">
               <CardHeader className="pb-3">
-                <CardTitle className="text-base text-slate-900 dark:text-slate-100">Leady (symulacja CRM – lokalnie)</CardTitle>
+                <CardTitle className="text-base text-slate-900 dark:text-slate-100">Kolejka audytów wg priorytetu finansowego</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="text-xs text-slate-600 dark:text-slate-400">
-                  Dane pochodzą z localStorage (zgłoszenia z panelu mieszkańca). Statusy są lokalne w UI (bez backendu).
+                <div className="text-sm text-slate-700 dark:text-slate-300">
+                  Ta kolejka pokazuje, gdzie audyt ma sens finansowy — nie gdzie jest najwięcej zgłoszeń.
                 </div>
+                <div className="text-xs text-slate-600 dark:text-slate-400">
+                  Dane są orientacyjne. Audyt techniczny potwierdza przyczynę i zakres działań.
+                </div>
+
+                <div className="text-xs text-slate-600 dark:text-slate-400">
+                  Panel prezentuje wyłącznie zgłoszenia o realnym potencjale finansowym. Dostęp pełny wymaga aktywnego planu audytora.
+                </div>
+
+                {/*
+                  PRICING (v0.6.x, bez blokowania funkcji):
+                  - FREE: podgląd ograniczony / demo
+                  - PAID: pełna kolejka, sortowanie, historia
+                  (placeholder pod przyszłe wdrożenie planów audytora)
+                */}
 
                 {leads.length ? (
                   <div className="rounded-2xl border border-slate-200/60 dark:border-slate-700/60 bg-slate-50/60 dark:bg-slate-950/30">
@@ -428,9 +486,11 @@ export default function AudytorzyPage() {
                         <TableRow>
                           <TableHead>ID</TableHead>
                           <TableHead>Data</TableHead>
+                          <TableHead>Priorytet</TableHead>
                           <TableHead>Mieszkań</TableHead>
                           <TableHead>Strata budynku</TableHead>
-                          <TableHead>Rekomendowany krok</TableHead>
+                          <TableHead>% strat</TableHead>
+                          <TableHead>Status decyzyjny</TableHead>
                           <TableHead>Status</TableHead>
                           <TableHead className="text-right">Akcja</TableHead>
                         </TableRow>
@@ -438,6 +498,7 @@ export default function AudytorzyPage() {
                       <TableBody>
                         {leads.map((l) => {
                           const rec = recommendedStepBadge(l.recommendedStep);
+                          const pr = priorityBadge(l.priority);
                           const st = statusBadge(l.status);
                           const isSelected = selectedLeadId === l.id;
 
@@ -449,8 +510,14 @@ export default function AudytorzyPage() {
                             >
                               <TableCell className="font-mono text-xs">{l.id}</TableCell>
                               <TableCell className="text-xs">{l.createdAtISO ? new Date(l.createdAtISO).toLocaleString("pl-PL") : "—"}</TableCell>
+                              <TableCell>
+                                <Badge variant={pr.variant} className="text-xs">
+                                  {pr.label}
+                                </Badge>
+                              </TableCell>
                               <TableCell className="text-xs">{typeof l.apartmentsCount === "number" ? `~${l.apartmentsCount}` : "—"}</TableCell>
                               <TableCell className="text-xs">{formatMoneyPL(l.lossesPlnPerYearBuilding)}</TableCell>
+                              <TableCell className="text-xs">{l.lossesPercent ? `${Math.round(l.lossesPercent)}%` : "—"}</TableCell>
                               <TableCell>
                                 <Badge variant={rec.variant} className="text-xs">
                                   {rec.label}

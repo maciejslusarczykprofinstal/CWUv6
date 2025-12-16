@@ -34,3 +34,11 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 
 - Każdy `git push` na gałąź `main` uruchamia automatyczny deploy na Vercel.
 - Uruchomienie z VS Code: Terminal → Run Task → "Deploy to Vercel".
+
+## v0.6.0-decision-engine
+
+Od tego punktu aplikacja nie tylko liczy straty CWU, ale też:
+
+- klasyfikuje zgłoszenia,
+- rekomenduje kolejny krok,
+- prowadzi użytkownika do decyzji (mieszkaniec → audytor).
