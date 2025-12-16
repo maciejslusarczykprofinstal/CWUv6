@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 function generateAuditToken(): string {
@@ -37,6 +38,31 @@ function notifyPdfGenerationUnavailable() {
   toast.info("Funkcja generowania PDF będzie dostępna w kolejnym etapie", {
     description: "Na tym etapie zapisujemy zgłoszenie i dane obliczeń bez pliku PDF.",
   });
+}
+
+function focusReadyForAuditSection() {
+  if (typeof window === "undefined") return;
+  const el = document.getElementById("resident-ready-for-audit");
+  if (!el) return;
+  const classes = ["outline", "outline-2", "outline-blue-400/70", "outline-offset-4", "rounded-3xl"];
+  try {
+    (el as HTMLElement).scrollIntoView({ behavior: "smooth", block: "start" });
+    try {
+      (el as HTMLElement).focus({ preventScroll: true });
+    } catch {
+      // pomijamy
+    }
+    el.classList.add(...classes);
+    window.setTimeout(() => {
+      try {
+        el.classList.remove(...classes);
+      } catch {
+        // pomijamy
+      }
+    }, 1600);
+  } catch {
+    // pomijamy
+  }
 }
 
 type CalcInputsSnapshot = {
@@ -453,6 +479,30 @@ export function ResidentCwuIssueForm(props: {
     };
   }, [buildingAnnualLoss, buildingLossVariant]);
 
+  const buildingAuditDecision = useMemo(() => {
+    if (!buildingApartmentsCountNum || !calcResult) return null;
+    const loss = buildingAnnualLoss;
+
+    if (loss < 10_000) {
+      return {
+        variant: "default" as const,
+        text: "Przy tej skali strat audyt techniczny raczej nie ma sensu ekonomicznego — wystarczająca może być obserwacja i monitoring.",
+      };
+    }
+
+    if (loss <= 30_000) {
+      return {
+        variant: "warning" as const,
+        text: "Przy tej skali strat audyt techniczny może mieć sens ekonomiczny — warto przygotować rozmowę z zarządcą.",
+      };
+    }
+
+    return {
+      variant: "success" as const,
+      text: "Przy tej skali strat audyt techniczny ma sens finansowy — są realne pieniądze i ryzyko do zweryfikowania.",
+    };
+  }, [buildingApartmentsCountNum, buildingAnnualLoss, calcResult]);
+
   function update<K extends keyof IssueFormState>(key: K, value: IssueFormState[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
   }
@@ -677,15 +727,58 @@ export function ResidentCwuIssueForm(props: {
           </div>
 
           {buildingApartmentsCountNum > 0 && calcResult ? (
-            <div className={buildingLossUi.containerClass}>
-              <h4 className="text-sm font-bold text-slate-100">Orientacyjna skala strat w całym budynku</h4>
-              <div className="mt-2 text-sm text-slate-200">
-                Przy {buildingApartmentsCountNum} mieszkaniach, łączna strata finansowa może wynosić około:
+            <div className="space-y-3">
+              <div className={buildingLossUi.containerClass}>
+                <h4 className="text-sm font-bold text-slate-100">Orientacyjna skala strat w całym budynku</h4>
+                <div className="mt-2 text-sm text-slate-200">
+                  Przy {buildingApartmentsCountNum} mieszkaniach, łączna strata finansowa może wynosić około:
+                </div>
+                <div className={"mt-2 " + buildingLossUi.valueClass}>{buildingLossUi.valueLabel} zł / rok</div>
+                <div className="mt-2 text-xs text-slate-200">
+                  To wartość orientacyjna, oparta na danych z tego formularza. Audyt techniczny pozwala potwierdzić przyczynę i rzeczywisty zakres strat.
+                </div>
               </div>
-              <div className={"mt-2 " + buildingLossUi.valueClass}>{buildingLossUi.valueLabel} zł / rok</div>
-              <div className="mt-2 text-xs text-slate-200">
-                To wartość orientacyjna, oparta na danych z tego formularza. Audyt techniczny pozwala potwierdzić przyczynę i rzeczywisty zakres strat.
-              </div>
+
+              {buildingAuditDecision ? (
+                <div className="space-y-2">
+                  <Alert variant={buildingAuditDecision.variant} className="rounded-2xl">
+                    <AlertDescription>{buildingAuditDecision.text}</AlertDescription>
+                  </Alert>
+
+                  {(() => {
+                    const content =
+                      buildingAnnualLoss < 10_000
+                        ? {
+                            headline: "Na razie to nie są duże pieniądze — ale warto je mieć pod kontrolą.",
+                            cta: "Zgłoś problem i miej punkt odniesienia",
+                            microcopy: "Bez audytu, bez kosztów — tylko uporządkowane zgłoszenie.",
+                          }
+                        : buildingAnnualLoss <= 30_000
+                          ? {
+                              headline: "To już kwota, o którą warto zapytać zarządcę wprost.",
+                              cta: "Przygotuj się do rozmowy z zarządcą",
+                              microcopy: "Masz liczby. Teraz potrzebujesz argumentów, nie domysłów.",
+                            }
+                          : {
+                              headline: "To są realne pieniądze, które co roku uciekają z budynku.",
+                              cta: "Przejdź do audytu technicznego",
+                              microcopy: "Im dłużej czekasz, tym większa strata. Audyt zamyka dyskusję.",
+                            };
+
+                    return (
+                      <div className="space-y-2">
+                        <div className="text-sm font-semibold text-slate-100">{content.headline}</div>
+                        <div>
+                          <Button type="button" variant="outline" onClick={focusReadyForAuditSection}>
+                            {content.cta}
+                          </Button>
+                        </div>
+                        <div className="text-xs text-slate-200">{content.microcopy}</div>
+                      </div>
+                    );
+                  })()}
+                </div>
+              ) : null}
             </div>
           ) : null}
 

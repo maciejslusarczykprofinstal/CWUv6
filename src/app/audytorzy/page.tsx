@@ -8,10 +8,49 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 const DEFAULT_FORMSPREE_AUDYTOR_ENDPOINT = "https://formspree.io/f/mpwvbbdl";
 
 type AuditPotentialLevel = "niski" | "średni" | "wysoki";
+
+type LeadRecommendedStep = "OBSERWACJA" | "ROZMOWA" | "AUDYT";
+type LeadStatus = "NEW" | "OBSERVATION" | "CONTACT" | "READY_FOR_AUDIT";
+
+function classifyLeadRecommendedStep(lossesPlnPerYearBuilding: number): LeadRecommendedStep {
+  const loss = Number.isFinite(lossesPlnPerYearBuilding) ? Math.max(0, lossesPlnPerYearBuilding) : 0;
+  if (loss < 10_000) return "OBSERWACJA";
+  if (loss <= 30_000) return "ROZMOWA";
+  return "AUDYT";
+}
+
+function recommendedStepBadge(step: LeadRecommendedStep): {
+  label: string;
+  variant: "success" | "warning" | "destructive";
+} {
+  if (step === "OBSERWACJA") return { label: "Obserwacja", variant: "success" };
+  if (step === "ROZMOWA") return { label: "Rozmowa z zarządcą", variant: "warning" };
+  return { label: "Audyt techniczny", variant: "destructive" };
+}
+
+function mapRecommendedStepToLeadStatus(step: LeadRecommendedStep): LeadStatus {
+  if (step === "OBSERWACJA") return "OBSERVATION";
+  if (step === "ROZMOWA") return "CONTACT";
+  return "READY_FOR_AUDIT";
+}
+
+function statusBadge(status: LeadStatus): { label: string; variant: "outline" | "secondary" | "warning" | "success" } {
+  if (status === "NEW") return { label: "NEW", variant: "outline" };
+  if (status === "OBSERVATION") return { label: "OBSERVATION", variant: "secondary" };
+  if (status === "CONTACT") return { label: "CONTACT", variant: "warning" };
+  return { label: "READY_FOR_AUDIT", variant: "success" };
+}
+
+function formatMoneyPL(value: number | null): string {
+  if (typeof value !== "number" || !Number.isFinite(value)) return "—";
+  const rounded = Math.round(Math.max(0, value));
+  return `~${rounded.toLocaleString("pl-PL")} zł/rok`;
+}
 
 function classifyAuditPotential(input: { lossesPercent: number; lossesPlnPerYear: number }): {
   level: AuditPotentialLevel;
@@ -65,6 +104,19 @@ export default function AudytorzyPage() {
 
   const [buildingApartmentsCount, setBuildingApartmentsCount] = useState<number | null>(null);
 
+  const [leads, setLeads] = useState<
+    Array<{
+      id: string;
+      createdAtISO: string;
+      residentEmail: string | null;
+      apartmentsCount: number | null;
+      lossesPlnPerYearBuilding: number;
+      recommendedStep: LeadRecommendedStep;
+      status: LeadStatus;
+    }>
+  >([]);
+  const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
+
   const [lead, setLead] = useState<{ email: string; phone: string; company: string }>({
     email: "",
     phone: "",
@@ -78,10 +130,21 @@ export default function AudytorzyPage() {
     try {
       const keys = Object.keys(window.localStorage).filter((k) => k.startsWith("residentCwuAuditContext:issue-"));
 
-      let best: { createdAtMs: number; apartmentsCount: number } | null = null;
+      const loaded: Array<{
+        id: string;
+        createdAtISO: string;
+        residentEmail: string | null;
+        apartmentsCount: number | null;
+        lossesPlnPerYearBuilding: number;
+        recommendedStep: LeadRecommendedStep;
+        status: LeadStatus;
+        createdAtMs: number;
+      }> = [];
+
       for (const key of keys) {
         const raw = window.localStorage.getItem(key);
         if (!raw) continue;
+
         let parsed: any = null;
         try {
           parsed = JSON.parse(raw);
@@ -89,25 +152,60 @@ export default function AudytorzyPage() {
           continue;
         }
 
-        const apartmentsCountCandidate =
-          parsed?.building?.apartmentsCount ?? parsed?.payload?.building?.apartmentsCount ?? null;
-        if (typeof apartmentsCountCandidate !== "number" || !Number.isFinite(apartmentsCountCandidate)) continue;
-        if (apartmentsCountCandidate <= 0) continue;
-
+        const id = typeof parsed?.id === "string" ? parsed.id : key.replace("residentCwuAuditContext:issue-", "");
         const createdAtISO = typeof parsed?.createdAtISO === "string" ? parsed.createdAtISO : "";
-        const createdAtMs = Date.parse(createdAtISO);
-        const ms = Number.isFinite(createdAtMs) ? createdAtMs : 0;
+        const createdAtMsRaw = Date.parse(createdAtISO);
+        const createdAtMs = Number.isFinite(createdAtMsRaw) ? createdAtMsRaw : 0;
 
-        if (!best || ms >= best.createdAtMs) {
-          best = { createdAtMs: ms, apartmentsCount: Math.round(apartmentsCountCandidate) };
-        }
+        const apartmentsCountCandidate = parsed?.building?.apartmentsCount ?? parsed?.payload?.building?.apartmentsCount ?? null;
+        const apartmentsCount =
+          typeof apartmentsCountCandidate === "number" && Number.isFinite(apartmentsCountCandidate) && apartmentsCountCandidate > 0
+            ? Math.round(apartmentsCountCandidate)
+            : null;
+
+        const yearlyLossPerApartmentCandidate =
+          parsed?.result?.yearlyFinancialLoss ?? parsed?.payload?.calcSnapshot?.result?.yearlyFinancialLoss ?? null;
+        const yearlyLossPerApartment =
+          typeof yearlyLossPerApartmentCandidate === "number" && Number.isFinite(yearlyLossPerApartmentCandidate)
+            ? Math.max(0, yearlyLossPerApartmentCandidate)
+            : 0;
+
+        const lossesPlnPerYearBuilding = apartmentsCount ? yearlyLossPerApartment * apartmentsCount : 0;
+        const recommendedStep = classifyLeadRecommendedStep(lossesPlnPerYearBuilding);
+
+        const residentEmailCandidate =
+          parsed?.payload?.resident?.email ?? parsed?.inputs?.residentEmail ?? parsed?.payload?.resident?.fullName ?? null;
+        const residentEmail = typeof residentEmailCandidate === "string" && residentEmailCandidate.includes("@") ? residentEmailCandidate : null;
+
+        loaded.push({
+          id,
+          createdAtISO,
+          residentEmail,
+          apartmentsCount,
+          lossesPlnPerYearBuilding,
+          recommendedStep,
+          status: "NEW",
+          createdAtMs,
+        });
       }
 
-      setBuildingApartmentsCount(best ? best.apartmentsCount : null);
+      loaded.sort((a, b) => b.createdAtMs - a.createdAtMs);
+      setLeads(
+        loaded.map(({ createdAtMs, ...rest }) => rest),
+      );
+
+      const bestApartments = loaded.find((l) => typeof l.apartmentsCount === "number" && l.apartmentsCount > 0)?.apartmentsCount ?? null;
+      setBuildingApartmentsCount(bestApartments);
+      setSelectedLeadId((prev) => prev ?? (loaded.length ? loaded[0].id : null));
     } catch {
       // UI-only: jeśli localStorage jest niedostępny, pomijamy
     }
   }, []);
+
+  const selectedLead = useMemo(() => {
+    if (!selectedLeadId) return null;
+    return leads.find((l) => l.id === selectedLeadId) ?? null;
+  }, [leads, selectedLeadId]);
 
   const caseStudy = useMemo(
     () => ({
@@ -314,6 +412,148 @@ export default function AudytorzyPage() {
           </div>
 
           <div className="pt-4">
+            <Card className="bg-white/80 dark:bg-slate-900/60 border border-slate-200/30 dark:border-slate-700/50 shadow-xl rounded-3xl backdrop-blur">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base text-slate-900 dark:text-slate-100">Leady (symulacja CRM – lokalnie)</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="text-xs text-slate-600 dark:text-slate-400">
+                  Dane pochodzą z localStorage (zgłoszenia z panelu mieszkańca). Statusy są lokalne w UI (bez backendu).
+                </div>
+
+                {leads.length ? (
+                  <div className="rounded-2xl border border-slate-200/60 dark:border-slate-700/60 bg-slate-50/60 dark:bg-slate-950/30">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>ID</TableHead>
+                          <TableHead>Data</TableHead>
+                          <TableHead>Mieszkań</TableHead>
+                          <TableHead>Strata budynku</TableHead>
+                          <TableHead>Rekomendowany krok</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead className="text-right">Akcja</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {leads.map((l) => {
+                          const rec = recommendedStepBadge(l.recommendedStep);
+                          const st = statusBadge(l.status);
+                          const isSelected = selectedLeadId === l.id;
+
+                          return (
+                            <TableRow
+                              key={l.id}
+                              data-state={isSelected ? "selected" : undefined}
+                              className={isSelected ? "bg-muted/60" : undefined}
+                            >
+                              <TableCell className="font-mono text-xs">{l.id}</TableCell>
+                              <TableCell className="text-xs">{l.createdAtISO ? new Date(l.createdAtISO).toLocaleString("pl-PL") : "—"}</TableCell>
+                              <TableCell className="text-xs">{typeof l.apartmentsCount === "number" ? `~${l.apartmentsCount}` : "—"}</TableCell>
+                              <TableCell className="text-xs">{formatMoneyPL(l.lossesPlnPerYearBuilding)}</TableCell>
+                              <TableCell>
+                                <Badge variant={rec.variant} className="text-xs">
+                                  {rec.label}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant={st.variant} className="text-xs">
+                                  {st.label}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <Button type="button" size="sm" variant="outline" onClick={() => setSelectedLeadId(l.id)}>
+                                  Szczegóły
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
+                ) : (
+                  <div className="text-sm text-slate-700 dark:text-slate-300">
+                    Brak leadów w localStorage. Otwórz <Link href="/mieszkancy" className="underline">/mieszkancy</Link>, uzupełnij formularz i zapisz zgłoszenie.
+                  </div>
+                )}
+
+                {selectedLead ? (
+                  <Card className="bg-white/80 dark:bg-slate-900/60 border border-slate-200/30 dark:border-slate-700/50 shadow-xl rounded-3xl backdrop-blur">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-base text-slate-900 dark:text-slate-100">Szczegóły leadu</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="text-sm text-slate-700 dark:text-slate-300">
+                        <span className="font-semibold">ID:</span> {selectedLead.id}
+                        {selectedLead.residentEmail ? (
+                          <> · <span className="font-semibold">E-mail:</span> {selectedLead.residentEmail}</>
+                        ) : null}
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div className="rounded-2xl border border-slate-200/60 dark:border-slate-700/60 bg-slate-50/60 dark:bg-slate-950/30 p-4">
+                          <div className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Mieszkań</div>
+                          <div className="font-semibold text-slate-900 dark:text-slate-100">
+                            {typeof selectedLead.apartmentsCount === "number" ? `~${selectedLead.apartmentsCount}` : "—"}
+                          </div>
+                        </div>
+                        <div className="rounded-2xl border border-slate-200/60 dark:border-slate-700/60 bg-slate-50/60 dark:bg-slate-950/30 p-4">
+                          <div className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Strata budynku</div>
+                          <div className="font-semibold text-slate-900 dark:text-slate-100">{formatMoneyPL(selectedLead.lossesPlnPerYearBuilding)}</div>
+                        </div>
+                        <div className="rounded-2xl border border-slate-200/60 dark:border-slate-700/60 bg-slate-50/60 dark:bg-slate-950/30 p-4">
+                          <div className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Rekomendowany krok</div>
+                          {(() => {
+                            const rec = recommendedStepBadge(selectedLead.recommendedStep);
+                            return (
+                              <div className="mt-1">
+                                <Badge variant={rec.variant}>{rec.label}</Badge>
+                              </div>
+                            );
+                          })()}
+                        </div>
+                      </div>
+
+                      <div className="rounded-2xl border border-slate-200/60 dark:border-slate-700/60 bg-slate-50/60 dark:bg-slate-950/30 p-4">
+                        <div className="font-semibold text-slate-900 dark:text-slate-100">Rekomendowany kolejny krok</div>
+                        <div className="mt-2 text-sm text-slate-700 dark:text-slate-300">
+                          {selectedLead.recommendedStep === "OBSERWACJA"
+                            ? "Na tym etapie rekomendowana jest obserwacja kosztów i kontakt informacyjny. Lead o niskim priorytecie."
+                            : selectedLead.recommendedStep === "ROZMOWA"
+                              ? "Skala strat uzasadnia rozmowę z zarządcą i zebranie danych do decyzji."
+                              : "Skala strat uzasadnia audyt techniczny. Lead o wysokim potencjale finansowym."}
+                        </div>
+
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          <Button
+                            type="button"
+                            variant={
+                              selectedLead.recommendedStep === "AUDYT"
+                                ? "default"
+                                : selectedLead.recommendedStep === "ROZMOWA"
+                                  ? "secondary"
+                                  : "outline"
+                            }
+                            onClick={() => {
+                              const nextStatus = mapRecommendedStepToLeadStatus(selectedLead.recommendedStep);
+                              setLeads((prev) => prev.map((l) => (l.id === selectedLead.id ? { ...l, status: nextStatus } : l)));
+                            }}
+                          >
+                            {selectedLead.recommendedStep === "OBSERWACJA"
+                              ? "Oznacz jako: obserwacja"
+                              : selectedLead.recommendedStep === "ROZMOWA"
+                                ? "Przygotuj rozmowę z zarządcą"
+                                : "Przejdź do audytu technicznego"}
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ) : null}
+              </CardContent>
+            </Card>
+
             <Card className="bg-white/80 dark:bg-slate-900/60 border border-slate-200/30 dark:border-slate-700/50 shadow-xl rounded-3xl backdrop-blur">
               <CardContent className="p-5 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                 <div className="flex items-center gap-3 flex-wrap">

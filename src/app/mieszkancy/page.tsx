@@ -833,7 +833,11 @@ export default function MieszkancyPage() {
             </Card>
 
             {(auditStatus === "READY_FOR_AUDIT" || auditStatus === "AUDIT_REQUESTED") ? (
-              <Card className="backdrop-blur-sm bg-white/70 dark:bg-slate-900/70 border-0 shadow-xl">
+              <Card
+                id="resident-ready-for-audit"
+                tabIndex={-1}
+                className="backdrop-blur-sm bg-white/70 dark:bg-slate-900/70 border-0 shadow-xl"
+              >
                 <CardHeader>
                   <CardTitle className="text-xl text-slate-800 dark:text-slate-200">
                     Zgłoszenie gotowe do audytu technicznego
