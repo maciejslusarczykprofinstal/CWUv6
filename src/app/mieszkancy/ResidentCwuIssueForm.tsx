@@ -33,35 +33,9 @@ function buildAuditorPath(token: string): string {
   return `/audytor?auditToken=${encodeURIComponent(token)}`;
 }
 
-async function savePdfBlobToIndexedDb(params: { id: string; blob: Blob }) {
-  if (typeof indexedDB === "undefined") {
-    throw new Error("IndexedDB niedostępne");
-  }
-
-  await new Promise<void>((resolve, reject) => {
-    const req = indexedDB.open("CWUDecisionPack", 1);
-    req.onupgradeneeded = () => {
-      const db = req.result;
-      if (!db.objectStoreNames.contains("pdfs")) {
-        db.createObjectStore("pdfs");
-      }
-    };
-    req.onerror = () => reject(req.error);
-    req.onsuccess = () => {
-      const db = req.result;
-      const tx = db.transaction("pdfs", "readwrite");
-      const store = tx.objectStore("pdfs");
-      store.put(params.blob, params.id);
-      tx.oncomplete = () => {
-        db.close();
-        resolve();
-      };
-      tx.onerror = () => {
-        const err = tx.error;
-        db.close();
-        reject(err);
-      };
-    };
+function notifyPdfGenerationUnavailable() {
+  toast.info("Funkcja generowania PDF będzie dostępna w kolejnym etapie", {
+    description: "Na tym etapie zapisujemy zgłoszenie i dane obliczeń bez pliku PDF.",
   });
 }
 
@@ -373,7 +347,7 @@ export function ResidentCwuIssueForm(props: {
     createdAtISO: string;
     adminSummary: string;
     payload: unknown;
-    pdf: { id: string; filename: string };
+    pdf: { id: string; filename: string } | null;
   } | null>(null);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -461,196 +435,9 @@ export function ResidentCwuIssueForm(props: {
     }
   }
 
-  async function generateIssuePdfBlob(params: {
-    id: string;
-    createdAtISO: string;
-    adminSummary: string;
-  }): Promise<{ blob: Blob; filename: string }> {
-    const { id, createdAtISO, adminSummary } = params;
-    const filename = `Zgloszenie-strat-CWU-${id}.pdf`;
-
-    const { ResidentCwuLossIssuePDFDocument } = await import(
-      "@/lib/report/resident-cwu-loss-issue-pdf-client"
-    );
-    const { pdf } = await import("@react-pdf/renderer");
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const blob = await pdf(
-      (
-        <ResidentCwuLossIssuePDFDocument id={id} createdAtISO={createdAtISO} adminSummary={adminSummary} />
-      ) as any
-    ).toBlob();
-
-    return { blob, filename };
-  }
-
-  async function generateManagerLetterPdfBlob(params: {
-    createdAtISO: string;
-    buildingLabel: string;
-    efficiencyPercent: number;
-    lossPercent: number;
-    estimatedMonthlyLossPLN: number;
-    estimatedYearlyLossPLN: number;
-    actualCostPerM3PLN: number;
-    estimatedReasonableCostPerM3PLN: number;
-    notes: {
-      issue: {
-        fullName?: string;
-        email?: string;
-        phone?: string;
-        street: string;
-        buildingNumber: string;
-        apartmentNumber: string;
-        problemType: IssueFormState["problemType"];
-        otherProblem: string;
-        symptoms: IssueFormState["symptoms"];
-        description: string;
-      };
-      flags: {
-        mentionsHighCosts: boolean;
-        mentionsLongWait: boolean;
-        mentionsTempFluctuations: boolean;
-        mentionsLowTemp: boolean;
-        mentionsNoHotWater: boolean;
-        mentionsNoBillingInfo: boolean;
-      };
-    };
-  }): Promise<{ blob: Blob; filename: string }> {
-    const { createdAtISO } = params;
-
-    const dateStamp = (() => {
-      const d = new Date(createdAtISO);
-      const iso = Number.isFinite(d.getTime()) ? d.toISOString() : new Date().toISOString();
-      return iso.slice(0, 10);
-    })();
-
-    const filename = `Zgłoszenie_wysokich_kosztów_CWU_do_Zarządcy_${dateStamp}.pdf`;
-
-    const { ResidentCwuManagerLetterPDFDocument } = await import(
-      "@/lib/report/resident-cwu-manager-letter-pdf-client"
-    );
-    const { pdf } = await import("@react-pdf/renderer");
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const blob = await pdf(
-      (
-        <ResidentCwuManagerLetterPDFDocument
-          createdAtISO={params.createdAtISO}
-          buildingLabel={params.buildingLabel}
-          efficiencyPercent={params.efficiencyPercent}
-          lossPercent={params.lossPercent}
-          estimatedMonthlyLossPLN={params.estimatedMonthlyLossPLN}
-          estimatedYearlyLossPLN={params.estimatedYearlyLossPLN}
-          actualCostPerM3PLN={params.actualCostPerM3PLN}
-          estimatedReasonableCostPerM3PLN={params.estimatedReasonableCostPerM3PLN}
-          notes={params.notes}
-        />
-      ) as any
-    ).toBlob();
-
-    return { blob, filename };
-  }
-
-  function openOrDownloadPdfBlob(params: { blob: Blob; filename: string }) {
-    if (typeof window === "undefined") return;
-    const { blob, filename } = params;
-    const objectUrl = URL.createObjectURL(blob);
-
-    const w = window.open(objectUrl, "_blank");
-    if (!w) {
-      const a = document.createElement("a");
-      a.href = objectUrl;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-    }
-
-    setTimeout(() => URL.revokeObjectURL(objectUrl), 10_000);
-  }
-
   async function onGeneratePdfOnly() {
     if (isGeneratingPdf || isSubmitting) return;
-
-    if (!calcResult) {
-      toast.error("Brak wyników obliczeń CWU", {
-        description: "Najpierw wykonaj obliczenia w kalkulatorze (wyniki są dołączane do PDF).",
-      });
-      return;
-    }
-
-    if (form.problemType === "inne" && !form.otherProblem.trim()) {
-      toast.error("Uzupełnij pole: Inny problem", {
-        description: "Wpisz krótko, co dokładnie chcesz ująć w PDF.",
-      });
-      return;
-    }
-
-    const createdAtISO = new Date().toISOString();
-
-    const buildingLabel = (() => {
-      const street = form.street.trim();
-      const building = form.buildingNumber.trim();
-      const apt = form.apartmentNumber.trim();
-      const parts = [street ? street : null, building ? `bud. ${building}` : null, apt ? `lok. ${apt}` : null].filter(Boolean);
-      return parts.join(", ") || "—";
-    })();
-
-    const bill = Number(calcInputs.cwuPriceFromBill) || 0;
-    const lossPerM3 = Math.max(0, Number(calcResult.lossPerM3) || 0);
-    const lossPercent = bill > 0 ? Math.min(100, Math.max(0, (lossPerM3 / bill) * 100)) : 0;
-    const efficiencyPercent = Math.min(100, Math.max(0, 100 - lossPercent));
-
-    const estimatedMonthlyLossPLN = Math.max(0, Number(calcResult.monthlyFinancialLoss) || 0);
-    const estimatedYearlyLossPLN = Math.max(0, Number(calcResult.yearlyFinancialLoss) || 0);
-    const actualCostPerM3PLN = bill;
-    const estimatedReasonableCostPerM3PLN = Math.max(0, Number(calcResult.theoreticalCostPerM3) || 0);
-
-    const flags = {
-      mentionsHighCosts: form.problemType === "zawyzony_koszt" || lossPercent >= 20,
-      mentionsLongWait: form.problemType === "dlugi_czas" || form.symptoms.longFlush,
-      mentionsTempFluctuations: form.problemType === "wahania" || form.symptoms.unstableTemp,
-      mentionsLowTemp: form.problemType === "niska_temp" || technical.cwuTempC < 50,
-      mentionsNoHotWater: form.problemType === "brak_cwu",
-      mentionsNoBillingInfo: form.problemType === "zawyzony_koszt",
-    };
-
-    const notes = {
-      issue: {
-        fullName: form.fullName,
-        email: form.email,
-        phone: form.phone,
-        street: form.street,
-        buildingNumber: form.buildingNumber,
-        apartmentNumber: form.apartmentNumber,
-        problemType: form.problemType,
-        otherProblem: form.otherProblem,
-        symptoms: form.symptoms,
-        description: form.description,
-      },
-      flags,
-    };
-
-    try {
-      setIsGeneratingPdf(true);
-      const { blob, filename } = await generateManagerLetterPdfBlob({
-        createdAtISO,
-        buildingLabel,
-        efficiencyPercent,
-        lossPercent,
-        estimatedMonthlyLossPLN,
-        estimatedYearlyLossPLN,
-        actualCostPerM3PLN,
-        estimatedReasonableCostPerM3PLN,
-        notes,
-      });
-      openOrDownloadPdfBlob({ blob, filename });
-      toast.success("Wygenerowano zgłoszenie (PDF)");
-    } catch (e) {
-      toast.error("Nie udało się wygenerować PDF", { description: String(e) });
-    } finally {
-      setIsGeneratingPdf(false);
-    }
+    notifyPdfGenerationUnavailable();
   }
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -726,9 +513,8 @@ export function ResidentCwuIssueForm(props: {
     try {
       setIsSubmitting(true);
 
-      const pdfId = `CWU-PDF-${Date.now().toString(36).toUpperCase()}`;
-      const { blob, filename: pdfFilename } = await generateIssuePdfBlob({ id, createdAtISO, adminSummary });
-      await savePdfBlobToIndexedDb({ id: pdfId, blob });
+      // PDF generowanie jest celowo wyłączone na tym etapie projektu.
+      // Zapisujemy zgłoszenie i kontekst obliczeń bez pliku PDF.
 
       // 2) Zapisz dane + pdfId w systemie (localStorage)
       try {
@@ -738,7 +524,7 @@ export function ResidentCwuIssueForm(props: {
             createdAtISO,
             inputs: calcInputs,
             result: calcResult,
-            pdf: { id: pdfId, filename: pdfFilename },
+            pdf: null,
             // Dodatkowe dane (audytor może je odczytać, jeśli potrzeba)
             adminSummary,
             payload,
@@ -750,11 +536,13 @@ export function ResidentCwuIssueForm(props: {
         // UI-only: jeśli localStorage jest niedostępny, pomijamy
       }
 
-      setSubmitted({ id, createdAtISO, adminSummary, payload, pdf: { id: pdfId, filename: pdfFilename } });
+      setSubmitted({ id, createdAtISO, adminSummary, payload, pdf: null });
 
       toast.success("Zgłoszenie zapisane w systemie audytowym", {
-        description: "Audytor otrzymał dostęp do danych i pliku PDF.",
+        description: "Audytor otrzymał dostęp do danych. PDF będzie dostępny w kolejnym etapie.",
       });
+
+      notifyPdfGenerationUnavailable();
 
       onAuditStatusChange?.("READY_FOR_AUDIT");
 
@@ -1160,7 +948,11 @@ export function ResidentCwuIssueForm(props: {
               </div>
               <div className="text-sm text-slate-200">Numer zgłoszenia: <strong>{submitted.id}</strong></div>
               <div className="text-sm text-slate-200">Data: {new Date(submitted.createdAtISO).toLocaleString("pl-PL")}</div>
-              <div className="text-xs text-slate-300">PDF ID: {submitted.pdf.id} ({submitted.pdf.filename})</div>
+              {submitted.pdf ? (
+                <div className="text-xs text-slate-300">PDF ID: {submitted.pdf.id} ({submitted.pdf.filename})</div>
+              ) : (
+                <div className="text-xs text-slate-300">PDF: niedostępne (funkcja będzie dostępna w kolejnym etapie)</div>
+              )}
             </div>
 
             <div className="space-y-2">
