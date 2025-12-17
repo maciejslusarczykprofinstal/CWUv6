@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint --no-error-on-unmatched-pattern src/**/*.{ts,tsx}",
+    "lint:harmonogram": "eslint --no-error-on-unmatched-pattern \"src/app/wykonawcy/harmonogram/**/*.{ts,tsx}\" \"src/lib/schedule/**/*.{ts,tsx}\"",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "format": "prettier -w .",
     "deploy:prod": "git add -A && git commit -m \"deploy: auto\" || echo no-changes && git push",

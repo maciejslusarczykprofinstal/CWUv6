@@ -9,14 +9,30 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { calculateCwuLoss, type CwuLossInputs } from "@/lib/calc/calculateCwuLoss";
 
 const DEFAULT_FORMSPREE_AUDYTOR_ENDPOINT = "https://formspree.io/f/mpwvbbdl";
+
+const DEFAULT_APARTMENTS_RANGE = { min: 20, max: 60 };
 
 type AuditPotentialLevel = "niski" | "średni" | "wysoki";
 
 type LeadRecommendedStep = "OBSERWACJA" | "ROZMOWA" | "AUDYT";
 type LeadStatus = "NEW" | "OBSERVATION" | "CONTACT" | "READY_FOR_AUDIT";
 type LeadPriority = "niski" | "średni" | "wysoki";
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function readPath(root: unknown, path: string[]): unknown {
+  let current: unknown = root;
+  for (const key of path) {
+    if (!isRecord(current)) return undefined;
+    current = current[key];
+  }
+  return current;
+}
 
 function classifyLeadRecommendedStep(lossesPlnPerYearBuilding: number): LeadRecommendedStep {
   const loss = Number.isFinite(lossesPlnPerYearBuilding) ? Math.max(0, lossesPlnPerYearBuilding) : 0;
@@ -70,6 +86,15 @@ function formatMoneyPL(value: number | null): string {
   if (typeof value !== "number" || !Number.isFinite(value)) return "—";
   const rounded = Math.round(Math.max(0, value));
   return `~${rounded.toLocaleString("pl-PL")} zł/rok`;
+}
+
+function formatMoneyPLRange(range: { min: number; max: number } | null): string {
+  if (!range) return "—";
+  const min = Math.round(Math.max(0, range.min));
+  const max = Math.round(Math.max(0, range.max));
+  if (!Number.isFinite(min) || !Number.isFinite(max)) return "—";
+  if (min === max) return `~${min.toLocaleString("pl-PL")} zł/rok`;
+  return `~${min.toLocaleString("pl-PL")}–${max.toLocaleString("pl-PL")} zł/rok`;
 }
 
 function classifyAuditPotential(input: { lossesPercent: number; lossesPlnPerYear: number }): {
@@ -131,6 +156,7 @@ export default function AudytorzyPage() {
       residentEmail: string | null;
       apartmentsCount: number | null;
       lossesPlnPerYearBuilding: number;
+      lossesPlnPerYearBuildingRange: { min: number; max: number } | null;
       lossesPercent: number;
       priority: LeadPriority;
       recommendedStep: LeadRecommendedStep;
@@ -158,6 +184,7 @@ export default function AudytorzyPage() {
         residentEmail: string | null;
         apartmentsCount: number | null;
         lossesPlnPerYearBuilding: number;
+        lossesPlnPerYearBuildingRange: { min: number; max: number } | null;
         lossesPercent: number;
         priority: LeadPriority;
         recommendedStep: LeadRecommendedStep;
@@ -169,48 +196,112 @@ export default function AudytorzyPage() {
         const raw = window.localStorage.getItem(key);
         if (!raw) continue;
 
-        let parsed: any = null;
+        let parsed: unknown = null;
         try {
           parsed = JSON.parse(raw);
         } catch {
           continue;
         }
 
-        const id = typeof parsed?.id === "string" ? parsed.id : key.replace("residentCwuAuditContext:issue-", "");
-        const createdAtISO = typeof parsed?.createdAtISO === "string" ? parsed.createdAtISO : "";
+        if (!isRecord(parsed)) continue;
+
+        const idCandidate = readPath(parsed, ["id"]);
+        const id = typeof idCandidate === "string" ? idCandidate : key.replace("residentCwuAuditContext:issue-", "");
+        const createdAtISOCandidate = readPath(parsed, ["createdAtISO"]);
+        const createdAtISO = typeof createdAtISOCandidate === "string" ? createdAtISOCandidate : "";
         const createdAtMsRaw = Date.parse(createdAtISO);
         const createdAtMs = Number.isFinite(createdAtMsRaw) ? createdAtMsRaw : 0;
 
-        const apartmentsCountCandidate = parsed?.building?.apartmentsCount ?? parsed?.payload?.building?.apartmentsCount ?? null;
+        const apartmentsCountCandidate =
+          readPath(parsed, ["building", "apartmentsCount"]) ?? readPath(parsed, ["payload", "building", "apartmentsCount"]) ?? null;
         const apartmentsCount =
           typeof apartmentsCountCandidate === "number" && Number.isFinite(apartmentsCountCandidate) && apartmentsCountCandidate > 0
             ? Math.round(apartmentsCountCandidate)
             : null;
 
-        const yearlyLossPerApartmentCandidate =
-          parsed?.result?.yearlyFinancialLoss ?? parsed?.payload?.calcSnapshot?.result?.yearlyFinancialLoss ?? null;
-        const yearlyLossPerApartment =
-          typeof yearlyLossPerApartmentCandidate === "number" && Number.isFinite(yearlyLossPerApartmentCandidate)
-            ? Math.max(0, yearlyLossPerApartmentCandidate)
-            : 0;
+        // Źródło prawdy: liczymy zawsze z inputów (a nie z zapisanych wyników UI mieszkańca).
+        const inputsCandidate =
+          readPath(parsed, ["payload", "calcSnapshot", "inputs"]) ??
+          readPath(parsed, ["calcSnapshot", "inputs"]) ??
+          readPath(parsed, ["inputs"]) ??
+          null;
+        const inputsObj = isRecord(inputsCandidate) ? inputsCandidate : null;
+        const inputs: CwuLossInputs | null = inputsObj
+          ? {
+              cwuPriceFromBill: Number(inputsObj["cwuPriceFromBill"]),
+              monthlyConsumption: Number(inputsObj["monthlyConsumption"]),
+              coldTempC: Number(inputsObj["coldTempC"]),
+              hotTempC: Number(inputsObj["hotTempC"]),
+              heatPriceFromCity: Number(inputsObj["heatPriceFromCity"]),
+            }
+          : null;
 
-        const energyLossPerM3Candidate =
-          parsed?.result?.energyLossPerM3 ?? parsed?.payload?.calcSnapshot?.result?.energyLossPerM3 ?? null;
-        const energyPerM3Candidate = parsed?.result?.energyPerM3 ?? parsed?.payload?.calcSnapshot?.result?.energyPerM3 ?? null;
-        const energyLossPerM3 =
-          typeof energyLossPerM3Candidate === "number" && Number.isFinite(energyLossPerM3Candidate)
-            ? Math.max(0, energyLossPerM3Candidate)
-            : 0;
-        const energyPerM3 =
-          typeof energyPerM3Candidate === "number" && Number.isFinite(energyPerM3Candidate) ? Math.max(0, energyPerM3Candidate) : 0;
-        const energyTotal = energyLossPerM3 + energyPerM3;
-        const lossesPercent = energyTotal > 0 ? (energyLossPerM3 / energyTotal) * 100 : 0;
+        const hasValidInputs =
+          !!inputs &&
+          Number.isFinite(inputs.cwuPriceFromBill) &&
+          Number.isFinite(inputs.monthlyConsumption) &&
+          Number.isFinite(inputs.coldTempC) &&
+          Number.isFinite(inputs.hotTempC) &&
+          Number.isFinite(inputs.heatPriceFromCity) &&
+          inputs.monthlyConsumption > 0 &&
+          inputs.heatPriceFromCity > 0;
 
-        const lossesPlnPerYearBuilding = apartmentsCount ? yearlyLossPerApartment * apartmentsCount : 0;
+        let yearlyLossPerApartment = 0;
+        let lossesPercent = 0;
+        if (hasValidInputs && inputs) {
+          const calc = calculateCwuLoss(inputs);
+          yearlyLossPerApartment = Math.max(0, Number(calc.yearlyFinancialLoss) || 0);
+
+          const energyLossPerM3 = Math.max(0, Number(calc.energyLossPerM3) || 0);
+          const energyPerM3 = Math.max(0, Number(calc.energyPerM3) || 0);
+          const energyTotal = energyLossPerM3 + energyPerM3;
+          lossesPercent = energyTotal > 0 ? (energyLossPerM3 / energyTotal) * 100 : 0;
+        } else {
+          // Fallback dla starszych/niepełnych wpisów: użyj zapisanych wyników, jeśli istnieją.
+          const yearlyLossPerApartmentCandidate =
+            readPath(parsed, ["result", "yearlyFinancialLoss"]) ??
+            readPath(parsed, ["payload", "calcSnapshot", "result", "yearlyFinancialLoss"]) ??
+            null;
+          yearlyLossPerApartment =
+            typeof yearlyLossPerApartmentCandidate === "number" && Number.isFinite(yearlyLossPerApartmentCandidate)
+              ? Math.max(0, yearlyLossPerApartmentCandidate)
+              : 0;
+
+          const energyLossPerM3Candidate =
+            readPath(parsed, ["result", "energyLossPerM3"]) ??
+            readPath(parsed, ["payload", "calcSnapshot", "result", "energyLossPerM3"]) ??
+            null;
+          const energyPerM3Candidate =
+            readPath(parsed, ["result", "energyPerM3"]) ?? readPath(parsed, ["payload", "calcSnapshot", "result", "energyPerM3"]) ?? null;
+          const energyLossPerM3 =
+            typeof energyLossPerM3Candidate === "number" && Number.isFinite(energyLossPerM3Candidate)
+              ? Math.max(0, energyLossPerM3Candidate)
+              : 0;
+          const energyPerM3 =
+            typeof energyPerM3Candidate === "number" && Number.isFinite(energyPerM3Candidate)
+              ? Math.max(0, energyPerM3Candidate)
+              : 0;
+          const energyTotal = energyLossPerM3 + energyPerM3;
+          lossesPercent = energyTotal > 0 ? (energyLossPerM3 / energyTotal) * 100 : 0;
+        }
+
+        const lossesPlnPerYearBuildingRange =
+          !apartmentsCount && yearlyLossPerApartment > 0
+            ? {
+                min: yearlyLossPerApartment * DEFAULT_APARTMENTS_RANGE.min,
+                max: yearlyLossPerApartment * DEFAULT_APARTMENTS_RANGE.max,
+              }
+            : null;
+
+        const lossesPlnPerYearBuilding = apartmentsCount
+          ? yearlyLossPerApartment * apartmentsCount
+          : yearlyLossPerApartment * ((DEFAULT_APARTMENTS_RANGE.min + DEFAULT_APARTMENTS_RANGE.max) / 2);
+
         const recommendedStep = classifyLeadRecommendedStep(lossesPlnPerYearBuilding);
         const priority = classifyLeadPriority(lossesPlnPerYearBuilding);
 
-        const residentEmailCandidate = parsed?.payload?.resident?.email ?? parsed?.inputs?.residentEmail ?? null;
+        const residentEmailCandidate =
+          readPath(parsed, ["payload", "resident", "email"]) ?? readPath(parsed, ["inputs", "residentEmail"]) ?? null;
         const residentEmail = typeof residentEmailCandidate === "string" && residentEmailCandidate.includes("@") ? residentEmailCandidate : null;
 
         loaded.push({
@@ -219,6 +310,7 @@ export default function AudytorzyPage() {
           residentEmail,
           apartmentsCount,
           lossesPlnPerYearBuilding,
+          lossesPlnPerYearBuildingRange,
           lossesPercent: Number.isFinite(lossesPercent) ? Math.max(0, Math.min(100, lossesPercent)) : 0,
           priority,
           recommendedStep,
@@ -235,7 +327,7 @@ export default function AudytorzyPage() {
         return b.createdAtMs - a.createdAtMs;
       });
       setLeads(
-        loaded.map(({ createdAtMs, ...rest }) => rest),
+        loaded.map(({ createdAtMs: _createdAtMs, ...rest }) => rest),
       );
 
       const bestApartments = loaded.find((l) => typeof l.apartmentsCount === "number" && l.apartmentsCount > 0)?.apartmentsCount ?? null;
@@ -260,13 +352,35 @@ export default function AudytorzyPage() {
     [],
   );
 
+  const activeDecisionNumbers = useMemo(() => {
+    if (selectedLead) {
+      return {
+        source: "lead" as const,
+        lossesPercent: Number.isFinite(selectedLead.lossesPercent) ? Math.max(0, Math.min(100, selectedLead.lossesPercent)) : 0,
+        lossesPlnPerYear: Number.isFinite(selectedLead.lossesPlnPerYearBuilding)
+          ? Math.max(0, selectedLead.lossesPlnPerYearBuilding)
+          : 0,
+        lossesPlnPerYearRange: selectedLead.lossesPlnPerYearBuildingRange,
+        apartmentsCount: typeof selectedLead.apartmentsCount === "number" ? selectedLead.apartmentsCount : null,
+      };
+    }
+
+    return {
+      source: "demo" as const,
+      lossesPercent: caseStudy.lossesPercent,
+      lossesPlnPerYear: caseStudy.lossesPlnPerYear,
+      lossesPlnPerYearRange: null,
+      apartmentsCount: buildingApartmentsCount,
+    };
+  }, [buildingApartmentsCount, caseStudy.lossesPercent, caseStudy.lossesPlnPerYear, selectedLead]);
+
   const auditPotential = useMemo(
     () =>
       classifyAuditPotential({
-        lossesPercent: caseStudy.lossesPercent,
-        lossesPlnPerYear: caseStudy.lossesPlnPerYear,
+        lossesPercent: activeDecisionNumbers.lossesPercent,
+        lossesPlnPerYear: activeDecisionNumbers.lossesPlnPerYear,
       }),
-    [caseStudy.lossesPercent, caseStudy.lossesPlnPerYear],
+    [activeDecisionNumbers.lossesPercent, activeDecisionNumbers.lossesPlnPerYear],
   );
 
   const buildingScale = useMemo(() => {
@@ -293,7 +407,9 @@ export default function AudytorzyPage() {
   }, [buildingApartmentsCount]);
 
   const argumentsForManager = useMemo(() => {
-    const money = `~${caseStudy.lossesPlnPerYear.toLocaleString("pl-PL")} zł/rok`;
+    const money = activeDecisionNumbers.lossesPlnPerYearRange
+      ? formatMoneyPLRange(activeDecisionNumbers.lossesPlnPerYearRange)
+      : `~${Math.round(activeDecisionNumbers.lossesPlnPerYear).toLocaleString("pl-PL")} zł/rok`;
 
     if (auditPotential.level === "niski") {
       return {
@@ -319,7 +435,74 @@ export default function AudytorzyPage() {
       action: "Audyt pełny – decyzja pilna",
       accent: `Ryzyko kosztowe: ${money}`,
     };
-  }, [auditPotential.level, caseStudy.lossesPlnPerYear]);
+  }, [activeDecisionNumbers.lossesPlnPerYear, activeDecisionNumbers.lossesPlnPerYearRange, auditPotential.level]);
+
+  const preliminaryBuildingAnalysis = useMemo(() => {
+    if (activeDecisionNumbers.source === "lead" && !selectedLead) return null;
+
+    const annualLoss = Math.max(0, Number(activeDecisionNumbers.lossesPlnPerYear) || 0);
+    const monthlyLoss = annualLoss / 12;
+    const annualLossLabel = activeDecisionNumbers.lossesPlnPerYearRange
+      ? formatMoneyPLRange(activeDecisionNumbers.lossesPlnPerYearRange)
+      : `~${Math.round(annualLoss).toLocaleString("pl-PL")} zł/rok`;
+    const monthlyLossLabel = activeDecisionNumbers.lossesPlnPerYearRange
+      ? "(widełki roczne — brak liczby mieszkań)"
+      : `~${Math.round(monthlyLoss).toLocaleString("pl-PL")} zł/mies.`;
+
+    const financialScale =
+      annualLoss < 10_000 ? "Skala marginalna" : annualLoss <= 30_000 ? "Skala zauważalna" : "Skala istotna";
+
+    const lossesPercent = Math.max(0, Math.min(100, Number(activeDecisionNumbers.lossesPercent) || 0));
+    const lossesPercentLabel = lossesPercent ? `~${Math.round(lossesPercent)}%` : "—";
+
+    const technical = (() => {
+      if (lossesPercent < 20) {
+        return { label: "Bliska poprawnej", variant: "outline" as const };
+      }
+      if (lossesPercent <= 35) {
+        return { label: "Wymaga weryfikacji", variant: "warning" as const };
+      }
+      return { label: "Nieprawidłowości systemowe", variant: "destructive" as const };
+    })();
+
+    const riskLevel = annualLoss < 10_000 ? "niskie" : annualLoss <= 30_000 ? "średnie" : "wysokie";
+    const riskSentence = `Przy tej skali strat ryzyko sporów i presji na zarządcę jest ${riskLevel}.`;
+
+    const recommendation = (() => {
+      if (annualLoss < 10_000) {
+        return {
+          label: "Obserwacja / monitoring",
+          variant: "outline" as const,
+        };
+      }
+      if (annualLoss <= 30_000) {
+        return {
+          label: "Audyt wstępny / rozmowa z zarządcą",
+          variant: "warning" as const,
+        };
+      }
+      return {
+        label: "Pełny audyt techniczny – rekomendowany",
+        variant: "destructive" as const,
+      };
+    })();
+
+    return {
+      annualLossLabel,
+      monthlyLossLabel,
+      financialScale,
+      lossesPercentLabel,
+      technical,
+      riskSentence,
+      recommendation,
+    };
+  }, [
+    activeDecisionNumbers.lossesPercent,
+    activeDecisionNumbers.lossesPlnPerYear,
+    activeDecisionNumbers.lossesPlnPerYearRange,
+    activeDecisionNumbers.source,
+    selectedLead,
+  ]);
 
   const isEmailValid = useMemo(() => lead.email.trim().includes("@"), [lead.email]);
 
@@ -457,179 +640,19 @@ export default function AudytorzyPage() {
 
           <div className="pt-4">
             <Card className="bg-white/80 dark:bg-slate-900/60 border border-slate-200/30 dark:border-slate-700/50 shadow-xl rounded-3xl backdrop-blur">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base text-slate-900 dark:text-slate-100">Kolejka audytów wg priorytetu finansowego</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="text-sm text-slate-700 dark:text-slate-300">
-                  Ta kolejka pokazuje, gdzie audyt ma sens finansowy — nie gdzie jest najwięcej zgłoszeń.
-                </div>
-                <div className="text-xs text-slate-600 dark:text-slate-400">
-                  Dane są orientacyjne. Audyt techniczny potwierdza przyczynę i zakres działań.
-                </div>
-
-                <div className="text-xs text-slate-600 dark:text-slate-400">
-                  Panel prezentuje wyłącznie zgłoszenia o realnym potencjale finansowym. Dostęp pełny wymaga aktywnego planu audytora.
-                </div>
-
-                {/*
-                  PRICING (v0.6.x, bez blokowania funkcji):
-                  - FREE: podgląd ograniczony / demo
-                  - PAID: pełna kolejka, sortowanie, historia
-                  (placeholder pod przyszłe wdrożenie planów audytora)
-                */}
-
-                {leads.length ? (
-                  <div className="rounded-2xl border border-slate-200/60 dark:border-slate-700/60 bg-slate-50/60 dark:bg-slate-950/30">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>ID</TableHead>
-                          <TableHead>Data</TableHead>
-                          <TableHead>Priorytet</TableHead>
-                          <TableHead>Mieszkań</TableHead>
-                          <TableHead>Strata budynku</TableHead>
-                          <TableHead>% strat</TableHead>
-                          <TableHead>Status decyzyjny</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead className="text-right">Akcja</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {leads.map((l) => {
-                          const rec = recommendedStepBadge(l.recommendedStep);
-                          const pr = priorityBadge(l.priority);
-                          const st = statusBadge(l.status);
-                          const isSelected = selectedLeadId === l.id;
-
-                          return (
-                            <TableRow
-                              key={l.id}
-                              data-state={isSelected ? "selected" : undefined}
-                              className={isSelected ? "bg-muted/60" : undefined}
-                            >
-                              <TableCell className="font-mono text-xs">{l.id}</TableCell>
-                              <TableCell className="text-xs">{l.createdAtISO ? new Date(l.createdAtISO).toLocaleString("pl-PL") : "—"}</TableCell>
-                              <TableCell>
-                                <Badge variant={pr.variant} className="text-xs">
-                                  {pr.label}
-                                </Badge>
-                              </TableCell>
-                              <TableCell className="text-xs">{typeof l.apartmentsCount === "number" ? `~${l.apartmentsCount}` : "—"}</TableCell>
-                              <TableCell className="text-xs">{formatMoneyPL(l.lossesPlnPerYearBuilding)}</TableCell>
-                              <TableCell className="text-xs">{l.lossesPercent ? `${Math.round(l.lossesPercent)}%` : "—"}</TableCell>
-                              <TableCell>
-                                <Badge variant={rec.variant} className="text-xs">
-                                  {rec.label}
-                                </Badge>
-                              </TableCell>
-                              <TableCell>
-                                <Badge variant={st.variant} className="text-xs">
-                                  {st.label}
-                                </Badge>
-                              </TableCell>
-                              <TableCell className="text-right">
-                                <Button type="button" size="sm" variant="outline" onClick={() => setSelectedLeadId(l.id)}>
-                                  Szczegóły
-                                </Button>
-                              </TableCell>
-                            </TableRow>
-                          );
-                        })}
-                      </TableBody>
-                    </Table>
-                  </div>
-                ) : (
-                  <div className="text-sm text-slate-700 dark:text-slate-300">
-                    Brak leadów w localStorage. Otwórz <Link href="/mieszkancy" className="underline">/mieszkancy</Link>, uzupełnij formularz i zapisz zgłoszenie.
-                  </div>
-                )}
-
-                {selectedLead ? (
-                  <Card className="bg-white/80 dark:bg-slate-900/60 border border-slate-200/30 dark:border-slate-700/50 shadow-xl rounded-3xl backdrop-blur">
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-base text-slate-900 dark:text-slate-100">Szczegóły leadu</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="text-sm text-slate-700 dark:text-slate-300">
-                        <span className="font-semibold">ID:</span> {selectedLead.id}
-                        {selectedLead.residentEmail ? (
-                          <> · <span className="font-semibold">E-mail:</span> {selectedLead.residentEmail}</>
-                        ) : null}
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                        <div className="rounded-2xl border border-slate-200/60 dark:border-slate-700/60 bg-slate-50/60 dark:bg-slate-950/30 p-4">
-                          <div className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Mieszkań</div>
-                          <div className="font-semibold text-slate-900 dark:text-slate-100">
-                            {typeof selectedLead.apartmentsCount === "number" ? `~${selectedLead.apartmentsCount}` : "—"}
-                          </div>
-                        </div>
-                        <div className="rounded-2xl border border-slate-200/60 dark:border-slate-700/60 bg-slate-50/60 dark:bg-slate-950/30 p-4">
-                          <div className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Strata budynku</div>
-                          <div className="font-semibold text-slate-900 dark:text-slate-100">{formatMoneyPL(selectedLead.lossesPlnPerYearBuilding)}</div>
-                        </div>
-                        <div className="rounded-2xl border border-slate-200/60 dark:border-slate-700/60 bg-slate-50/60 dark:bg-slate-950/30 p-4">
-                          <div className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Rekomendowany krok</div>
-                          {(() => {
-                            const rec = recommendedStepBadge(selectedLead.recommendedStep);
-                            return (
-                              <div className="mt-1">
-                                <Badge variant={rec.variant}>{rec.label}</Badge>
-                              </div>
-                            );
-                          })()}
-                        </div>
-                      </div>
-
-                      <div className="rounded-2xl border border-slate-200/60 dark:border-slate-700/60 bg-slate-50/60 dark:bg-slate-950/30 p-4">
-                        <div className="font-semibold text-slate-900 dark:text-slate-100">Rekomendowany kolejny krok</div>
-                        <div className="mt-2 text-sm text-slate-700 dark:text-slate-300">
-                          {selectedLead.recommendedStep === "OBSERWACJA"
-                            ? "Na tym etapie rekomendowana jest obserwacja kosztów i kontakt informacyjny. Lead o niskim priorytecie."
-                            : selectedLead.recommendedStep === "ROZMOWA"
-                              ? "Skala strat uzasadnia rozmowę z zarządcą i zebranie danych do decyzji."
-                              : "Skala strat uzasadnia audyt techniczny. Lead o wysokim potencjale finansowym."}
-                        </div>
-
-                        <div className="mt-3 flex flex-wrap gap-2">
-                          <Button
-                            type="button"
-                            variant={
-                              selectedLead.recommendedStep === "AUDYT"
-                                ? "default"
-                                : selectedLead.recommendedStep === "ROZMOWA"
-                                  ? "secondary"
-                                  : "outline"
-                            }
-                            onClick={() => {
-                              const nextStatus = mapRecommendedStepToLeadStatus(selectedLead.recommendedStep);
-                              setLeads((prev) => prev.map((l) => (l.id === selectedLead.id ? { ...l, status: nextStatus } : l)));
-                            }}
-                          >
-                            {selectedLead.recommendedStep === "OBSERWACJA"
-                              ? "Oznacz jako: obserwacja"
-                              : selectedLead.recommendedStep === "ROZMOWA"
-                                ? "Przygotuj rozmowę z zarządcą"
-                                : "Przejdź do audytu technicznego"}
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ) : null}
-              </CardContent>
-            </Card>
-
-            <Card className="bg-white/80 dark:bg-slate-900/60 border border-slate-200/30 dark:border-slate-700/50 shadow-xl rounded-3xl backdrop-blur">
               <CardContent className="p-5 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                 <div className="flex items-center gap-3 flex-wrap">
                   <Badge variant={auditPotential.badgeVariant} className="text-xs">
                     Potencjał audytu: {auditPotential.label}
                   </Badge>
                   <div className="text-sm text-slate-700 dark:text-slate-300">
-                    Skala strat: <span className="font-semibold">~{caseStudy.lossesPercent}%</span> (ok.{" "}
-                    <span className="font-semibold">~{caseStudy.lossesPlnPerYear.toLocaleString("pl-PL")} zł/rok</span>)
+                    Skala strat: <span className="font-semibold">~{Math.round(activeDecisionNumbers.lossesPercent)}%</span> (ok.{" "}
+                    <span className="font-semibold">
+                      {activeDecisionNumbers.lossesPlnPerYearRange
+                        ? formatMoneyPLRange(activeDecisionNumbers.lossesPlnPerYearRange)
+                        : `~${Math.round(activeDecisionNumbers.lossesPlnPerYear).toLocaleString("pl-PL")} zł/rok`}
+                    </span>
+                    )
                   </div>
                   <div className="text-xs text-slate-600 dark:text-slate-400">
                     Przy tej skali budynku potencjał audytu dotyczy nie jednego lokalu, ale całej nieruchomości.
@@ -639,9 +662,74 @@ export default function AudytorzyPage() {
                   Na podstawie obecnych danych audyt ma <span className="font-semibold">{auditPotential.level}</span> sens z punktu widzenia kosztów i ryzyka. {" "}
                   <span className="font-semibold">Kolejny krok:</span> {auditPotential.nextStep}.
                 </div>
+                <div className="text-xs text-slate-600 dark:text-slate-400">{auditPotential.helper}</div>
               </CardContent>
             </Card>
-            <div className="mt-2 text-xs text-blue-100/90">{auditPotential.helper}</div>
+
+            <Card className="mt-4 bg-white/80 dark:bg-slate-900/60 border border-slate-200/30 dark:border-slate-700/50 shadow-xl rounded-3xl backdrop-blur">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base text-slate-900 dark:text-slate-100">Automatyczna analiza strat budynku (wstępna)</CardTitle>
+              </CardHeader>
+              <CardContent className="pt-0 space-y-3">
+                {selectedLead ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="rounded-2xl border border-slate-200/60 dark:border-slate-700/60 bg-slate-50/60 dark:bg-slate-950/30 p-4">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="font-semibold text-slate-900 dark:text-slate-100">A. Skala finansowa</div>
+                        <Badge variant={preliminaryBuildingAnalysis?.recommendation.variant ?? "outline"} className="text-xs">
+                          {preliminaryBuildingAnalysis?.financialScale ?? "—"}
+                        </Badge>
+                      </div>
+                      <div className="mt-2 text-sm text-slate-700 dark:text-slate-300">
+                        {preliminaryBuildingAnalysis?.annualLossLabel ?? "—"} · {preliminaryBuildingAnalysis?.monthlyLossLabel ?? "—"}
+                      </div>
+                    </div>
+
+                    <div className="rounded-2xl border border-slate-200/60 dark:border-slate-700/60 bg-slate-50/60 dark:bg-slate-950/30 p-4">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="font-semibold text-slate-900 dark:text-slate-100">B. Skala techniczna (heurystyka)</div>
+                        <Badge variant={preliminaryBuildingAnalysis?.technical.variant ?? "outline"} className="text-xs">
+                          {preliminaryBuildingAnalysis?.technical.label ?? "—"}
+                        </Badge>
+                      </div>
+                      <div className="mt-2 text-sm text-slate-700 dark:text-slate-300">
+                        Udział strat: <span className="font-semibold">{preliminaryBuildingAnalysis?.lossesPercentLabel ?? "—"}</span>
+                      </div>
+                    </div>
+
+                    <div className="rounded-2xl border border-slate-200/60 dark:border-slate-700/60 bg-slate-50/60 dark:bg-slate-950/30 p-4 md:col-span-2">
+                      <div className="font-semibold text-slate-900 dark:text-slate-100">C. Ryzyko zarządcze</div>
+                      <div className="mt-2 text-sm text-slate-700 dark:text-slate-300">
+                        {preliminaryBuildingAnalysis?.riskSentence ?? "—"}
+                      </div>
+                    </div>
+
+                    <div className="rounded-2xl border border-slate-200/60 dark:border-slate-700/60 bg-slate-50/60 dark:bg-slate-950/30 p-4 md:col-span-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="font-semibold text-slate-900 dark:text-slate-100">D. Rekomendacja audytorska (automat)</div>
+                        <Badge variant={preliminaryBuildingAnalysis?.recommendation.variant ?? "outline"} className="text-xs">
+                          {preliminaryBuildingAnalysis?.recommendation.label ?? "—"}
+                        </Badge>
+                      </div>
+                      <div className="mt-2 text-sm text-slate-700 dark:text-slate-300">
+                        Decyzja oparta o zł/rok i ryzyko — bez ręcznego liczenia.
+                      </div>
+                    </div>
+
+                    <div className="rounded-2xl border border-slate-200/60 dark:border-slate-700/60 bg-slate-50/60 dark:bg-slate-950/30 p-4 md:col-span-2">
+                      <div className="text-sm text-slate-700 dark:text-slate-300">
+                        Uwaga: to estymacje orientacyjne (zależne od danych wejściowych i liczby mieszkań). Jeśli brakuje liczby mieszkań, pokazujemy widełki dla
+                        typowego zakresu {DEFAULT_APARTMENTS_RANGE.min}–{DEFAULT_APARTMENTS_RANGE.max} lokali.
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-sm text-slate-700 dark:text-slate-300">
+                    Brak danych ze zgłoszenia mieszkańca. Ta sekcja uzupełni się automatycznie po zapisaniu zgłoszenia w <Link href="/mieszkancy" className="underline">/mieszkancy</Link>.
+                  </div>
+                )}
+              </CardContent>
+            </Card>
 
             <Card className="mt-4 bg-white/80 dark:bg-slate-900/60 border border-slate-200/30 dark:border-slate-700/50 shadow-xl rounded-3xl backdrop-blur">
               <CardHeader className="pb-2">
@@ -699,6 +787,209 @@ export default function AudytorzyPage() {
                     <Link href={managerCta.href}>{managerCta.label}</Link>
                   </Button>
                 </div>
+              </CardContent>
+            </Card>
+
+            <Card className="mt-4 bg-white/80 dark:bg-slate-900/60 border border-slate-200/30 dark:border-slate-700/50 shadow-xl rounded-3xl backdrop-blur">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base text-slate-900 dark:text-slate-100">Kolejka audytów wg priorytetu finansowego</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="text-sm text-slate-700 dark:text-slate-300">
+                  Ta kolejka pokazuje, gdzie audyt ma sens finansowy — nie gdzie jest najwięcej zgłoszeń.
+                </div>
+                <div className="text-xs text-slate-600 dark:text-slate-400">
+                  Dane są orientacyjne. Audyt techniczny potwierdza przyczynę i zakres działań.
+                </div>
+
+                <div className="text-xs text-slate-600 dark:text-slate-400">
+                  Panel prezentuje wyłącznie zgłoszenia o realnym potencjale finansowym. Dostęp pełny wymaga aktywnego planu audytora.
+                </div>
+
+                {/*
+                  PRICING (v0.6.x, bez blokowania funkcji):
+                  - FREE: podgląd ograniczony / demo
+                  - PAID: pełna kolejka, sortowanie, historia
+                  (placeholder pod przyszłe wdrożenie planów audytora)
+                */}
+
+                {leads.length ? (
+                  <div className="rounded-2xl border border-slate-200/80 dark:border-slate-700/80 bg-white/70 dark:bg-slate-950/30 overflow-hidden">
+                    <Table className="text-slate-900 dark:text-slate-100">
+                      <TableHeader className="bg-slate-100/90 dark:bg-slate-900/50">
+                        <TableRow className="border-slate-200/80 dark:border-slate-700/80">
+                          <TableHead className="h-12 px-5 text-xs font-semibold text-slate-800 dark:text-slate-200">ID</TableHead>
+                          <TableHead className="h-12 px-5 text-xs font-semibold text-slate-800 dark:text-slate-200">Data</TableHead>
+                          <TableHead className="h-12 px-5 text-xs font-semibold text-slate-800 dark:text-slate-200">Priorytet</TableHead>
+                          <TableHead className="h-12 px-5 text-xs font-semibold text-slate-800 dark:text-slate-200">Mieszkań</TableHead>
+                          <TableHead className="h-12 px-5 text-xs font-semibold text-slate-800 dark:text-slate-200">Strata budynku</TableHead>
+                          <TableHead className="h-12 px-5 text-xs font-semibold text-slate-800 dark:text-slate-200">% strat</TableHead>
+                          <TableHead className="h-12 px-5 text-xs font-semibold text-slate-800 dark:text-slate-200">Status decyzyjny</TableHead>
+                          <TableHead className="h-12 px-5 text-xs font-semibold text-slate-800 dark:text-slate-200">Status</TableHead>
+                          <TableHead className="h-12 px-5 text-xs font-semibold text-slate-800 dark:text-slate-200 text-right">Akcja</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody className="[&_tr:nth-child(odd)]:bg-slate-50/60 dark:[&_tr:nth-child(odd)]:bg-slate-950/20">
+                        {leads.map((l) => {
+                          const rec = recommendedStepBadge(l.recommendedStep);
+                          const pr = priorityBadge(l.priority);
+                          const st = statusBadge(l.status);
+                          const isSelected = selectedLeadId === l.id;
+
+                          const lossesPercentLabel = l.lossesPercent ? `${Math.round(l.lossesPercent)}%` : "—";
+                          const lossesPercentVariant = !l.lossesPercent
+                            ? "outline"
+                            : l.lossesPercent >= 35
+                              ? "destructive"
+                              : l.lossesPercent >= 25
+                                ? "warning"
+                                : "outline";
+
+                          return (
+                            <TableRow
+                              key={l.id}
+                              data-state={isSelected ? "selected" : undefined}
+                              className={
+                                isSelected
+                                  ? "bg-slate-200/50 dark:bg-slate-800/30 border-slate-200/80 dark:border-slate-700/80"
+                                  : "border-slate-200/70 dark:border-slate-800/70"
+                              }
+                            >
+                              <TableCell className="px-5 py-4 font-mono text-xs text-slate-700 dark:text-slate-300">{l.id}</TableCell>
+                              <TableCell className="px-5 py-4 text-xs text-slate-800 dark:text-slate-200">
+                                {l.createdAtISO ? new Date(l.createdAtISO).toLocaleString("pl-PL") : "—"}
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant={pr.variant} className="text-xs whitespace-nowrap">
+                                  {pr.label}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="px-5 py-4 text-xs text-slate-800 dark:text-slate-200 tabular-nums">
+                                {typeof l.apartmentsCount === "number" ? `~${l.apartmentsCount}` : "—"}
+                              </TableCell>
+                              <TableCell className="px-5 py-4 text-xs tabular-nums">
+                                <span className="font-bold text-red-700 dark:text-red-200">
+                                  {typeof l.apartmentsCount === "number"
+                                    ? formatMoneyPL(l.lossesPlnPerYearBuilding)
+                                    : l.lossesPlnPerYearBuildingRange
+                                      ? formatMoneyPLRange(l.lossesPlnPerYearBuildingRange)
+                                      : formatMoneyPL(l.lossesPlnPerYearBuilding)}
+                                </span>
+                              </TableCell>
+                              <TableCell className="px-5 py-4">
+                                <Badge
+                                  variant={lossesPercentVariant}
+                                  className="text-xs tabular-nums border-slate-300/80 dark:border-slate-600/80"
+                                >
+                                  {lossesPercentLabel}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant={rec.variant} className="text-xs whitespace-nowrap">
+                                  {rec.label}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant={st.variant} className="text-xs whitespace-nowrap">
+                                  {st.label}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="px-5 py-4 text-right">
+                                <Button type="button" size="sm" variant="outline" onClick={() => setSelectedLeadId(l.id)}>
+                                  Szczegóły
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
+                ) : (
+                  <div className="text-sm text-slate-700 dark:text-slate-300">
+                    Brak leadów w localStorage. Otwórz <Link href="/mieszkancy" className="underline">/mieszkancy</Link>, uzupełnij formularz i zapisz zgłoszenie.
+                  </div>
+                )}
+
+                {selectedLead ? (
+                  <Card className="bg-white/80 dark:bg-slate-900/60 border border-slate-200/30 dark:border-slate-700/50 shadow-xl rounded-3xl backdrop-blur">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-base text-slate-900 dark:text-slate-100">Szczegóły leadu</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="text-sm text-slate-700 dark:text-slate-300">
+                        <span className="font-semibold">ID:</span> {selectedLead.id}
+                        {selectedLead.residentEmail ? (
+                          <> · <span className="font-semibold">E-mail:</span> {selectedLead.residentEmail}</>
+                        ) : null}
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div className="rounded-2xl border border-slate-200/60 dark:border-slate-700/60 bg-slate-50/60 dark:bg-slate-950/30 p-4">
+                          <div className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Mieszkań</div>
+                          <div className="font-semibold text-slate-900 dark:text-slate-100">
+                            {typeof selectedLead.apartmentsCount === "number" ? `~${selectedLead.apartmentsCount}` : "—"}
+                          </div>
+                        </div>
+                        <div className="rounded-2xl border border-slate-200/60 dark:border-slate-700/60 bg-slate-50/60 dark:bg-slate-950/30 p-4">
+                          <div className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Strata budynku</div>
+                          <div className="font-semibold text-slate-900 dark:text-slate-100">
+                            {typeof selectedLead.apartmentsCount === "number"
+                              ? formatMoneyPL(selectedLead.lossesPlnPerYearBuilding)
+                              : selectedLead.lossesPlnPerYearBuildingRange
+                                ? formatMoneyPLRange(selectedLead.lossesPlnPerYearBuildingRange)
+                                : formatMoneyPL(selectedLead.lossesPlnPerYearBuilding)}
+                          </div>
+                        </div>
+                        <div className="rounded-2xl border border-slate-200/60 dark:border-slate-700/60 bg-slate-50/60 dark:bg-slate-950/30 p-4">
+                          <div className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Rekomendowany krok</div>
+                          {(() => {
+                            const rec = recommendedStepBadge(selectedLead.recommendedStep);
+                            return (
+                              <div className="mt-1">
+                                <Badge variant={rec.variant}>{rec.label}</Badge>
+                              </div>
+                            );
+                          })()}
+                        </div>
+                      </div>
+
+                      <div className="rounded-2xl border border-slate-200/60 dark:border-slate-700/60 bg-slate-50/60 dark:bg-slate-950/30 p-4">
+                        <div className="font-semibold text-slate-900 dark:text-slate-100">Rekomendowany kolejny krok</div>
+                        <div className="mt-2 text-sm text-slate-700 dark:text-slate-300">
+                          {selectedLead.recommendedStep === "OBSERWACJA"
+                            ? "Na tym etapie rekomendowana jest obserwacja kosztów i kontakt informacyjny. Lead o niskim priorytecie."
+                            : selectedLead.recommendedStep === "ROZMOWA"
+                              ? "Skala strat uzasadnia rozmowę z zarządcą i zebranie danych do decyzji."
+                              : "Skala strat uzasadnia audyt techniczny. Lead o wysokim potencjale finansowym."}
+                        </div>
+
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          <Button
+                            type="button"
+                            variant={
+                              selectedLead.recommendedStep === "AUDYT"
+                                ? "default"
+                                : selectedLead.recommendedStep === "ROZMOWA"
+                                  ? "secondary"
+                                  : "outline"
+                            }
+                            onClick={() => {
+                              const nextStatus = mapRecommendedStepToLeadStatus(selectedLead.recommendedStep);
+                              setLeads((prev) => prev.map((l) => (l.id === selectedLead.id ? { ...l, status: nextStatus } : l)));
+                            }}
+                          >
+                            {selectedLead.recommendedStep === "OBSERWACJA"
+                              ? "Oznacz jako: obserwacja"
+                              : selectedLead.recommendedStep === "ROZMOWA"
+                                ? "Przygotuj rozmowę z zarządcą"
+                                : "Przejdź do audytu technicznego"}
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ) : null}
               </CardContent>
             </Card>
           </div>

@@ -2,6 +2,26 @@ import { Building, TrendingUp, BarChart3, FileSearch, Users, Clock } from "lucid
 import { Badge } from "@/components/ui/badge";
 
 export default function InwestorzyPage() {
+  const buildings = [
+    // A. Budynki o wysokich kosztach i dużych stratach (ok. połowa)
+    { group: "A", name: "Os. Lotnictwa", units: 65, cost: 97500, efficiency: 26 },
+    { group: "A", name: "Wieżowiec Centrum", units: 120, cost: 56800, efficiency: 63 },
+    { group: "A", name: "Osiedle Północ", units: 88, cost: 41200, efficiency: 58 },
+    { group: "A", name: "Bloki Nad Potokiem", units: 74, cost: 35900, efficiency: 61 },
+    { group: "A", name: "Zespół Przy Dworcowej", units: 102, cost: 47700, efficiency: 54 },
+    { group: "A", name: "Budynek Handlowy", units: 24, cost: 21900, efficiency: 49 },
+
+    // B. Budynki o średnich parametrach
+    { group: "B", name: "Apartamenty Park", units: 45, cost: 16700, efficiency: 81 },
+    { group: "B", name: "Osiedle Kasztanowe", units: 56, cost: 18900, efficiency: 79 },
+    { group: "B", name: "Blok Zachodni", units: 68, cost: 21400, efficiency: 83 },
+    { group: "B", name: "Wieża Wschodnia", units: 96, cost: 24900, efficiency: 77 },
+
+    // C. Budynki prawidłowe / dobrze działające (kilka sztuk)
+    { group: "C", name: "Nowe Tarasy", units: 52, cost: 9800, efficiency: 92 },
+    { group: "C", name: "Osiedle Zielone", units: 61, cost: 11200, efficiency: 89 },
+  ] as const;
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-950 to-slate-800 relative overflow-x-hidden">
       {/* Dekoracyjne gradientowe blury w tle */}
@@ -17,7 +37,6 @@ export default function InwestorzyPage() {
             Dashboard zarządzania portfelem nieruchomości – analiza kosztów CWU, monitoring efektywności i raporty ROI
           </p>
         </div>
-
         {/* Statystyki */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="rounded-3xl bg-gradient-to-br from-blue-900/80 via-slate-900/90 to-blue-950/80 border-0 shadow-xl backdrop-blur-md p-8 flex flex-col items-center">
@@ -56,22 +75,39 @@ export default function InwestorzyPage() {
             <div className="rounded-3xl bg-gradient-to-br from-blue-900/80 via-slate-900/90 to-blue-950/80 border-0 shadow-xl backdrop-blur-md p-8">
               <h2 className="text-2xl font-bold text-cyan-200 mb-6">Przegląd budynków</h2>
               <div className="space-y-4">
-                {[
-                  { name: "Osiedle Słoneczne A", units: 65, cost: 12400, efficiency: 85 },
-                  { name: "Wieżowiec Centrum", units: 120, cost: 18200, efficiency: 72 },
-                  { name: "Apartamenty Park", units: 45, cost: 8900, efficiency: 91 },
-                  { name: "Budynek Handlowy", units: 24, cost: 5200, efficiency: 78 },
-                ].map((building, i) => (
-                  <div key={i} className="flex items-center justify-between p-4 rounded-xl bg-slate-900/60 hover:bg-blue-900/40 transition-colors">
-                    <div>
-                      <h4 className="font-medium text-slate-100">{building.name}</h4>
-                      <p className="text-sm text-slate-400">{building.units} mieszkań</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-medium text-slate-100">{building.cost.toLocaleString("pl-PL")} zł/mies.</p>
-                      <Badge variant={building.efficiency > 85 ? "success" : building.efficiency > 75 ? "warning" : "destructive"}>
-                        {building.efficiency}% efektywności
-                      </Badge>
+                {buildings.map((building, i) => (
+                  <div key={`${building.group}-${building.name}`} className="space-y-4">
+                    {i > 0 && building.group !== buildings[i - 1].group ? (
+                      <div className="h-px bg-slate-800/60" />
+                    ) : null}
+                    <div className="flex items-center justify-between p-4 rounded-xl bg-slate-900/60 hover:bg-blue-900/40 transition-colors">
+                      <div>
+                        <h4 className="font-medium text-slate-100">{building.name}</h4>
+                        {building.name === "Os. Lotnictwa" ? (
+                          <>
+                            {/* TODO: dane z modułu Audytorzy – moc zamówiona */}
+                            <p className="text-sm text-slate-400">Liczba mieszkań: 70</p>
+                          </>
+                        ) : (
+                          <p className="text-sm text-slate-400">{building.units} mieszkań</p>
+                        )}
+                      </div>
+                      <div className="text-right">
+                        <p className="font-medium text-slate-100">{building.cost.toLocaleString("pl-PL")} zł/mies.</p>
+                        <Badge
+                          variant={
+                            building.name === "Os. Lotnictwa"
+                              ? "success"
+                              : building.efficiency > 85
+                                ? "success"
+                                : building.efficiency > 75
+                                  ? "warning"
+                                  : "destructive"
+                          }
+                        >
+                          {building.efficiency}% efektywności
+                        </Badge>
+                      </div>
                     </div>
                   </div>
                 ))}

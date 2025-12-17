@@ -331,6 +331,31 @@ export const SzybkaWycenaWizard: React.FC = () => {
             </ul>
             <p className="text-xs text-slate-400 mt-2">To jest wycena wstępna. Pełna wycena możliwa po kontakcie.</p>
           </div>
+
+          <div className="text-center">
+            <Link
+              href={{
+                pathname: "/wykonawcy/oferta-cenowa",
+                query: {
+                  klatki: 1,
+                  kondygnacje: formData.floors,
+                  piony: formData.risers,
+                  lokale: formData.flats,
+                  zw: 0,
+                  cwu: 1,
+                  cyrkulacja: scope.wymiana.includes("Wymiana cyrkulacji") ? 1 : 0,
+                  vat: 8,
+                },
+              }}
+              className="inline-flex items-center justify-center px-8 py-3 rounded-xl font-bold bg-gradient-to-r from-blue-700 to-cyan-600 text-white shadow-lg hover:scale-105 transition-all"
+            >
+              Oferta cenowa
+            </Link>
+            <div className="mt-2 text-xs text-slate-400">
+              Kolejny krok: kosztorys, narzuty, ryzyka i podsumowanie netto/VAT/brutto.
+            </div>
+          </div>
+
           <div className="text-center mt-6">
             <Link href="/kontakt" className="inline-block px-8 py-3 rounded-xl font-bold bg-gradient-to-r from-blue-700 to-cyan-600 text-white shadow-lg hover:scale-105 transition-all">
               Poproś o szczegółową wycenę

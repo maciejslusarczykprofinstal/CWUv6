@@ -13,27 +13,11 @@ import { KatexFormula } from "@/components/ui/katex-formula";
 import { toast } from "sonner";
 import { ResidentCwuIssueForm } from "./ResidentCwuIssueForm";
 import { EnergyPieChart } from "./components/EnergyPieChart";
+import { calculateCwuLoss, type CwuLossInputs, type CwuLossResult } from "@/lib/calc/calculateCwuLoss";
 
-type Result = {
-  energyLossPerM3: number;
-  lossPerM3: number;
-  monthlyFinancialLoss: number;
-  monthlyEnergyLoss: number;
-  yearlyFinancialLoss: number;
-  yearlyEnergyLoss: number;
-  theoreticalCostPerM3: number;
-  theoreticalMonthlyPayment: number;
-  actualMonthlyPayment: number;
-  energyPerM3: number;
-};
+type Result = CwuLossResult;
 
-type Inputs = {
-  cwuPriceFromBill: number;
-  monthlyConsumption: number;
-  coldTempC: number;
-  hotTempC: number;
-  heatPriceFromCity: number;
-};
+type Inputs = CwuLossInputs;
 
 export default function MieszkancyPage() {
   const [res, setRes] = useState<Result | null>(null);
@@ -248,34 +232,7 @@ export default function MieszkancyPage() {
   // Automatyczna kalkulacja przy zmianie inputów
   function calculateResults(inp: Inputs) {
     try {
-      const deltaT = inp.hotTempC - inp.coldTempC; // K
-      const energyPerM3 = 0.004186 * deltaT; // GJ/m³
-      const theoreticalCostPerM3 = energyPerM3 * inp.heatPriceFromCity; // zł/m³
-      const lossPerM3 = inp.cwuPriceFromBill - theoreticalCostPerM3; // zł/m³
-      const energyLossPerM3 = lossPerM3 / inp.heatPriceFromCity; // GJ/m³
-
-      const monthlyFinancialLoss = lossPerM3 * inp.monthlyConsumption; // zł/miesiąc
-      const monthlyEnergyLoss = energyLossPerM3 * inp.monthlyConsumption; // GJ/miesiąc
-      const yearlyFinancialLoss = monthlyFinancialLoss * 12; // zł/rok
-      const yearlyEnergyLoss = monthlyEnergyLoss * 12; // GJ/rok
-
-      const theoreticalMonthlyPayment = theoreticalCostPerM3 * inp.monthlyConsumption;
-      const actualMonthlyPayment = inp.cwuPriceFromBill * inp.monthlyConsumption;
-
-      const result: Result = {
-        energyLossPerM3: Number(energyLossPerM3.toFixed(4)),
-        lossPerM3: Number(lossPerM3.toFixed(2)),
-        monthlyFinancialLoss: Number(monthlyFinancialLoss.toFixed(2)),
-        monthlyEnergyLoss: Number(monthlyEnergyLoss.toFixed(3)),
-        yearlyFinancialLoss: Number(yearlyFinancialLoss.toFixed(2)),
-        yearlyEnergyLoss: Number(yearlyEnergyLoss.toFixed(3)),
-        theoreticalCostPerM3: Number(theoreticalCostPerM3.toFixed(2)),
-        theoreticalMonthlyPayment: Number(theoreticalMonthlyPayment.toFixed(2)),
-        actualMonthlyPayment: Number(actualMonthlyPayment.toFixed(2)),
-        energyPerM3: Number(energyPerM3.toFixed(4)),
-      };
-
-      setRes(result);
+      setRes(calculateCwuLoss(inp));
     } catch (error) {
       console.error("Błąd obliczeń:", error);
       setRes(null);
