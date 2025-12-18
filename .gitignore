@@ -25,3 +25,12 @@ yarn-error.log*
 
 # TypeScript cache
 *.tsbuildinfo
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+.env
